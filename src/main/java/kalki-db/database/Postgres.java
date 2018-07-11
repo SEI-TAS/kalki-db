@@ -21,17 +21,11 @@ public class Postgres {
 
     public static Connection db = null;
 
-    private Postgres(){
+    private Postgres(String ip, String port, String dbName, String dbUser){
         try{
             //Read ip, port from config file
-            Properties prop = new Properties();
-            String fileName = "db.config";
-            InputStream is = new FileInputStream(fileName);
-            prop.load(is);
-            dbName = prop.getProperty("POSTGRES_USER");
-            dbUser = prop.getProperty("POSTGRES_DB_NAME");
-            String port = prop.getProperty("POSTGRES_PORT");
-            String ip = prop.getProperty("POSTGRES_IP");
+            this.dbName = dbName;
+            this.dbUser = dbUser;
             db = makeConnection(ip, port);
         }
         catch(Exception e){
@@ -44,9 +38,9 @@ public class Postgres {
      * Initialize the singleton instance of postgres, connecting to the database.
      * Must be done before any static methods can be used.
      */
-    public static void initialize() {
+    public static void initialize(String port, String ip, String dbName, String dbUser) {
         if (postgres == null){
-            postgres = new Postgres();
+            postgres = new Postgres(port, ip, dbName, dbUser);
         }
     }
 
@@ -117,6 +111,10 @@ public class Postgres {
      * @param command SQL commmand string
      */
     public static void executeCommand(String command){
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return;
+        }
         try{
             Statement statement = db.createStatement();
             statement.execute(command);
@@ -301,6 +299,10 @@ public class Postgres {
      */
     private static ResultSet findById(String id, String tableName){
         ResultSet rs = null;
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
         try{
             Statement st = db.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName + " WHERE ID ='" + id+"'");
@@ -320,6 +322,10 @@ public class Postgres {
      */
     private static ResultSet getAllFromTable(String tableName){
         ResultSet rs = null;
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
         try{
             Statement st = db.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName);
@@ -392,10 +398,14 @@ public class Postgres {
     /**
      * Saves given deviceHistory to the database.
      * @param deviceHistory deviceHistory to be inserted.
+     * @return auto incremented id
      */
-    public static void insertDeviceHistory(DeviceHistory deviceHistory){
+    public static int insertDeviceHistory(DeviceHistory deviceHistory){
         logger.info("Inserting device_history: " + deviceHistory.toString());
-
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
         try{
             PreparedStatement update = db.prepareStatement
                     ("INSERT INTO device_history(device_id, attributes, timestamp) values(?,?,?)");
@@ -404,11 +414,25 @@ public class Postgres {
             update.setTimestamp(3, deviceHistory.timestamp);
 
             update.executeUpdate();
+
+            int serialNum = 0;
+            Statement stmt = db.createStatement();
+
+            // get the postgresql serial field value with this query
+            String query = "select currval('device_id_seq')";
+            ResultSet rs = stmt.executeQuery(query);
+            if ( rs.next() )
+            {
+                serialNum = rs.getInt(1);
+                return serialNum;
+            }
+            stmt.close();
         }
         catch(Exception e){
             e.printStackTrace();
             logger.severe("Error inserting deviceHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
+        return -1;
     }
 
     /**
@@ -417,7 +441,10 @@ public class Postgres {
      */
     public static void updateDeviceHistory(DeviceHistory deviceHistory){
         logger.info("Updating deviceHistory with id=" + deviceHistory.id);
-
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return;
+        }
         try{
             PreparedStatement update = db.prepareStatement
                     ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
@@ -468,10 +495,14 @@ public class Postgres {
     /**
      * Saves given device to the database.
      * @param device deviceHistory to be inserted.
+     * @return auto incremented id
      */
-    public static void insertDevice(Device device){
+    public static int insertDevice(Device device){
         logger.info("Inserting device with id=" + device.id);
-
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
         try{
             PreparedStatement update = db.prepareStatement
                     ("INSERT INTO device(description, device_name, type_id, group_id, ip_address," +
@@ -486,11 +517,25 @@ public class Postgres {
             update.setString(8, device.policyFile);
 
             update.executeUpdate();
+
+            int serialNum = 0;
+            Statement stmt = db.createStatement();
+
+            // get the postgresql serial field value with this query
+            String query = "select currval('device_id_seq')";
+            ResultSet rs = stmt.executeQuery(query);
+            if ( rs.next() )
+            {
+                serialNum = rs.getInt(1);
+                return serialNum;
+            }
+            stmt.close();
         }
         catch(Exception e){
             e.printStackTrace();
             logger.severe("Error inserting device: " + e.getClass().getName()+": "+e.getMessage());
         }
+        return -1;
     }
 
     /**
@@ -498,6 +543,10 @@ public class Postgres {
      * @return a list of all deviceHistories in the database.
      */
     public static List<Device> getAllDevices(){
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
         List<Device> devices = new ArrayList<Device>();
         try{
             Statement st = db.createStatement();
