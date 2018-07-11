@@ -498,7 +498,7 @@ public class Postgres {
      * @return auto incremented id
      */
     public static int insertDevice(Device device){
-        logger.info("Inserting device with id=" + device.id);
+        logger.info("Inserting device");
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
