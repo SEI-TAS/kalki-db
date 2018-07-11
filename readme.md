@@ -16,6 +16,7 @@ In whatever project you want to include this library in, make sure that your dep
              
              dependencies {
                  compile group: 'edu.cmu.sei.ttg', name: 'kalki-db', version: '0.0.1-SNAPSHOT'
+             }
 
 
   
