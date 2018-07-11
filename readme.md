@@ -10,11 +10,8 @@ To publish to the local maven repository, use
 In whatever project you want to include this library in, make sure that your dependencies include this project and that mavenLocal is under the repositories in your build.gradle file.
 
             repositories {
-                 mavenCentral()
                  mavenLocal()
-                 flatDir {
-                     dirs 'libs'
-                 }
+                 mavenCentral()
              }
              
              dependencies {
