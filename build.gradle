@@ -16,16 +16,17 @@ apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.8
 
+sourceSets {
+    main.java.srcDirs = ['src']
+}
+
 repositories {
     mavenLocal()
     mavenCentral()
-    flatDir {
-        dirs 'libs'
-    }
 }
 
 dependencies {
-    compile group: 'org.postgresql', name: 'postgresql-42.2.2', version:'42.2.2'
+    compile group: 'org.postgresql', name: 'postgresql', version:'42.2.2'
 }
 
 publishing {
