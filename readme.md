@@ -1,6 +1,6 @@
-#KalkiDB
+# KalkiDB
 
-##Usage
+## Usage
 First, clone this repo and install maven.
 
 To publish to the local maven repository, use `$ gradle publishToMavenLocal`.
@@ -20,7 +20,7 @@ dependencies {
 
 
   
-##Code Integration
+## Code Integration
 
 First, initialize Postgres using 
 ```
