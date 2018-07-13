@@ -16,16 +16,17 @@ public class Postgres {
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
     private static String dbUser;
-    private static String dbPassword = "123";
+    private static String dbPassword;
     private static Postgres postgres = null;
 
     public static Connection db = null;
 
-    private Postgres(String ip, String port, String dbName, String dbUser){
+    private Postgres(String ip, String port, String dbName, String dbUser, String dbPassword){
         try{
             //Read ip, port from config file
             this.dbName = dbName;
             this.dbUser = dbUser;
+            this.dbPassword = dbPassword;
             db = makeConnection(ip, port);
         }
         catch(Exception e){
@@ -39,8 +40,12 @@ public class Postgres {
      * Must be done before any static methods can be used.
      */
     public static void initialize(String port, String ip, String dbName, String dbUser) {
+        initialize(port, ip, dbName, dbUser, "");
+    }
+
+    public static void initialize(String port, String ip, String dbName, String dbUser, String dbPassword) {
         if (postgres == null){
-            postgres = new Postgres(port, ip, dbName, dbUser);
+            postgres = new Postgres(port, ip, dbName, dbUser, dbPassword);
         }
     }
 
@@ -75,8 +80,7 @@ public class Postgres {
         try {
             Class.forName("org.postgresql.Driver");
             db = DriverManager
-                    .getConnection("jdbc:postgresql://" + ip + ":" + port + "/myDB",
-                            "postgres", "123");
+                    .getConnection("jdbc:postgresql://" + ip + ":" + port + "/dbName", this.dbUser, this.dbPassword);
             return db;
         } catch (Exception e) {
             e.printStackTrace();
