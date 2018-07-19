@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static java.lang.Thread.sleep;
 
@@ -80,7 +82,7 @@ public class Postgres {
         try {
             Class.forName("org.postgresql.Driver");
             db = DriverManager
-                    .getConnection("jdbc:postgresql://" + ip + ":" + port + "/dbName", this.dbUser, this.dbPassword);
+                    .getConnection("jdbc:postgresql://" + ip + ":" + port + "/" + this.dbName, this.dbUser, this.dbPassword);
             return db;
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,14 +121,18 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return;
         }
+        Statement st = null;
         try{
-            Statement statement = db.createStatement();
-            statement.execute(command);
+            st = db.createStatement();
+            st.execute(command);
         }
         catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error executing database command: '" + command + "' " +
                     e.getClass().getName()+": "+e.getMessage());
+        }
+        finally {
+            try {if(st != null) st.close(); } catch (Exception e) {}
         }
     }
 
@@ -163,8 +169,8 @@ public class Postgres {
             }
             rs.close();
             ps.close();
-
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -172,25 +178,24 @@ public class Postgres {
     /**
      * Drops all tables from the database.
      */
-    public static void dropTables(){
-        logger.info("Dropping tables.");
-
-        List<String> tableNames = new ArrayList<String>();
-        tableNames.add("device_history");
-        tableNames.add("device");
-        tableNames.add("alert");
-        tableNames.add("umbox");
-        tableNames.add("tag");
-        tableNames.add("device_tag");
-        tableNames.add("alert_history");
-        tableNames.add("state_history");
-        tableNames.add("umbox_image");
-        tableNames.add("device_group");
-
-
-        for(String tableName: tableNames){
-            dropTable(tableName);
-        }
+    public static CompletionStage<Void> dropTables(){
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Dropping tables.");
+            List<String> tableNames = new ArrayList<String>();
+            tableNames.add("device_history");
+            tableNames.add("device");
+            tableNames.add("alert");
+            tableNames.add("umbox");
+            tableNames.add("tag");
+            tableNames.add("device_tag");
+            tableNames.add("alert_history");
+            tableNames.add("state_history");
+            tableNames.add("umbox_image");
+            tableNames.add("device_group");
+            for(String tableName: tableNames){
+                dropTable(tableName);
+            }
+        });
     }
 
     /**
@@ -218,16 +223,16 @@ public class Postgres {
     public static void makeTables(){
         logger.info("Making tables.");
         executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
-                "device_id     varchar(255) NOT NULL," +
+                "device_id     int NOT NULL," +
                 "attributes    hstore, " +
                 "timestamp     TIMESTAMP NOT NULL," +
                 "id            serial    PRIMARY KEY" +
                 ");"
         );
-        executeCommand("CREATE TABLE IF NOT EXISTS device (" +
+        executeCommand("CREATE TABLE IF NOT EXISTS device(" +
                 "id             serial   PRIMARY KEY," +
+                "name           varchar(255) NOT NULL," +
                 "description    varchar(255)," +
-                "device_name    varchar(255) NOT NULL," +
                 "type_id        varchar(255) NOT NULL," +
                 "group_id       varchar(255)," +
                 "ip_address     varchar(255)," +
@@ -236,28 +241,24 @@ public class Postgres {
                 "policy_file varchar(255) NOT NULL" +
                 ");"
         );
-        executeCommand("CREATE TABLE IF NOT EXISTS alert (" +
+        executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
                 "id           serial PRIMARY KEY, " +
-                "umbox_id     varchar(255) NOT NULL, " +
+                "umbox_id     int NOT NULL, " +
                 "info         varchar(255) NOT NULL, " +
                 "stamp        bigint NOT NULL " +
                 ");"
         );
-        executeCommand("CREATE TABLE IF NOT EXISTS umbox (" +
+        executeCommand("CREATE TABLE IF NOT EXISTS umbox(" +
                 "id           serial PRIMARY KEY, " +
-                "umbox_id     varchar(255) NOT NULL, " +
+                "umbox_id     int NOT NULL, " +
                 "umbox_name   varchar(255) NOT NULL, " +
                 "device       varchar(255) NOT NULL, " +
                 "started_at   bigint NOT NULL " +
                 ");"
         );
-        executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
-                "id           serial PRIMARY KEY, " +
-                "name         varchar(255) NOT NULL" +
-                ");");
-        executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
-                "device_id    varchar(255) NOT NULL, " +
-                "tag_id       varchar(255) NOT NULL" +
+        executeCommand("CREATE TABLE IF NOT EXISTS type(" +
+                "id    serial PRIMARY KEY, " +
+                "name  varchar(255)" +
                 ");"
         );
         executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
@@ -265,10 +266,19 @@ public class Postgres {
                 "name  varchar(255)" +
                 ");"
         );
+        executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
+                "id           serial PRIMARY KEY, " +
+                "name         varchar(255) NOT NULL" +
+                ");");
+        executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
+                "device_id    int NOT NULL, " +
+                "tag_id       int NOT NULL" +
+                ");"
+        );
         executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
                 "id           serial PRIMARY KEY," +
                 "timestamp    TIMESTAMP NOT NULL," +
-                "external_id  varchar(255) NOT NULL," +
+                "external_id  int NOT NULL," +
                 "name         varchar(255)" +
                 ");"
         );
@@ -301,20 +311,26 @@ public class Postgres {
      * @param tableName name of the table to search
      * @return the resultset of the query
      */
-    private static ResultSet findById(String id, String tableName){
+    private static ResultSet _findById(int id, String tableName){
+        PreparedStatement st = null;
         ResultSet rs = null;
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         try{
-            Statement st = db.createStatement();
-            rs = st.executeQuery("SELECT * FROM " + tableName + " WHERE ID ='" + id+"'");
-            st.close();
+            st = db.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
+            st.setInt(1, id);
+            rs = st.executeQuery();
+
+            // Moves the result set to the first row
+            rs.next();
+            // closes rs. Need to close it somewhere else
+//            st.close();
         }
         catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error finding deviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error finding by ID: " + e.getClass().getName()+": "+e.getMessage());
         }
         return rs;
     }
@@ -324,7 +340,7 @@ public class Postgres {
      * @param tableName name of the table.
      * @return a list of all entries in the table.
      */
-    private static ResultSet getAllFromTable(String tableName){
+    private static ResultSet _getAllFromTable(String tableName){
         ResultSet rs = null;
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
@@ -333,7 +349,8 @@ public class Postgres {
         try{
             Statement st = db.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName);
-            st.close();
+            // This line closes the result set too
+//            st.close();
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -358,16 +375,15 @@ public class Postgres {
 
 
     /**
-     * Finds all deviceHistories in the database.
-     * @return a list of all deviceHistories in the database.
+     * Finds all DeviceHistories in the database.
+     * @return a list of all DeviceHistories in the database.
      */
     public static List<DeviceHistory> getAllDeviceHistories() {
-        ResultSet rs = getAllFromTable("device_history");
+        ResultSet rs = _getAllFromTable("device_history");
         List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
         try {
-
             while (rs.next()) {
-                deviceHistories.add(rsToDeviceHistory(rs));
+                deviceHistories.add(_rsToDeviceHistory(rs));
             }
             rs.close();
         }
@@ -378,73 +394,75 @@ public class Postgres {
     }
 
     /**
-     * Extract a deviceHistory from the result set of a database query.
-     * @param rs result set from a deviceHistory query.
-     * @return The deviceHistory that was found.
+     * Extract a DeviceHistory from the result set of a database query.
+     * @param rs ResultSet from a DeviceHistory query.
+     * @return The DeviceHistory that was found.
      */
-    private static DeviceHistory rsToDeviceHistory(ResultSet rs){
+    private static DeviceHistory _rsToDeviceHistory(ResultSet rs){
         DeviceHistory deviceHistory = null;
         try{
-            String deviceId = rs.getString(1);
+            int deviceId = rs.getInt(1);
             Map<String, String> attributes = HStoreConverter.fromString(rs.getString(2));
             Timestamp timestamp = rs.getTimestamp(3);
-            String historyId = rs.getString(4);
+            int historyId = rs.getInt(4);
 
             deviceHistory = new DeviceHistory(deviceId, attributes, timestamp, historyId);
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to deviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
         return deviceHistory;
     }
 
     /**
-     * Saves given deviceHistory to the database.
-     * @param deviceHistory deviceHistory to be inserted.
+     * Saves given DeviceHistory to the database.
+     * @param deviceHistory DeviceHistory to be inserted.
      * @return auto incremented id
      */
-    public static int insertDeviceHistory(DeviceHistory deviceHistory){
-        logger.info("Inserting device_history: " + deviceHistory.toString());
-        if(db == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-        try{
-            PreparedStatement update = db.prepareStatement
-                    ("INSERT INTO device_history(device_id, attributes, timestamp) values(?,?,?)");
-            update.setString(1, deviceHistory.deviceId);
-            update.setObject(2, deviceHistory.attributes);
-            update.setTimestamp(3, deviceHistory.timestamp);
-
-            update.executeUpdate();
-
-            int serialNum = 0;
-            Statement stmt = db.createStatement();
-
-            // get the postgresql serial field value with this query
-            String query = "select currval('device_id_seq')";
-            ResultSet rs = stmt.executeQuery(query);
-            if ( rs.next() )
-            {
-                serialNum = rs.getInt(1);
-                return serialNum;
+    public static CompletionStage<Integer> insertDeviceHistory(DeviceHistory deviceHistory){
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting device_history: " + deviceHistory.toString());
+            if(db == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
             }
-            stmt.close();
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            logger.severe("Error inserting deviceHistory: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return -1;
+            try{
+                PreparedStatement update = db.prepareStatement
+                        ("INSERT INTO device_history(device_id, attributes, timestamp) values(?,?,?)");
+                update.setInt(1, deviceHistory.deviceId);
+                update.setObject(2, deviceHistory.attributes);
+                update.setTimestamp(3, deviceHistory.timestamp);
+
+                update.executeUpdate();
+
+                int serialNum = 0;
+                Statement stmt = db.createStatement();
+
+                // get the postgresql serial field value with this query
+                String query = "select currval('device_id_seq')";
+                ResultSet rs = stmt.executeQuery(query);
+                if ( rs.next() )
+                {
+                    serialNum = rs.getInt(1);
+                    return serialNum;
+                }
+                stmt.close();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+                logger.severe("Error inserting DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return -1;
+        });
     }
 
     /**
-     * Updates deviceHistory with given id to have the parameters of the given deviceHistory.
-     * @param deviceHistory holding new parameters to be saved in the database.
+     * Updates DeviceHistory with given id to have the parameters of the given DeviceHistory.
+     * @param deviceHistory DeviceHistory holding new parameters to be saved in the database.
      */
     public static void updateDeviceHistory(DeviceHistory deviceHistory){
-        logger.info("Updating deviceHistory with id=" + deviceHistory.id);
+        logger.info("Updating DeviceHistory with id=" + deviceHistory.id);
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return;
@@ -454,24 +472,24 @@ public class Postgres {
                     ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
                             "WHERE id=?");
 
-            update.setString(1, deviceHistory.id);
+            update.setInt(1, deviceHistory.id);
             update.setObject(2, deviceHistory.attributes);
             update.setTimestamp(3, deviceHistory.timestamp);
-            update.setString(4, deviceHistory.id);
+            update.setInt(4, deviceHistory.id);
 
             update.executeUpdate();
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error updating deviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error updating DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
     }
 
     /**
-     * First, attempts to find the deviceHistory in the database.
-     * If successful, updates the existing deviceHistory with the given deviceHistory's parameters Otherwise,
-     * inserts the given deviceHistory.
-     * @param deviceHistory deviceHistory to be inserted or updated.
+     * First, attempts to find the DeviceHistory in the database.
+     * If successful, updates the existing DeviceHistory with the given DeviceHistory's parameters Otherwise,
+     * inserts the given DeviceHistory.
+     * @param deviceHistory DeviceHistory to be inserted or updated.
      */
     public static void insertOrUpdateDeviceHistory(DeviceHistory deviceHistory){
         if(findDeviceHistory(deviceHistory.id) != null){
@@ -484,12 +502,12 @@ public class Postgres {
 
 
     /**
-     * Finds a deviceHistory from the database by its id.
-     * @param id id of the device to find.
-     * @return the deviceHistory if it exists in the database, else null.
+     * Finds a DeviceHistory from the database by its id.
+     * @param id id of the DeviceHistory to find.
+     * @return the DeviceHistory if it exists in the database, else null.
      */
-    public static DeviceHistory findDeviceHistory(String id){
-        return rsToDeviceHistory(findById(id, "device_history"));
+    public static DeviceHistory findDeviceHistory(int id){
+        return _rsToDeviceHistory(_findById(id, "device_history"));
     }
 
     /*
@@ -497,112 +515,490 @@ public class Postgres {
      */
 
     /**
-     * Saves given device to the database.
-     * @param device deviceHistory to be inserted.
+     * Saves given Device to the database.
+     * @param device Device to be inserted.
      * @return auto incremented id
      */
-    public static int insertDevice(Device device){
-        logger.info("Inserting device");
+    public static CompletionStage<Integer> insertDevice(Device device){
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting device");
+            if(db == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try{
+                PreparedStatement update = db.prepareStatement
+                        ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
+                                "history_size, sampling_rate, policy_file) values(?,?,?,?,?,?,?,?)");
+                update.setString(1, device.getDescription());
+                update.setString(2, device.getName());
+                update.setString(3, device.getType());
+                update.setString(4, device.getGroup());
+                update.setString(5, device.getIp());
+                update.setInt(6, device.getHistorySize());
+                update.setInt(7, device.getSamplingRate());
+                update.setString(8, device.getPolicyFile());
+
+                update.executeUpdate();
+
+                int serialNum = 0;
+                Statement stmt = db.createStatement();
+
+                // get the postgresql serial field value with this query
+                String query = "select currval('device_id_seq')";
+                ResultSet rs = stmt.executeQuery(query);
+                if ( rs.next() )
+                {
+                    serialNum = rs.getInt(1);
+                    return serialNum;
+                }
+                stmt.close();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+                logger.severe("Error inserting Device: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * Updates Device with given id to have the parameters of the given Device.
+     * @param device Device holding new parameters to be saved in the database.
+     */
+    public static void updateDevice(Device device){
+        logger.info("Updating Device with id=" + device.id);
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
+            return;
         }
         try{
-            PreparedStatement update = db.prepareStatement
-                    ("INSERT INTO device(description, device_name, type_id, group_id, ip_address," +
-                            "history_size, sampling_rate, policy_file) values(?,?,?,?,?,?,?,?)");
-            update.setString(1, device.description);
-            update.setString(2, device.name);
-            update.setString(3, device.type);
-            update.setString(4, device.groupId);
-            update.setString(5, device.ip);
-            update.setInt(6, device.historySize);
-            update.setInt(7, device.samplingRate);
-            update.setString(8, device.policyFile);
-
+            PreparedStatement update = db.prepareStatement("UPDATE device " +
+                    "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ? " +
+                    "WHERE id = ?");
+            update.setString(1, device.getName());
+            update.setString(2, device.getDescription());
+            update.setString(3, device.getType());
+            update.setString(4, device.getGroup());
+            update.setString(5, device.getIp());
+            update.setInt(6, device.getHistorySize());
+            update.setInt(7, device.getSamplingRate());
+            update.setInt(8, device.getId());
             update.executeUpdate();
-
-            int serialNum = 0;
-            Statement stmt = db.createStatement();
-
-            // get the postgresql serial field value with this query
-            String query = "select currval('device_id_seq')";
-            ResultSet rs = stmt.executeQuery(query);
-            if ( rs.next() )
-            {
-                serialNum = rs.getInt(1);
-                return serialNum;
-            }
-            stmt.close();
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error inserting device: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error updating Device: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return -1;
     }
 
     /**
-     * Finds all devices in the database.
-     * @return a list of all deviceHistories in the database.
+     * Finds all Devices in the database.
+     * @return a list of all Devices in the database.
      */
-    public static List<Device> getAllDevices(){
-        if(db == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
-        List<Device> devices = new ArrayList<Device>();
-        try{
-            Statement st = db.createStatement();
-            ResultSet rs = st.executeQuery("SELECT * FROM device");
-            while (rs.next())
-            {
-                devices.add(rsToDevice(rs));
+    public static CompletionStage<List<Device>> getAllDevices(){
+        return CompletableFuture.supplyAsync(() -> {
+            if(db == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
             }
-            rs.close();
-            st.close();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error getting all deviceHistories: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return devices;
+            List<Device> devices = new ArrayList<Device>();
+            try{
+                Statement st = db.createStatement();
+                ResultSet rs = st.executeQuery("SELECT * FROM device");
+                while (rs.next())
+                {
+                    devices.add(_rsToDevice(rs));
+                }
+                rs.close();
+                st.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting all Devices: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return devices;
+        });
     }
 
     /**
-     * Extract a deviceHistory from the result set of a database query.
-     * @param rs result set from a deviceHistory query.
-     * @return The deviceHistory that was found.
+     * Extract a Device from the result set of a database query.
+     * @param rs ResultSet from a Device query.
+     * @return The Device that was found.
      */
-    private static Device rsToDevice(ResultSet rs){
+    private static Device _rsToDevice(ResultSet rs){
         Device device = null;
         try{
-            String id = rs.getString(1);
-            String description = rs.getString(2);
-            String name = rs.getString(3);
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            String description = rs.getString(3);
             String type = rs.getString(4);
-            String groupId = rs.getString(5);
+            String group = rs.getString(5);
             String ip = rs.getString(6);
             int historySize = rs.getInt(7);
             int samplingRate = rs.getInt(8);
             String policyFile = rs.getString(9);
 
-            device = new Device(id, description, name, type, groupId, ip, historySize, samplingRate, policyFile);
+            device = new Device(id, name, description, type, group, ip, historySize, samplingRate, policyFile);
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to deviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to Device: " + e.getClass().getName()+": "+e.getMessage());
         }
         return device;
     }
 
     /**
-     * Finds a deviceHistory from the database by its id.
-     * @param id id of the device to find.
-     * @return the deviceHistory if it exists in the database, else null.
+     * First, attempts to find the Device in the database.
+     * If successful, updates the existing Device with the given Device's parameters Otherwise,
+     * inserts the given Device.
+     * @param device Device to be inserted or updated.
      */
-    public static Device findDevice(String id){
-        return rsToDevice(findById(id, "device"));
+    public static CompletionStage<Void> insertOrUpdateDevice(Device device){
+        return CompletableFuture.runAsync(() -> {
+            if(findDevice(device.getId()) != null) {
+                updateDevice(device);
+            }
+            else{
+                insertDevice(device);
+            }
+        });
+    }
+
+    /**
+     * Finds a Device from the database by its id.
+     * @param id id of the Device to find.
+     * @return the Device if it exists in the database, else null.
+     */
+    public static CompletionStage<Device> findDevice(int id){
+        return CompletableFuture.supplyAsync(() -> {
+            return _rsToDevice(_findById(id, "device"));
+        });
+    }
+
+    // Connor's stuff
+    // TODO: Add documentation
+
+    // Unused
+    public static void addUmboxContainer(UmboxContainer umbox) {
+        PreparedStatement st = null;
+        try {
+            st = db.prepareStatement("INSERT INTO umbox (umbox_id, umbox_name, device, started_at) VALUES (?, ?, ?, ?)");
+            st.setString(1, umbox.getUmboxId());
+            st.setString(2, umbox.getUmboxName());
+            st.setString(3, umbox.getDevice());
+            st.setInt(4, umbox.getStartedAt());
+            st.executeUpdate();
+        }
+        catch (SQLException e) {}
+        finally {
+            try { if(st != null) st.close(); } catch (Exception e) {}
+        }
+    }
+
+    public static CompletionStage<Void> addUmboxImage(UmboxImage u) {
+        return CompletableFuture.runAsync(() -> {
+            PreparedStatement st = null;
+            try {
+                st = db.prepareStatement("INSERT INTO umbox_image (name, path) VALUES (?, ?)");
+                st.setString(1, u.getName());
+                st.setString(2, u.getPath());
+                st.executeUpdate();
+            }
+            catch (SQLException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+        });
+    }
+
+    public static CompletionStage<Void> editUmboxImage(UmboxImage u, String id) {
+        return CompletableFuture.runAsync(() -> {
+            PreparedStatement st = null;
+            try {
+                st = db.prepareStatement("UPDATE umbox_image " +
+                        "SET name = ?, path = ? " +
+                        "WHERE id = ?");
+                st.setString(1, u.getName());
+                st.setString(2, u.getPath());
+                st.setInt(3, Integer.parseInt(id));
+                st.executeUpdate();
+            }
+            catch (SQLException e) {}
+            catch (NumberFormatException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+        });
+    }
+
+    public static CompletionStage<Integer> addDevice(Device device) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            try {
+                // Adds new device based on form values
+                st = db.prepareStatement("INSERT INTO device (name, description, type_id, group_id, ip_address, history_size, sampling_rate) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)");
+                st.setString(1, device.getName());
+                st.setString(2, device.getDescription());
+                st.setString(3, device.getType());
+                st.setString(4, device.getGroup());
+                st.setString(5, device.getIp());
+                st.setInt(6, device.getHistorySize());
+                st.setInt(7, device.getSamplingRate());
+                st.executeUpdate();
+            } catch (SQLException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return 1;
+        });
+    }
+
+    public static CompletionStage<Integer> editDevice(Device device) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            try {
+                st = db.prepareStatement("UPDATE device " +
+                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ? " +
+                        "WHERE id = ?");
+                st.setString(1, device.getName());
+                st.setString(2, device.getDescription());
+                st.setString(3, device.getType());
+                st.setString(4, device.getGroup());
+                st.setString(5, device.getIp());
+                st.setInt(6, device.getHistorySize());
+                st.setInt(7, device.getSamplingRate());
+                st.setInt(8, device.getId());
+                st.executeUpdate();
+            }
+            catch (SQLException e) {}
+            catch (NumberFormatException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+            return 1;
+        });
+    }
+
+    public static CompletionStage<Integer> deleteById(String table, String id) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            try {
+                st = db.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
+                st.setInt(1, Integer.parseInt(id));
+                st.executeUpdate();
+            } catch (SQLException e) {
+            } catch (NumberFormatException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return 1;
+        });
+    }
+
+    private static CompletionStage<ResultSet> _getById(String table, String id) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            try {
+                st = db.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", table));
+                st.setInt(1, Integer.parseInt(id));
+                rs = st.executeQuery();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting by id: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return rs;
+        });
+    }
+
+    /**
+     * Finds all UmboxImages in the database.
+     * @return a list of all UmboxImages in the database.
+     */
+    public static CompletionStage<List<UmboxImage>> getAllUmboxImages() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = _getAllFromTable("umbox_image");
+            List<UmboxImage> umboxImages = new ArrayList<UmboxImage>();
+            try {
+                while (rs.next()) {
+                    umboxImages.add(_rsToUmboxImage(rs));
+                }
+                rs.close();
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all umbox images.");
+            }
+            return umboxImages;
+        });
+    }
+
+    /**
+     * Extract a UmboxImage from the result set of a database query.
+     * @param rs ResultSet from a UmboxImage query.
+     * @return The first UmboxImage in rs.
+     */
+    private static UmboxImage _rsToUmboxImage(ResultSet rs){
+        UmboxImage umboxImage = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            String path = rs.getString(3);
+            umboxImage = new UmboxImage(id, name, path);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return umboxImage;
+    }
+
+    /**
+     * Finds all Groups in the database.
+     * @return a list of all Groups in the database.
+     */
+    public static CompletionStage<List<Group>> getAllGroups() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = _getAllFromTable("device_group");
+            List<Group> groups = new ArrayList<Group>();
+            try {
+                while (rs.next()) {
+                    groups.add(_rsToGroup(rs));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQLException getting all Groups: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(rs != null) rs.close(); } catch (Exception e) {}
+            }
+            return groups;
+        });
+    }
+
+    /**
+     * Extract a Group from the result set of a database query.
+     * @param rs ResultSet from a Group query.
+     * @return The first Group in rs.
+     */
+    private static Group _rsToGroup(ResultSet rs){
+        Group group = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            group = new Group(id, name);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to Group: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return group;
+    }
+
+    /**
+     * Finds all Types in the database.
+     * @return a list of all Types in the database.
+     */
+    public static CompletionStage<List<Type>> getAllTypes() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = _getAllFromTable("type");
+            List<Type> types = new ArrayList<Type>();
+            try {
+                while (rs.next()) {
+                    types.add(_rsToType(rs));
+                }
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQLException getting all Types: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(rs != null) rs.close(); } catch (Exception e) {}
+            }
+            return types;
+        });
+    }
+
+    /**
+     * Extract a Type from the result set of a database query.
+     * @param rs ResultSet from a Type query.
+     * @return The first Type in rs.
+     */
+    private static Type _rsToType(ResultSet rs){
+        Type type = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            type = new Type(id, name);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to Type: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return type;
+    }
+
+    /**
+     * Finds all Tags in the database.
+     * @return a list of all Tags in the database.
+     */
+    public static CompletionStage<List<Tag>> getAllTags() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = _getAllFromTable("tag");
+            List<Tag> tags = new ArrayList<Tag>();
+            try {
+                while (rs.next()) {
+                    tags.add(_rsToTag(rs));
+                }
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQLException getting all Tags: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if (rs != null) rs.close(); } catch(Exception e) {}
+            }
+            return tags;
+        });
+    }
+
+    /**
+     * Extract a Tag from the result set of a database query.
+     * @param rs ResultSet from a Tag query.
+     * @return The first Tag in rs.
+     */
+    private static Tag _rsToTag(ResultSet rs){
+        Tag tag = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            tag = new Tag(id, name);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to Tag: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return tag;
+    }
+
+    public static CompletionStage<Integer> addRowToTable(String table, String name) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            try {
+                st = db.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
+                st.setString(1, name);
+                st.executeUpdate();
+            }
+            catch (SQLException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+            return 1;
+        });
     }
 
 }

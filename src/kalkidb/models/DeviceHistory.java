@@ -9,30 +9,30 @@ import kalkidb.database.Postgres;
 
 public class DeviceHistory {
 
-    public String id;
+    public int id;
     public String group;
     public Timestamp timestamp;
     public Map<String, String> attributes;
-    public String deviceId;
+    public int deviceId;
 
-    public DeviceHistory(String deviceId){
+    public DeviceHistory(int deviceId){
         this.attributes = new HashMap<String, String>();
         long millis = System.currentTimeMillis() % 1000;
         this.timestamp = new Timestamp(millis);
         this.deviceId = deviceId;
     }
 
-    public DeviceHistory(String deviceId, Map<String, String> attributes) {
+    public DeviceHistory(int deviceId, Map<String, String> attributes) {
         this(deviceId);
         this.attributes = attributes;
     }
 
-    public DeviceHistory(String deviceId, Map<String, String> attributes, Timestamp timestamp) {
+    public DeviceHistory(int deviceId, Map<String, String> attributes, Timestamp timestamp) {
         this(deviceId, attributes);
         this.timestamp = timestamp;
     }
 
-    public DeviceHistory(String deviceId, Map<String, String> attributes, Timestamp timestamp, String id) {
+    public DeviceHistory(int deviceId, Map<String, String> attributes, Timestamp timestamp, int id) {
         this(deviceId, attributes, timestamp);
         this.id = id;
 
@@ -57,7 +57,7 @@ public class DeviceHistory {
     }
 
     public String toString() {
-        String result = "DeviceHistory Info: deviceId: " + deviceId + ",";
+        String result = "DeviceHistory Info: deviceId: " + Integer.toString(deviceId) + ",";
         for(String key : attributes.keySet()){
             result += key + ": " + attributes.get(key) + ", ";
         }
