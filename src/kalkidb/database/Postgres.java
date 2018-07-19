@@ -732,55 +732,6 @@ public class Postgres {
         });
     }
 
-    public static CompletionStage<Integer> addDevice(Device device) {
-        return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
-            try {
-                // Adds new device based on form values
-                st = db.prepareStatement("INSERT INTO device (name, description, type_id, group_id, ip_address, history_size, sampling_rate) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?)");
-                st.setString(1, device.getName());
-                st.setString(2, device.getDescription());
-                st.setString(3, device.getType());
-                st.setString(4, device.getGroup());
-                st.setString(5, device.getIp());
-                st.setInt(6, device.getHistorySize());
-                st.setInt(7, device.getSamplingRate());
-                st.executeUpdate();
-            } catch (SQLException e) {
-            } finally {
-                try { if (st != null) st.close(); } catch (Exception e) {}
-            }
-            return 1;
-        });
-    }
-
-    public static CompletionStage<Integer> editDevice(Device device) {
-        return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
-            try {
-                st = db.prepareStatement("UPDATE device " +
-                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ? " +
-                        "WHERE id = ?");
-                st.setString(1, device.getName());
-                st.setString(2, device.getDescription());
-                st.setString(3, device.getType());
-                st.setString(4, device.getGroup());
-                st.setString(5, device.getIp());
-                st.setInt(6, device.getHistorySize());
-                st.setInt(7, device.getSamplingRate());
-                st.setInt(8, device.getId());
-                st.executeUpdate();
-            }
-            catch (SQLException e) {}
-            catch (NumberFormatException e) {}
-            finally {
-                try { if(st != null) st.close(); } catch (Exception e) {}
-            }
-            return 1;
-        });
-    }
-
     public static CompletionStage<Integer> deleteById(String table, String id) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
@@ -794,26 +745,6 @@ public class Postgres {
                 try { if (st != null) st.close(); } catch (Exception e) {}
             }
             return 1;
-        });
-    }
-
-    private static CompletionStage<ResultSet> _getById(String table, String id) {
-        return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
-            ResultSet rs = null;
-            try {
-                st = db.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", table));
-                st.setInt(1, Integer.parseInt(id));
-                rs = st.executeQuery();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error getting by id: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            finally {
-                try { if (st != null) st.close(); } catch (Exception e) {}
-            }
-            return rs;
         });
     }
 
