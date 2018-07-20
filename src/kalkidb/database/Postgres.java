@@ -56,14 +56,18 @@ public class Postgres {
      * Creates necessary extensions, databases, and tables
      */
     public static CompletionStage<Void> setupDatabase(){
-        return CompletableFuture.runAsync(() -> {
-            createHstoreExtension();
-            makeDatabase();
-            makeTables();
-            try {
-                sleep(1000);
-            } catch(Exception e){}
-            createTriggers();
+        logger.info("Setting up database.");
+        return createHstoreExtension().thenRunAsync(() -> {
+            makeDatabase().thenRunAsync(() -> {
+                makeTables().thenRunAsync(() -> {
+                    insertDefaultTypes().thenRunAsync(() -> {
+                        try {
+                            sleep(1000);
+                        } catch(Exception e){}
+                        createTriggers();
+                    });
+                });
+            });
         });
     }
 
@@ -71,16 +75,13 @@ public class Postgres {
      * Drops and recreates all tables.
      */
     public static CompletionStage<Void> resetDatabase(){
+        logger.info("Resetting Database.");
         return dropTables().thenRunAsync(() -> {
             makeTables().thenRunAsync(() -> {
+                insertDefaultTypes();
                 createTriggers();
             });
         });
-//        return CompletableFuture.runAsync(() -> {
-//            dropTables();
-//            makeTables();
-//            createTriggers();
-//        });
     }
 
     /**
@@ -103,22 +104,23 @@ public class Postgres {
     /**
      * Creates the user if it does not exist.
      */
-    public static void createUserIfNotExists(String user, String password) {
-        String createUser = "DO\n" +
-                "$body$\n" +
-                "BEGIN\n" +
-                "   IF NOT EXISTS (\n" +
-                "      SELECT *\n" +
-                "      FROM   pg_catalog.pg_user\n" +
-                "      WHERE  usename = '" + user + "') THEN\n" +
-                "\n" +
-                "      CREATE ROLE " + user + " LOGIN PASSWORD '"
-                + password + "';\n" +
-                "   END IF;\n" +
-                "END\n" +
-                "$body$;";
-        executeCommand(createUser);
-        return;
+    public static CompletionStage<Void> createUserIfNotExists(String user, String password) {
+        return CompletableFuture.runAsync(() -> {
+            String createUser = "DO\n" +
+                    "$body$\n" +
+                    "BEGIN\n" +
+                    "   IF NOT EXISTS (\n" +
+                    "      SELECT *\n" +
+                    "      FROM   pg_catalog.pg_user\n" +
+                    "      WHERE  usename = '" + user + "') THEN\n" +
+                    "\n" +
+                    "      CREATE ROLE " + user + " LOGIN PASSWORD '"
+                    + password + "';\n" +
+                    "   END IF;\n" +
+                    "END\n" +
+                    "$body$;";
+            executeCommand(createUser);
+        });
     }
 
     /**
@@ -149,20 +151,22 @@ public class Postgres {
      * Creates all necessary triggers in the database, and necessary helper functions.
      * Namely, creates a trigger and function to send notifications on device insert.
      */
-    public static void createTriggers(){
-        executeCommand("CREATE OR REPLACE FUNCTION \"deviceNotify\"()\n" +
-                "  RETURNS TRIGGER AS $$\n" +
-                "DECLARE\n" +
-                "  payload TEXT;\n" +
-                "BEGIN\n" +
-                "  payload := NEW.id;\n" +
-                "  PERFORM pg_notify('deviceinsert', payload);\n" +
-                "  RETURN NEW;\n" +
-                "END;\n" +
-                "$$ LANGUAGE plpgsql;");
-        executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
-                "AFTER INSERT ON device\n" +
-                "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
+    public static CompletionStage<Void> createTriggers(){
+        return CompletableFuture.runAsync(() -> {
+            executeCommand("CREATE OR REPLACE FUNCTION \"deviceNotify\"()\n" +
+                    "  RETURNS TRIGGER AS $$\n" +
+                    "DECLARE\n" +
+                    "  payload TEXT;\n" +
+                    "BEGIN\n" +
+                    "  payload := NEW.id;\n" +
+                    "  PERFORM pg_notify('deviceinsert', payload);\n" +
+                    "  RETURN NEW;\n" +
+                    "END;\n" +
+                    "$$ LANGUAGE plpgsql;");
+            executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
+                    "AFTER INSERT ON device\n" +
+                    "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
+        });
     }
 
     /**
@@ -175,7 +179,7 @@ public class Postgres {
                         .prepareStatement("SELECT datname FROM pg_database WHERE datistemplate = false;");
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
-                    logger.info(rs.getString(1));
+                    logger.info("Database: " + rs.getString(1));
                 }
                 rs.close();
                 ps.close();
@@ -202,6 +206,7 @@ public class Postgres {
             tableNames.add("alert_history");
             tableNames.add("state_history");
             tableNames.add("umbox_image");
+            tableNames.add("type");
             tableNames.add("device_group");
             for(String tableName: tableNames){
                 dropTable(tableName);
@@ -213,8 +218,10 @@ public class Postgres {
      * Drop a table from the database.
      * @param tableName name of the table to be dropped
      */
-    public static void dropTable(String tableName){
-        executeCommand("DROP TABLE IF EXISTS " + tableName);
+    public static CompletionStage<Void> dropTable(String tableName){
+        return CompletableFuture.runAsync(() -> {
+            executeCommand("DROP TABLE IF EXISTS " + tableName);
+        });
     }
 
     /**
@@ -323,11 +330,30 @@ public class Postgres {
     }
 
     /**
+     * Insert the default types into the database.
+     */
+    public static CompletionStage<Void> insertDefaultTypes() {
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Inserting default types.");
+            List<String> typeNames = new ArrayList<String>();
+            typeNames.add("Hue Light");
+            typeNames.add("Dlink Camera");
+            typeNames.add("WeMo Insight");
+            typeNames.add("Udoo Neo");
+            for(String typeName: typeNames){
+                executeCommand("INSERT INTO type (name) VALUES ('" + typeName + "')");
+            }
+        });
+    }
+
+    /**
      * Add the hstore extension to the postgres database.
      */
-    public static void createHstoreExtension(){
-        logger.info("Adding hstore extension.");
-        executeCommand("CREATE EXTENSION hstore");
+    public static CompletionStage<Void> createHstoreExtension(){
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Adding hstore extension.");
+            executeCommand("CREATE EXTENSION hstore");
+        });
     }
 
     /**
@@ -336,28 +362,29 @@ public class Postgres {
      * @param tableName name of the table to search
      * @return the resultset of the query
      */
-    private static ResultSet findById(int id, String tableName){
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        if(db == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
-        try{
-            st = db.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
-            st.setInt(1, id);
-            rs = st.executeQuery();
-
-            // Moves the result set to the first row
-            rs.next();
-            // closes rs. Need to close it somewhere else
+    private static CompletionStage<ResultSet> findById(int id, String tableName){
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(db == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = db.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
+                st.setInt(1, id);
+                rs = st.executeQuery();
+                // Moves the result set to the first row
+                rs.next();
+                // closes rs. Need to close it somewhere else
 //            st.close();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error finding by ID: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return rs;
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error finding by ID: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return rs;
+        });
     }
 
     /**
@@ -531,8 +558,11 @@ public class Postgres {
      * @param id id of the DeviceHistory to find.
      * @return the DeviceHistory if it exists in the database, else null.
      */
-    public static DeviceHistory findDeviceHistory(int id){
-        return rsToDeviceHistory(findById(id, "device_history"));
+    public static CompletionStage<DeviceHistory> findDeviceHistory(int id){
+//        return rsToDeviceHistory(findById(id, "device_history"));
+        return findById(id, "device_history").thenApplyAsync(rs -> {
+            return rsToDeviceHistory(rs);
+        });
     }
 
     /*
@@ -696,8 +726,8 @@ public class Postgres {
      * @return the Device if it exists in the database, else null.
      */
     public static CompletionStage<Device> findDevice(int id){
-        return CompletableFuture.supplyAsync(() -> {
-            return rsToDevice(findById(id, "device"));
+        return findById(id, "device").thenApplyAsync(rs -> {
+            return rsToDevice(rs);
         });
     }
 
@@ -757,19 +787,20 @@ public class Postgres {
         });
     }
 
-    public static CompletionStage<Integer> deleteById(String table, String id) {
+    public static CompletionStage<Boolean> deleteById(String table, String id) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             try {
                 st = db.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
                 st.setInt(1, Integer.parseInt(id));
                 st.executeUpdate();
+                return true;
             } catch (SQLException e) {
             } catch (NumberFormatException e) {
             } finally {
                 try { if (st != null) st.close(); } catch (Exception e) {}
             }
-            return 1;
+            return false;
         });
     }
 
