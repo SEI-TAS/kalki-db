@@ -55,23 +55,32 @@ public class Postgres {
      * First time database setup.
      * Creates necessary extensions, databases, and tables
      */
-    public static void setupDatabase(){
-        createHstoreExtension();
-        makeDatabase();
-        makeTables();
-        try {
-            sleep(1000);
-        } catch(Exception e){}
-        createTriggers();
+    public static CompletionStage<Void> setupDatabase(){
+        return CompletableFuture.runAsync(() -> {
+            createHstoreExtension();
+            makeDatabase();
+            makeTables();
+            try {
+                sleep(1000);
+            } catch(Exception e){}
+            createTriggers();
+        });
     }
 
     /**
      * Drops and recreates all tables.
      */
-    public static void resetDatabase(){
-        dropTables();
-        makeTables();
-        createTriggers();
+    public static CompletionStage<Void> resetDatabase(){
+        return dropTables().thenRunAsync(() -> {
+            makeTables().thenRunAsync(() -> {
+                createTriggers();
+            });
+        });
+//        return CompletableFuture.runAsync(() -> {
+//            dropTables();
+//            makeTables();
+//            createTriggers();
+//        });
     }
 
     /**
@@ -159,20 +168,22 @@ public class Postgres {
     /**
      * Lists all postgres databases. Primarily for testing.
      */
-    public static void listAllDatabases() {
-        try {
-            PreparedStatement ps = db
-                    .prepareStatement("SELECT datname FROM pg_database WHERE datistemplate = false;");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                logger.info(rs.getString(1));
+    public static CompletionStage<Void> listAllDatabases() {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement ps = db
+                        .prepareStatement("SELECT datname FROM pg_database WHERE datistemplate = false;");
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    logger.info(rs.getString(1));
+                }
+                rs.close();
+                ps.close();
             }
-            rs.close();
-            ps.close();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -203,98 +214,112 @@ public class Postgres {
      * @param tableName name of the table to be dropped
      */
     public static void dropTable(String tableName){
-        executeCommand("DROP TABLE " + tableName);
+        executeCommand("DROP TABLE IF EXISTS " + tableName);
     }
 
     /**
      * Creates a postgres database.
      */
-    public static void makeDatabase(){
-        logger.info("Creating database.");
-        executeCommand("CREATE DATABASE " + dbName
-                + " WITH OWNER= " + dbUser
-                + " ENCODING = 'UTF8' TEMPLATE = template0 "
-                + " CONNECTION LIMIT = -1;");
+    public static CompletionStage<Void> makeDatabase(){
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Creating database.");
+            executeCommand("CREATE DATABASE " + dbName
+                    + " WITH OWNER= " + dbUser
+                    + " ENCODING = 'UTF8' TEMPLATE = template0 "
+                    + " CONNECTION LIMIT = -1;");
+        });
     }
 
     /**
      * Create tables for each model.
      */
-    public static void makeTables(){
-        logger.info("Making tables.");
-        executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
-                "device_id     int NOT NULL," +
-                "attributes    hstore, " +
-                "timestamp     TIMESTAMP NOT NULL," +
-                "id            serial    PRIMARY KEY" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS device(" +
-                "id             serial   PRIMARY KEY," +
-                "name           varchar(255) NOT NULL," +
-                "description    varchar(255)," +
-                "type_id        varchar(255) NOT NULL," +
-                "group_id       varchar(255)," +
-                "ip_address     varchar(255)," +
-                "history_size   int NOT NULL," +
-                "sampling_rate  int NOT NULL," +
-                "policy_file varchar(255) NOT NULL" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
-                "id           serial PRIMARY KEY, " +
-                "umbox_id     int NOT NULL, " +
-                "info         varchar(255) NOT NULL, " +
-                "stamp        bigint NOT NULL " +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS umbox(" +
-                "id           serial PRIMARY KEY, " +
-                "umbox_id     int NOT NULL, " +
-                "umbox_name   varchar(255) NOT NULL, " +
-                "device       varchar(255) NOT NULL, " +
-                "started_at   bigint NOT NULL " +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS type(" +
-                "id    serial PRIMARY KEY, " +
-                "name  varchar(255)" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
-                "id    serial PRIMARY KEY, " +
-                "name  varchar(255)" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
-                "id           serial PRIMARY KEY, " +
-                "name         varchar(255) NOT NULL" +
-                ");");
-        executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
-                "device_id    int NOT NULL, " +
-                "tag_id       int NOT NULL" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
-                "id           serial PRIMARY KEY," +
-                "timestamp    TIMESTAMP NOT NULL," +
-                "external_id  int NOT NULL," +
-                "name         varchar(255)" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
-                "id           serial PRIMARY KEY," +
-                "timestamp    TIMESTAMP NOT NULL," +
-                "state        varchar(255) NOT NULL" +
-                ");"
-        );
-        executeCommand("CREATE TABLE IF NOT EXISTS umbox_image(" +
-                "id           serial PRIMARY KEY," +
-                "name         TIMESTAMP NOT NULL," +
-                "path         varchar(255) NOT NULL" +
-                ");"
-        );
+    public static CompletionStage<Void> makeTables(){
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Making tables.");
+            executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
+                    "device_id     int NOT NULL," +
+                    "attributes    hstore, " +
+                    "timestamp     TIMESTAMP NOT NULL," +
+                    "id            serial    PRIMARY KEY" +
+                    ");"
+            );
 
+            executeCommand("CREATE TABLE IF NOT EXISTS device(" +
+                    "id             serial   PRIMARY KEY," +
+                    "name           varchar(255) NOT NULL," +
+                    "description    varchar(255)," +
+                    "type_id        varchar(255) NOT NULL," +
+                    "group_id       varchar(255)," +
+                    "ip_address     varchar(255)," +
+                    "history_size   int NOT NULL," +
+                    "sampling_rate  int NOT NULL," +
+                    "policy_file varchar(255) NOT NULL" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
+                    "id           serial PRIMARY KEY, " +
+                    "umbox_id     int NOT NULL, " +
+                    "info         varchar(255) NOT NULL, " +
+                    "stamp        bigint NOT NULL " +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS umbox(" +
+                    "id           serial PRIMARY KEY, " +
+                    "umbox_id     int NOT NULL, " +
+                    "umbox_name   varchar(255) NOT NULL, " +
+                    "device       varchar(255) NOT NULL, " +
+                    "started_at   bigint NOT NULL " +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS type(" +
+                    "id    serial PRIMARY KEY, " +
+                    "name  varchar(255)" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
+                    "id    serial PRIMARY KEY, " +
+                    "name  varchar(255)" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
+                    "id           serial PRIMARY KEY, " +
+                    "name         varchar(255) NOT NULL" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
+                    "device_id    int NOT NULL, " +
+                    "tag_id       int NOT NULL" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
+                    "id           serial PRIMARY KEY," +
+                    "timestamp    TIMESTAMP NOT NULL," +
+                    "external_id  int NOT NULL," +
+                    "name         varchar(255)" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
+                    "id           serial PRIMARY KEY," +
+                    "timestamp    TIMESTAMP NOT NULL," +
+                    "state        varchar(255) NOT NULL" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS umbox_image(" +
+                    "id           serial PRIMARY KEY," +
+                    "name         TIMESTAMP NOT NULL," +
+                    "path         varchar(255) NOT NULL" +
+                    ");"
+            );
+        });
     }
 
     /**
@@ -311,7 +336,7 @@ public class Postgres {
      * @param tableName name of the table to search
      * @return the resultset of the query
      */
-    private static ResultSet _findById(int id, String tableName){
+    private static ResultSet findById(int id, String tableName){
         PreparedStatement st = null;
         ResultSet rs = null;
         if(db == null){
@@ -340,7 +365,7 @@ public class Postgres {
      * @param tableName name of the table.
      * @return a list of all entries in the table.
      */
-    private static ResultSet _getAllFromTable(String tableName){
+    private static ResultSet getAllFromTable(String tableName){
         ResultSet rs = null;
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
@@ -379,11 +404,11 @@ public class Postgres {
      * @return a list of all DeviceHistories in the database.
      */
     public static List<DeviceHistory> getAllDeviceHistories() {
-        ResultSet rs = _getAllFromTable("device_history");
+        ResultSet rs = getAllFromTable("device_history");
         List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
         try {
             while (rs.next()) {
-                deviceHistories.add(_rsToDeviceHistory(rs));
+                deviceHistories.add(rsToDeviceHistory(rs));
             }
             rs.close();
         }
@@ -398,7 +423,7 @@ public class Postgres {
      * @param rs ResultSet from a DeviceHistory query.
      * @return The DeviceHistory that was found.
      */
-    private static DeviceHistory _rsToDeviceHistory(ResultSet rs){
+    private static DeviceHistory rsToDeviceHistory(ResultSet rs){
         DeviceHistory deviceHistory = null;
         try{
             int deviceId = rs.getInt(1);
@@ -507,7 +532,7 @@ public class Postgres {
      * @return the DeviceHistory if it exists in the database, else null.
      */
     public static DeviceHistory findDeviceHistory(int id){
-        return _rsToDeviceHistory(_findById(id, "device_history"));
+        return rsToDeviceHistory(findById(id, "device_history"));
     }
 
     /*
@@ -608,7 +633,7 @@ public class Postgres {
                 ResultSet rs = st.executeQuery("SELECT * FROM device");
                 while (rs.next())
                 {
-                    devices.add(_rsToDevice(rs));
+                    devices.add(rsToDevice(rs));
                 }
                 rs.close();
                 st.close();
@@ -626,7 +651,7 @@ public class Postgres {
      * @param rs ResultSet from a Device query.
      * @return The Device that was found.
      */
-    private static Device _rsToDevice(ResultSet rs){
+    private static Device rsToDevice(ResultSet rs){
         Device device = null;
         try{
             int id = rs.getInt(1);
@@ -672,7 +697,7 @@ public class Postgres {
      */
     public static CompletionStage<Device> findDevice(int id){
         return CompletableFuture.supplyAsync(() -> {
-            return _rsToDevice(_findById(id, "device"));
+            return rsToDevice(findById(id, "device"));
         });
     }
 
@@ -754,11 +779,11 @@ public class Postgres {
      */
     public static CompletionStage<List<UmboxImage>> getAllUmboxImages() {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = _getAllFromTable("umbox_image");
+            ResultSet rs = getAllFromTable("umbox_image");
             List<UmboxImage> umboxImages = new ArrayList<UmboxImage>();
             try {
                 while (rs.next()) {
-                    umboxImages.add(_rsToUmboxImage(rs));
+                    umboxImages.add(rsToUmboxImage(rs));
                 }
                 rs.close();
             } catch (SQLException e) {
@@ -773,7 +798,7 @@ public class Postgres {
      * @param rs ResultSet from a UmboxImage query.
      * @return The first UmboxImage in rs.
      */
-    private static UmboxImage _rsToUmboxImage(ResultSet rs){
+    private static UmboxImage rsToUmboxImage(ResultSet rs){
         UmboxImage umboxImage = null;
         try{
             int id = rs.getInt(1);
@@ -794,11 +819,11 @@ public class Postgres {
      */
     public static CompletionStage<List<Group>> getAllGroups() {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = _getAllFromTable("device_group");
+            ResultSet rs = getAllFromTable("device_group");
             List<Group> groups = new ArrayList<Group>();
             try {
                 while (rs.next()) {
-                    groups.add(_rsToGroup(rs));
+                    groups.add(rsToGroup(rs));
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -816,7 +841,7 @@ public class Postgres {
      * @param rs ResultSet from a Group query.
      * @return The first Group in rs.
      */
-    private static Group _rsToGroup(ResultSet rs){
+    private static Group rsToGroup(ResultSet rs){
         Group group = null;
         try{
             int id = rs.getInt(1);
@@ -836,11 +861,11 @@ public class Postgres {
      */
     public static CompletionStage<List<Type>> getAllTypes() {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = _getAllFromTable("type");
+            ResultSet rs = getAllFromTable("type");
             List<Type> types = new ArrayList<Type>();
             try {
                 while (rs.next()) {
-                    types.add(_rsToType(rs));
+                    types.add(rsToType(rs));
                 }
             }
             catch (SQLException e) {
@@ -859,7 +884,7 @@ public class Postgres {
      * @param rs ResultSet from a Type query.
      * @return The first Type in rs.
      */
-    private static Type _rsToType(ResultSet rs){
+    private static Type rsToType(ResultSet rs){
         Type type = null;
         try{
             int id = rs.getInt(1);
@@ -879,11 +904,11 @@ public class Postgres {
      */
     public static CompletionStage<List<Tag>> getAllTags() {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = _getAllFromTable("tag");
+            ResultSet rs = getAllFromTable("tag");
             List<Tag> tags = new ArrayList<Tag>();
             try {
                 while (rs.next()) {
-                    tags.add(_rsToTag(rs));
+                    tags.add(rsToTag(rs));
                 }
             }
             catch (SQLException e) {
@@ -902,7 +927,7 @@ public class Postgres {
      * @param rs ResultSet from a Tag query.
      * @return The first Tag in rs.
      */
-    private static Tag _rsToTag(ResultSet rs){
+    private static Tag rsToTag(ResultSet rs){
         Tag tag = null;
         try{
             int id = rs.getInt(1);
