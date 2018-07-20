@@ -193,3 +193,7 @@ gradle-app.setting
 
 
 # End of https://www.gitignore.io/api/osx,sbt,java,scala,linux,gradle,windows,intellij
+
+# Other stuff
+*.iml
+.idea/
