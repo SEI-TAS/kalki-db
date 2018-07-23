@@ -116,8 +116,14 @@ public class Device {
         Postgres.insertDevice(this);
     }
 
-    public CompletionStage<Void> insertOrUpdate(){
+    public CompletionStage<Integer> insertOrUpdate(){
         return Postgres.insertOrUpdateDevice(this);
+    }
+
+    public String toString() {
+        return String.format("{ id: \"%d\", name: \"%s\", description: \"%s\", type: \"%s\", group: \"%s\", ip: \"%s\", " +
+                "historySize: \"%d\", samplingRate: \"%d\", policyFile: \"%s }",
+                id, name, description, type, group, ip, historySize, samplingRate, policyFile);
     }
 
 }

@@ -40,4 +40,8 @@ public class UmboxImage {
         this.path = path;
     }
 
+    public String toString() {
+        return String.format("{ id: \"%d\", name: \"%s\", path: \"%s\" }", id, name, path);
+    }
+
 }
