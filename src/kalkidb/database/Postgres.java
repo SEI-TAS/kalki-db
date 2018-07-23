@@ -2,6 +2,7 @@ package kalkidb.database;
 
 import kalkidb.models.*;
 import org.postgresql.util.HStoreConverter;
+import org.postgresql.util.PSQLException;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -353,7 +354,7 @@ public class Postgres {
     public static CompletionStage<Void> createHstoreExtension(){
         return CompletableFuture.runAsync(() -> {
             logger.info("Adding hstore extension.");
-            executeCommand("CREATE EXTENSION hstore");
+            executeCommand("CREATE EXTENSION hstore;");
         });
     }
 
@@ -464,7 +465,7 @@ public class Postgres {
 
             deviceHistory = new DeviceHistory(deviceId, attributes, timestamp, historyId);
         }
-        catch(Exception e){
+        catch(SQLException e){
             e.printStackTrace();
             logger.severe("Error converting rs to DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
@@ -520,26 +521,28 @@ public class Postgres {
     public static CompletionStage<Integer> updateDeviceHistory(DeviceHistory deviceHistory){
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Updating DeviceHistory with id=" + deviceHistory.id);
-            if(db == null){
+            if (db == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            } else {
-                try {
-                    PreparedStatement update = db.prepareStatement
-                            ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
-                                    "WHERE id=?");
-
-                    update.setInt(1, deviceHistory.id);
-                    update.setObject(2, deviceHistory.attributes);
-                    update.setTimestamp(3, deviceHistory.timestamp);
-                    update.setInt(4, deviceHistory.id);
-
-                    update.executeUpdate();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    logger.severe("Error updating DeviceHistory: " + e.getClass().getName() + ": " + e.getMessage());
-                }
+                return -1;
             }
-            return 1;
+            try {
+                PreparedStatement update = db.prepareStatement
+                        ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
+                                "WHERE id=?");
+
+                update.setInt(1, deviceHistory.deviceId);
+                update.setObject(2, deviceHistory.attributes);
+                update.setTimestamp(3, deviceHistory.timestamp);
+                update.setInt(4, deviceHistory.id);
+                update.setInt(5, deviceHistory.id);
+
+                update.executeUpdate();
+                return deviceHistory.id;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error updating DeviceHistory: " + e.getClass().getName() + ": " + e.getMessage());
+                return -1;
+            }
         });
     }
 
