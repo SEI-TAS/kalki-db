@@ -7,28 +7,28 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class Device {
 
-    public int id;
-    public String name;
-    public String description;
-    public String type;
-    public String group;
-    public String ip;
-    public int historySize;
-    public int samplingRate;
-    public String policyFile;
+    private int id;
+    private String name;
+    private String description;
+    private int typeId;
+    private int groupId;
+    private String ip;
+    private int historySize;
+    private int samplingRate;
+    private String policyFile;
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public Device() {
 
     }
 
-    public Device(int id, String name, String description, String type, String group, String ip,
+    public Device(int id, String name, String description, int typeId, int groupId, String ip,
                   int historySize, int samplingRate, String policyFile){
         this.id = id;
         this.description = description;
         this.name = name;
-        this.type = type;
-        this.group = group;
+        this.typeId = typeId;
+        this.groupId = groupId;
         this.historySize = historySize;
         this.samplingRate = samplingRate;
         this.ip = ip;
@@ -59,12 +59,12 @@ public class Device {
         this.description = description;
     }
 
-    public String getType() {
-        return type;
+    public int getTypeId() {
+        return typeId;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setTypeId(int typeId) {
+        this.typeId = typeId;
     }
 
     public String getIp() {
@@ -99,12 +99,12 @@ public class Device {
         this.policyFile = policyFile;
     }
 
-    public String getGroup() {
-        return group;
+    public int getGroupId() {
+        return groupId;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
+    public void setGroupId(int groupId) {
+        this.groupId = groupId;
     }
 
     public void insert(){

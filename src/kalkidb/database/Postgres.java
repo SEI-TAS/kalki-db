@@ -257,8 +257,8 @@ public class Postgres {
                     "id             serial   PRIMARY KEY," +
                     "name           varchar(255) NOT NULL," +
                     "description    varchar(255)," +
-                    "type_id        varchar(255) NOT NULL," +
-                    "group_id       varchar(255)," +
+                    "type_id        int NOT NULL," +
+                    "group_id       int," +
                     "ip_address     varchar(255)," +
                     "history_size   int NOT NULL," +
                     "sampling_rate  int NOT NULL," +
@@ -602,8 +602,8 @@ public class Postgres {
                                 "history_size, sampling_rate, policy_file) values(?,?,?,?,?,?,?,?)");
                 update.setString(1, device.getDescription());
                 update.setString(2, device.getName());
-                update.setString(3, device.getType());
-                update.setString(4, device.getGroup());
+                update.setInt(3, device.getTypeId());
+                update.setInt(4, device.getGroupId());
                 update.setString(5, device.getIp());
                 update.setInt(6, device.getHistorySize());
                 update.setInt(7, device.getSamplingRate());
@@ -648,8 +648,8 @@ public class Postgres {
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
-                    update.setString(3, device.getType());
-                    update.setString(4, device.getGroup());
+                    update.setInt(3, device.getTypeId());
+                    update.setInt(4, device.getGroupId());
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getHistorySize());
                     update.setInt(7, device.getSamplingRate());
@@ -704,14 +704,14 @@ public class Postgres {
             int id = rs.getInt(1);
             String name = rs.getString(2);
             String description = rs.getString(3);
-            String type = rs.getString(4);
-            String group = rs.getString(5);
+            int typeId = rs.getInt(4);
+            int groupId = rs.getInt(5);
             String ip = rs.getString(6);
             int historySize = rs.getInt(7);
             int samplingRate = rs.getInt(8);
             String policyFile = rs.getString(9);
 
-            device = new Device(id, name, description, type, group, ip, historySize, samplingRate, policyFile);
+            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate, policyFile);
         }
         catch(Exception e){
             e.printStackTrace();
