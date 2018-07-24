@@ -1,7 +1,9 @@
 package kalkidb.models;
 import kalkidb.database.Postgres;
 import java.util.concurrent.CompletionStage;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class Device {
 
@@ -14,6 +16,7 @@ public class Device {
     public int historySize;
     public int samplingRate;
     public String policyFile;
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public Device() {
 
@@ -88,14 +91,6 @@ public class Device {
         this.samplingRate = samplingRate;
     }
 
-//    public byte[] getPolicyFile() {
-//        return policyFile;
-//    }
-//
-//    public void setPolicyFile(byte[] policyFile) {
-//        this.policyFile = policyFile;
-//    }
-
     public String getPolicyFile() {
         return policyFile;
     }
@@ -121,9 +116,12 @@ public class Device {
     }
 
     public String toString() {
-        return String.format("{ id: \"%d\", name: \"%s\", description: \"%s\", type: \"%s\", group: \"%s\", ip: \"%s\", " +
-                "historySize: \"%d\", samplingRate: \"%d\", policyFile: \"%s }",
-                id, name, description, type, group, ip, historySize, samplingRate, policyFile);
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad device";
+        }
     }
 
 }

@@ -27,6 +27,9 @@ repositories {
 
 dependencies {
     compile group: 'org.postgresql', name: 'postgresql', version:'42.2.2'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.6'
+
 }
 
 publishing {

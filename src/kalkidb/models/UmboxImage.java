@@ -1,10 +1,14 @@
 package kalkidb.models;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class UmboxImage {
 
     private int id;
     private String name;
     private String path;
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public UmboxImage() {
 
@@ -41,7 +45,13 @@ public class UmboxImage {
     }
 
     public String toString() {
-        return String.format("{ id: \"%d\", name: \"%s\", path: \"%s\" }", id, name, path);
+//        return String.format("{ id: \"%d\", name: \"%s\", path: \"%s\" }", id, name, path);
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad umbox image";
+        }
     }
 
 }
