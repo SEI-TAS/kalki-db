@@ -989,6 +989,12 @@ public class Postgres {
         return tag;
     }
 
+    /**
+     * Saves given tag/type/group to the database.
+     * @param name name of the tag/type/group to be inserted.
+     * @param table one of tag, type, or group where the name should be inserted.
+     * @return auto incremented id
+     */
     public static CompletionStage<Integer> addRowToTable(String table, String name) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
@@ -996,12 +1002,28 @@ public class Postgres {
                 st = db.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
                 st.setString(1, name);
                 st.executeUpdate();
+
+                int serialNum = 0;
+                Statement stmt = db.createStatement();
+
+                // get the postgresql serial field value with this query
+                String query = String.format("select currval('%s_id_seq')", table);
+                ResultSet rs = stmt.executeQuery(query);
+                if ( rs.next() )
+                {
+                    serialNum = rs.getInt(1);
+                    return serialNum;
+                }
+                stmt.close();
             }
-            catch (SQLException e) {}
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Error adding row to table: " + e.getClass().getName()+": "+e.getMessage());
+            }
             finally {
                 try { if(st != null) st.close(); } catch (Exception e) {}
             }
-            return 1;
+            return -1;
         });
     }
 
