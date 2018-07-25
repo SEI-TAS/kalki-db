@@ -134,20 +134,22 @@ public class Postgres {
     public static void executeCommand(String command){
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return;
-        }
-        Statement st = null;
-        try{
-            st = db.createStatement();
-            st.execute(command);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error executing database command: '" + command + "' " +
-                    e.getClass().getName()+": "+e.getMessage());
-        }
-        finally {
-            try {if(st != null) st.close(); } catch (Exception e) {}
+        } else {
+            logger.info(String.format("Executing command: %s", command));
+            Statement st = null;
+            try {
+                st = db.createStatement();
+                st.execute(command);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error executing database command: '" + command + "' " +
+                        e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try {
+                    if (st != null) st.close();
+                } catch (Exception e) {
+                }
+            }
         }
     }
 
@@ -622,6 +624,10 @@ public class Postgres {
                 if ( rs.next() )
                 {
                     serialNum = rs.getInt(1);
+                    //Insert tags into device_tag
+                    for(int tagId : device.getTagIds()) {
+                        executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", serialNum, tagId));
+                    }
                     return serialNum;
                 }
                 stmt.close();
@@ -637,6 +643,7 @@ public class Postgres {
     /**
      * Updates Device with given id to have the parameters of the given Device.
      * @param device Device holding new parameters to be saved in the database.
+     * @return the id of the updated device
      */
     public static CompletionStage<Integer> updateDevice(Device device) {
         return CompletableFuture.supplyAsync(() -> {
@@ -645,6 +652,9 @@ public class Postgres {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             } else {
                 try {
+                    // Delete existing tags
+                    executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
+
                     PreparedStatement update = db.prepareStatement("UPDATE device " +
                             "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ? " +
                             "WHERE id = ?");
@@ -657,12 +667,18 @@ public class Postgres {
                     update.setInt(7, device.getSamplingRate());
                     update.setInt(8, device.getId());
                     update.executeUpdate();
+
+                    // Insert tags into device_tag
+                    for(int tagId : device.getTagIds()) {
+                        executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
+                    }
+                    return device.getId();
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
                 }
             }
-            return 1;
+            return -1;
         });
     }
 
@@ -751,8 +767,56 @@ public class Postgres {
             if(rs == null) {
                 return null;
             } else {
-                return rsToDevice(rs);
+                Device device = rsToDevice(rs);
+                PreparedStatement st = null;
+                ResultSet tagRs = null;
+
+                try {
+                    st = db.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?");
+                    st.setInt(1, id);
+                    tagRs = st.executeQuery();
+
+                    List<Integer> tagIds = new ArrayList<Integer>();
+                    while(tagRs.next()) {
+                        tagIds.add(tagRs.getInt(2));
+                    }
+                    device.setTagIds(tagIds);
+                }
+                catch(SQLException e) {
+                    e.printStackTrace();
+                    logger.severe("Error finding device by id: " + e.getClass().getName()+": "+e.getMessage());
+                }
+                finally {
+                    try { if (tagRs != null) tagRs.close(); } catch (Exception e) {}
+                    try { if (st != null) st.close(); } catch (Exception e) {}
+                }
+                return device;
             }
+        });
+    }
+
+    /**
+     * Deletes a Device by its id.
+     * @param id id of the Device to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static CompletionStage<Boolean> deleteDevice(int id) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Deleting device with id = %d", id));
+            PreparedStatement st = null;
+            try {
+                // Delete associated tags
+                executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", id));
+
+                st = db.prepareStatement("DELETE FROM device WHERE id = ?");
+                st.setInt(1, id);
+                st.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return false;
         });
     }
 

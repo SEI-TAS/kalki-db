@@ -4,6 +4,7 @@ import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 
 public class Device {
 
@@ -16,6 +17,7 @@ public class Device {
     private int historySize;
     private int samplingRate;
     private String policyFile;
+    private List<Integer> tagIds;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -106,6 +108,14 @@ public class Device {
 
     public void setGroupId(int groupId) {
         this.groupId = groupId;
+    }
+
+    public List<Integer> getTagIds() {
+        return tagIds;
+    }
+
+    public void setTagIds(List<Integer> tagIds) {
+        this.tagIds = tagIds;
     }
 
     public void insert(){
