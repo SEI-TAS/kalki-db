@@ -50,6 +50,8 @@ public class Postgres {
         if (postgres == null){
             logger.info("Initializing database");
             postgres = new Postgres(port, ip, dbName, dbUser, dbPassword);
+        } else {
+            logger.info("Database already initialized");
         }
     }
 

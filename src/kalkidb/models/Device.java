@@ -16,6 +16,7 @@ public class Device {
     private int historySize;
     private int samplingRate;
     private String policyFile;
+
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public Device() {
