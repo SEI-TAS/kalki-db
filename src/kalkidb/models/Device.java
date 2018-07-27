@@ -16,7 +16,8 @@ public class Device {
     private String ip;
     private int historySize;
     private int samplingRate;
-    private String policyFile;
+    private byte[] policyFile;
+    private String policyFileName;
     private List<Integer> tagIds;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
@@ -26,7 +27,7 @@ public class Device {
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
-                  int historySize, int samplingRate, String policyFile){
+                  int historySize, int samplingRate, byte[] policyFile, String policyFileName) {
         this.id = id;
         this.description = description;
         this.name = name;
@@ -36,6 +37,7 @@ public class Device {
         this.samplingRate = samplingRate;
         this.ip = ip;
         this.policyFile = policyFile;
+        this.policyFileName = policyFileName;
     }
 
     public int getId() {
@@ -94,12 +96,20 @@ public class Device {
         this.samplingRate = samplingRate;
     }
 
-    public String getPolicyFile() {
+    public byte[] getPolicyFile() {
         return policyFile;
     }
 
-    public void setPolicyFile(String policyFile) {
+    public void setPolicyFile(byte[] policyFile) {
         this.policyFile = policyFile;
+    }
+
+    public String getPolicyFileName() {
+        return policyFileName;
+    }
+
+    public void setPolicyFileName(String policyFileName) {
+        this.policyFileName = policyFileName;
     }
 
     public int getGroupId() {

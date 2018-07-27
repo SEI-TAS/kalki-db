@@ -266,7 +266,8 @@ public class Postgres {
                     "ip_address     varchar(255)," +
                     "history_size   int NOT NULL," +
                     "sampling_rate  int NOT NULL," +
-                    "policy_file varchar(255) NOT NULL" +
+                    "policy_file    bytea NOT NULL," +
+                    "policy_file_name    varchar(255) NOT NULL" +
                     ");"
             );
 
@@ -603,7 +604,7 @@ public class Postgres {
             try{
                 PreparedStatement update = db.prepareStatement
                         ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                                "history_size, sampling_rate, policy_file) values(?,?,?,?,?,?,?,?)");
+                                "history_size, sampling_rate, policy_file, policy_file_name) values(?,?,?,?,?,?,?,?,?)");
                 update.setString(1, device.getDescription());
                 update.setString(2, device.getName());
                 update.setInt(3, device.getTypeId());
@@ -611,7 +612,8 @@ public class Postgres {
                 update.setString(5, device.getIp());
                 update.setInt(6, device.getHistorySize());
                 update.setInt(7, device.getSamplingRate());
-                update.setString(8, device.getPolicyFile());
+                update.setBytes(8, device.getPolicyFile());
+                update.setString(9, device.getPolicyFileName());
 
                 update.executeUpdate();
 
@@ -625,8 +627,11 @@ public class Postgres {
                 {
                     serialNum = rs.getInt(1);
                     //Insert tags into device_tag
-                    for(int tagId : device.getTagIds()) {
-                        executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", serialNum, tagId));
+                    List<Integer> tagIds = device.getTagIds();
+                    if(tagIds != null) {
+                        for(int tagId : tagIds) {
+                            executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", serialNum, tagId));
+                        }
                     }
                     return serialNum;
                 }
@@ -669,8 +674,11 @@ public class Postgres {
                     update.executeUpdate();
 
                     // Insert tags into device_tag
-                    for(int tagId : device.getTagIds()) {
-                        executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
+                    List<Integer> tagIds = device.getTagIds();
+                    if(tagIds != null) {
+                        for(int tagId : tagIds) {
+                            executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
+                        }
                     }
                     return device.getId();
                 } catch (Exception e) {
@@ -727,9 +735,10 @@ public class Postgres {
             String ip = rs.getString(6);
             int historySize = rs.getInt(7);
             int samplingRate = rs.getInt(8);
-            String policyFile = rs.getString(9);
+            byte[] policyFile = rs.getBytes(9);
+            String policyFileName = rs.getString(10);
 
-            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate, policyFile);
+            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate, policyFile, policyFileName);
         }
         catch(Exception e){
             e.printStackTrace();
