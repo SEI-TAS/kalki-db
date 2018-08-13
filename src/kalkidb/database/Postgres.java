@@ -62,14 +62,12 @@ public class Postgres {
     public static CompletionStage<Void> setupDatabase(){
         logger.info("Setting up database.");
         return createHstoreExtension().thenRunAsync(() -> {
-            makeDatabase().thenRunAsync(() -> {
-                makeTables().thenRunAsync(() -> {
-                    insertDefaultTypes().thenRunAsync(() -> {
-                        try {
-                            sleep(1000);
-                        } catch(Exception e){}
-                        createTriggers();
-                    });
+            makeTables().thenRunAsync(() -> {
+                insertDefaultTypes().thenRunAsync(() -> {
+                    try {
+                        sleep(1000);
+                    } catch(Exception e){}
+                    createTriggers();
                 });
             });
         });
@@ -661,7 +659,7 @@ public class Postgres {
                     executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                     PreparedStatement update = db.prepareStatement("UPDATE device " +
-                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ? " +
+                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ?, policy_file = ?, policy_file_name = ? " +
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
@@ -670,7 +668,9 @@ public class Postgres {
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getHistorySize());
                     update.setInt(7, device.getSamplingRate());
-                    update.setInt(8, device.getId());
+                    update.setBytes(8, device.getPolicyFile());
+                    update.setString(9, device.getPolicyFileName());
+                    update.setInt(10, device.getId());
                     update.executeUpdate();
 
                     // Insert tags into device_tag
