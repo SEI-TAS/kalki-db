@@ -201,17 +201,16 @@ public class Postgres {
         return CompletableFuture.runAsync(() -> {
             logger.info("Dropping tables.");
             List<String> tableNames = new ArrayList<String>();
-            tableNames.add("device_history");
             tableNames.add("device");
-            tableNames.add("alert");
-            tableNames.add("umbox");
-            tableNames.add("tag");
-            tableNames.add("device_tag");
-            tableNames.add("alert_history");
+            tableNames.add("device_history");
             tableNames.add("state_history");
-            tableNames.add("umbox_image");
+            tableNames.add("device_tag");
+            tableNames.add("tag");
             tableNames.add("type");
             tableNames.add("device_group");
+            tableNames.add("alert_history");
+            tableNames.add("umbox_instance");
+            tableNames.add("umbox_image");
             for(String tableName: tableNames){
                 dropTable(tableName);
             }
@@ -247,13 +246,6 @@ public class Postgres {
     public static CompletionStage<Void> makeTables(){
         return CompletableFuture.runAsync(() -> {
             logger.info("Making tables.");
-            executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
-                    "device_id     int NOT NULL," +
-                    "attributes    hstore, " +
-                    "timestamp     TIMESTAMP NOT NULL," +
-                    "id            serial    PRIMARY KEY" +
-                    ");"
-            );
 
             executeCommand("CREATE TABLE IF NOT EXISTS device(" +
                     "id             serial   PRIMARY KEY," +
@@ -264,25 +256,42 @@ public class Postgres {
                     "ip_address     varchar(255)," +
                     "history_size   int NOT NULL," +
                     "sampling_rate  int NOT NULL," +
-                    "policy_file    bytea NOT NULL," +
-                    "policy_file_name    varchar(255) NOT NULL" +
+                    "policy_file    bytea," +
+                    "policy_file_name    varchar(255)" +
                     ");"
             );
 
-            executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
-                    "id           serial PRIMARY KEY, " +
-                    "umbox_id     int NOT NULL, " +
-                    "info         varchar(255) NOT NULL, " +
-                    "stamp        bigint NOT NULL " +
+            executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
+                    "device_id     int NOT NULL," +
+                    "attributes    hstore," +
+                    "timestamp     TIMESTAMP," +
+                    "id            serial    PRIMARY KEY" +
                     ");"
             );
 
-            executeCommand("CREATE TABLE IF NOT EXISTS umbox(" +
+            executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
+                    "id           serial PRIMARY KEY," +
+                    "device_id    int NOT NULL," +
+                    "timestamp    TIMESTAMP," +
+                    "state        varchar(255) NOT NULL" +
+                    ");"
+            );
+
+            // Delete this
+            executeCommand("INSERT INTO state_history(device_id, state) VALUES (1,'Hello I am a state')");
+            executeCommand("INSERT INTO state_history(device_id, state) VALUES (2,'Beep')");
+            executeCommand("INSERT INTO state_history(device_id, state) VALUES (1,'Sam Procter')");
+            executeCommand("INSERT INTO device(name, type_id, history_size, sampling_rate) VALUES ('A', 1, 0, 1)");
+
+            executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
+                    "device_id    int NOT NULL, " +
+                    "tag_id       int NOT NULL" +
+                    ");"
+            );
+
+            executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
                     "id           serial PRIMARY KEY, " +
-                    "umbox_id     int NOT NULL, " +
-                    "umbox_name   varchar(255) NOT NULL, " +
-                    "device       varchar(255) NOT NULL, " +
-                    "started_at   bigint NOT NULL " +
+                    "name         varchar(255) NOT NULL" +
                     ");"
             );
 
@@ -298,18 +307,6 @@ public class Postgres {
                     ");"
             );
 
-            executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
-                    "id           serial PRIMARY KEY, " +
-                    "name         varchar(255) NOT NULL" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
-                    "device_id    int NOT NULL, " +
-                    "tag_id       int NOT NULL" +
-                    ");"
-            );
-
             executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
                     "id           serial PRIMARY KEY," +
                     "timestamp    TIMESTAMP NOT NULL," +
@@ -318,10 +315,11 @@ public class Postgres {
                     ");"
             );
 
-            executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
-                    "id           serial PRIMARY KEY," +
-                    "timestamp    TIMESTAMP NOT NULL," +
-                    "state        varchar(255) NOT NULL" +
+            executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
+                    "id                 serial PRIMARY KEY, " +
+                    "umbox_external_id  int NOT NULL, " +
+                    "device_id          varchar(255) NOT NULL, " +
+                    "started_at         bigint NOT NULL " +
                     ");"
             );
 
@@ -438,19 +436,66 @@ public class Postgres {
      * Finds all DeviceHistories in the database.
      * @return a list of all DeviceHistories in the database.
      */
-    public static List<DeviceHistory> getAllDeviceHistories() {
-        ResultSet rs = getAllFromTable("device_history");
-        List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
-        try {
-            while (rs.next()) {
-                deviceHistories.add(rsToDeviceHistory(rs));
+    public static CompletionStage<List<DeviceHistory>> getAllDeviceHistories() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = getAllFromTable("device_history");
+            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
+            try {
+                while (rs.next()) {
+                    deviceHistories.add(rsToDeviceHistory(rs));
+                }
+                rs.close();
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device histories.");
             }
-            rs.close();
-        }
-        catch(SQLException e) {
-            logger.severe("Sql exception getting all device histories.");
-        }
-        return deviceHistories;
+            return deviceHistories;
+        });
+    }
+
+    /**
+     * Finds all DeviceHistories from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all DeviceHistories in the database where the device_id field is equal to deviceId.
+     */
+    public static CompletionStage<List<DeviceHistory>> getDeviceHistory(int deviceId) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if (db == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try {
+                st = db.prepareStatement("SELECT * FROM device_history WHERE device_id = ?");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting device histories: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
+            try {
+                while (rs.next()) {
+                    deviceHistories.add(rsToDeviceHistory(rs));
+                }
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device histories: " + e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                } catch (Exception e) {
+                }
+                try {
+                    if (st != null) {
+                        st.close();
+                    }
+                } catch (Exception e) {
+                }
+            }
+            return deviceHistories;
+        });
     }
 
     /**
@@ -828,6 +873,114 @@ public class Postgres {
             return false;
         });
     }
+
+    /*
+     *      StateHistory specific methods
+     */
+
+    /**
+     * Finds all StateHistories from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all StateHistories in the database where the device_id field is equal to deviceId.
+     */
+    public static CompletionStage<List<StateHistory>> getStateHistory(int deviceId) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(db == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = db.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting state histories: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            List<StateHistory> stateHistories = new ArrayList<StateHistory>();
+            try {
+                while (rs.next()) {
+                    stateHistories.add(rsToStateHistory(rs));
+                }
+            }
+            catch(SQLException e) {
+                logger.severe("Sql exception getting all state histories: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+                try { if(st != null) { st.close(); } } catch(Exception e) {}
+            }
+            return stateHistories;
+        });
+    }
+
+    /**
+     * Extract a StateHistory from the result set of a database query.
+     * @param rs ResultSet from a StateHistory query.
+     * @return The StateHistory that was found.
+     */
+    private static StateHistory rsToStateHistory(ResultSet rs){
+        StateHistory stateHistory = null;
+        try{
+            int id = rs.getInt(1);
+            int deviceId = rs.getInt(2);
+            Timestamp timestamp = rs.getTimestamp(3);
+            String state = rs.getString(4);
+
+//            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate, policyFile, policyFileName);
+            stateHistory = new StateHistory(id, deviceId, timestamp, state);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to StateHistory: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return stateHistory;
+    }
+
+    /*
+     *      AlertHistory specific methods.
+     */
+
+    /**
+     * Finds all AlertHistories from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all AlertHistories in the database where the the alert was created by a umbox associated with
+     *         the device.
+     */
+/*    public static List<AlertHistory> getAlertHistory(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if(db == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try{
+            st = db.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting device histories: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
+        try {
+            while (rs.next()) {
+                deviceHistories.add(rsToDeviceHistory(rs));
+            }
+        }
+        catch(SQLException e) {
+            logger.severe("Sql exception getting all device histories: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        finally {
+            try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+            try { if(st != null) { st.close(); } } catch(Exception e) {}
+        }
+        return deviceHistories;
+    }*/
 
     // Connor's stuff
     // TODO: Add documentation
