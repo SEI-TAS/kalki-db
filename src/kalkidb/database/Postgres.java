@@ -277,12 +277,6 @@ public class Postgres {
                     ");"
             );
 
-            // Delete this
-            executeCommand("INSERT INTO state_history(device_id, state) VALUES (1,'Hello I am a state')");
-            executeCommand("INSERT INTO state_history(device_id, state) VALUES (2,'Beep')");
-            executeCommand("INSERT INTO state_history(device_id, state) VALUES (1,'Sam Procter')");
-            executeCommand("INSERT INTO device(name, type_id, history_size, sampling_rate) VALUES ('A', 1, 0, 1)");
-
             executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
                     "device_id    int NOT NULL, " +
                     "tag_id       int NOT NULL" +
@@ -310,16 +304,16 @@ public class Postgres {
             executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
                     "id           serial PRIMARY KEY," +
                     "timestamp    TIMESTAMP NOT NULL," +
-                    "external_id  int NOT NULL," +
+                    "external_id  varchar(255) NOT NULL," +
                     "name         varchar(255)" +
                     ");"
             );
 
             executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
                     "id                 serial PRIMARY KEY, " +
-                    "umbox_external_id  int NOT NULL, " +
-                    "device_id          varchar(255) NOT NULL, " +
-                    "started_at         bigint NOT NULL " +
+                    "umbox_external_id  varchar(255) NOT NULL, " +
+                    "device_id          int NOT NULL, " +
+                    "started_at         TIMESTAMP NOT NULL " +
                     ");"
             );
 
@@ -929,8 +923,6 @@ public class Postgres {
             int deviceId = rs.getInt(2);
             Timestamp timestamp = rs.getTimestamp(3);
             String state = rs.getString(4);
-
-//            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate, policyFile, policyFileName);
             stateHistory = new StateHistory(id, deviceId, timestamp, state);
         }
         catch(Exception e){
@@ -945,45 +937,122 @@ public class Postgres {
      */
 
     /**
-     * Finds all AlertHistories from the database for the given device.
-     * @param deviceId the id of the device.
-     * @return a list of all AlertHistories in the database where the the alert was created by a umbox associated with
-     *         the device.
+     * Finds all AlertHistories from the database for the given list of UmboxInstance externalIds.
+     * @param externalIds a list of externalIds of UmboxInstances.
+     * @return a list of all AlertHistories in the database where the the alert was created by a UmboxInstance with
+     *         externalId in externalIds.
      */
-/*    public static List<AlertHistory> getAlertHistory(int deviceId) {
+    public static List<AlertHistory> getAlertHistory(List<String> externalIds) {
         PreparedStatement st = null;
         ResultSet rs = null;
         if(db == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
-        try{
-            st = db.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
-            st.setInt(1, deviceId);
-            rs = st.executeQuery();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error getting device histories: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
-        try {
-            while (rs.next()) {
-                deviceHistories.add(rsToDeviceHistory(rs));
+        List<AlertHistory> alertHistories = new ArrayList<AlertHistory>();
+        for(String externalId : externalIds) {
+            try {
+                st = db.prepareStatement("SELECT * FROM alert_history WHERE external_id = ?");
+                st.setString(1, externalId);
+                rs = st.executeQuery();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            try {
+                while (rs.next()) {
+                    alertHistories.add(rsToAlertHistory(rs));
+                }
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+                try { if (st != null) { st.close(); } } catch (Exception e) {}
             }
         }
-        catch(SQLException e) {
-            logger.severe("Sql exception getting all device histories: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        finally {
-            try { if(rs != null) { rs.close(); } } catch(Exception e) {}
-            try { if(st != null) { st.close(); } } catch(Exception e) {}
-        }
-        return deviceHistories;
-    }*/
+        return alertHistories;
+    }
 
-    // Connor's stuff
-    // TODO: Add documentation
+    /**
+     * Extract an AlertHistory from the result set of a database query.
+     * @param rs ResultSet from a AlertHistory query.
+     * @return The AlertHistory that was found.
+     */
+    private static AlertHistory rsToAlertHistory(ResultSet rs){
+        AlertHistory alertHistory = null;
+        try{
+            int id = rs.getInt(1);
+            Timestamp timestamp = rs.getTimestamp(2);
+            int externalId = rs.getInt(3);
+            String name = rs.getString(4);
+            alertHistory = new AlertHistory(id, timestamp, externalId, name);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to AlertHistory: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return alertHistory;
+    }
+
+    /**
+     * Finds all UmboxInstances from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all UmboxInstaces in the database where the device_id field is equal to deviceId.
+     */
+    public static CompletionStage<List<UmboxInstance>> getUmboxInstances(int deviceId) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(db == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = db.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting UmboxInstances: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            List<UmboxInstance> umboxInstances = new ArrayList<UmboxInstance>();
+            try {
+                while (rs.next()) {
+                    umboxInstances.add(rsToUmboxInstance(rs));
+                }
+            }
+            catch(SQLException e) {
+                logger.severe("Sql exception getting all UmboxInstances: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+                try { if(st != null) { st.close(); } } catch(Exception e) {}
+            }
+            return umboxInstances;
+        });
+    }
+
+    /**
+     * Extract a UmboxInstance from the result set of a database query.
+     * @param rs ResultSet from a UmboxInstance query.
+     * @return The UmboxInstance that was found.
+     */
+    private static UmboxInstance rsToUmboxInstance(ResultSet rs){
+        UmboxInstance umboxInstance = null;
+        try{
+            int id = rs.getInt(1);
+            String umboxExternalId = rs.getString(2);
+            int deviceId = rs.getInt(3);
+            Timestamp startedAt = rs.getTimestamp(4);
+            umboxInstance = new UmboxInstance(id, umboxExternalId, deviceId, startedAt);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to UmboxInstance: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return umboxInstance;
+    }
 
     public static CompletionStage<Void> addUmboxImage(UmboxImage u) {
         return CompletableFuture.runAsync(() -> {
