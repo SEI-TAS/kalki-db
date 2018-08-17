@@ -983,7 +983,7 @@ public class Postgres {
         try{
             int id = rs.getInt(1);
             Timestamp timestamp = rs.getTimestamp(2);
-            int externalId = rs.getInt(3);
+            String externalId = rs.getString(3);
             String name = rs.getString(4);
             alertHistory = new AlertHistory(id, timestamp, externalId, name);
         }

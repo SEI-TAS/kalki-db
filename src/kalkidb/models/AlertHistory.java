@@ -6,14 +6,14 @@ public class AlertHistory {
 
     private int id;
     private Timestamp timestamp;
-    private int externalId;
+    private String externalId;
     private String name;
 
     public AlertHistory() {
 
     }
 
-    public AlertHistory(int id, Timestamp timestamp, int externalId, String name) {
+    public AlertHistory(int id, Timestamp timestamp, String externalId, String name) {
         this.id = id;
         this.timestamp = timestamp;
         this.externalId = externalId;
@@ -36,11 +36,11 @@ public class AlertHistory {
         this.timestamp = timestamp;
     }
 
-    public int getExternalId() {
+    public String getExternalId() {
         return externalId;
     }
 
-    public void setExternalId(int externalId) {
+    public void setExternalId(String externalId) {
         this.externalId = externalId;
     }
 
