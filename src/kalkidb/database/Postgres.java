@@ -65,18 +65,12 @@ public class Postgres {
      * First time database setup.
      * Creates necessary extensions, databases, and tables
      */
-    public static CompletionStage<Void> setupDatabase(){
+    public static void setupDatabase(){
         logger.info("Setting up database.");
-        return createHstoreExtension().thenRunAsync(() -> {
-            makeTables().thenRunAsync(() -> {
-                insertDefaultTypes().thenRunAsync(() -> {
-                    try {
-                        sleep(1000);
-                    } catch(Exception e){}
-                    createTriggers();
-                });
-            });
-        });
+        createHstoreExtension();
+        makeTables();
+        insertDefaultTypes();
+        createTriggers();
     }
 
     /**
@@ -112,7 +106,7 @@ public class Postgres {
     /**
      * Creates a DB if it does not exist.
      */
-    public static void createDBIfNotExist(String rootPassword, String dbName, String dbOwner) throws SQLException
+    public static boolean createDBIfNotExist(String rootPassword, String dbName, String dbOwner) throws SQLException
     {
         // First check it DB exists.
         String checkDB = "SELECT datname FROM pg_catalog.pg_database "
@@ -125,43 +119,43 @@ public class Postgres {
             {
                 // If there was no DB with this name, then create it.
                 makeDatabase(rootPassword);
+                return true;
             }
         } catch (SQLException e)
         {
             e.printStackTrace();
             throw e;
         }
+        return false;
     }
 
     /**
      * Creates the user if it does not exist.
      */
-    public static CompletionStage<Void> createUserIfNotExists(String rootPassword, String user, String password) {
-        return CompletableFuture.runAsync(() -> {
-            String createUser = "DO\n" +
-                    "$body$\n" +
-                    "BEGIN\n" +
-                    "   IF NOT EXISTS (\n" +
-                    "      SELECT *\n" +
-                    "      FROM   pg_catalog.pg_user\n" +
-                    "      WHERE  usename = '" + user + "') THEN\n" +
-                    "\n" +
-                    "      CREATE ROLE " + user + " LOGIN PASSWORD '"
-                    + password + "';\n" +
-                    "   END IF;\n" +
-                    "END\n" +
-                    "$body$;";
-            try (Connection rootConn = getRootConnection(rootPassword))
-            {
-                executeCommand(createUser, rootConn);
-            }
-            catch(SQLException e)
-            {
-                e.printStackTrace();
-                logger.severe("Error creating user:" +
-                        e.getClass().getName() + ": " + e.getMessage());
-            }
-        });
+    public static void createUserIfNotExists(String rootPassword, String user, String password) {
+        String createUser = "DO\n" +
+                "$body$\n" +
+                "BEGIN\n" +
+                "   IF NOT EXISTS (\n" +
+                "      SELECT *\n" +
+                "      FROM   pg_catalog.pg_user\n" +
+                "      WHERE  usename = '" + user + "') THEN\n" +
+                "\n" +
+                "      CREATE ROLE " + user + " LOGIN PASSWORD '"
+                + password + "';\n" +
+                "   END IF;\n" +
+                "END\n" +
+                "$body$;";
+        try (Connection rootConn = getRootConnection(rootPassword))
+        {
+            executeCommand(createUser, rootConn);
+        }
+        catch(SQLException e)
+        {
+            e.printStackTrace();
+            logger.severe("Error creating user:" +
+                    e.getClass().getName() + ": " + e.getMessage());
+        }
     }
 
     /**
