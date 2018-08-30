@@ -2,10 +2,7 @@ package kalkidb.database;
 
 import kalkidb.models.*;
 import org.postgresql.util.HStoreConverter;
-import org.postgresql.util.PSQLException;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -15,14 +12,20 @@ import java.util.concurrent.CompletionStage;
 import static java.lang.Thread.sleep;
 
 public class Postgres {
-    
+    private static final String DEFAULT_IP = "localhost";
+    private static final String DEFAULT_PORT = "5432";
+
+    private static final String ROOT_USER = "postgres";
+    private static final String BASE_DB = "postgres";
+    private static final String DEFAULT_DB_URL = "jdbc:postgresql://" + DEFAULT_IP + ":" + DEFAULT_PORT;
+
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
     private static String dbUser;
     private static String dbPassword;
-    private static Postgres postgres = null;
+    private static Postgres postgresInstance = null;
 
-    public static Connection db = null;
+    public static Connection dbConn = null;
 
     private Postgres(String ip, String port, String dbName, String dbUser, String dbPassword){
         try{
@@ -30,7 +33,7 @@ public class Postgres {
             this.dbName = dbName;
             this.dbUser = dbUser;
             this.dbPassword = dbPassword;
-            db = makeConnection(ip, port);
+            this.dbConn = makeConnection(ip, port);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -39,17 +42,20 @@ public class Postgres {
     }
 
     /**
+     * Initialize the singleton instance of postgres, using default IP and port.
+     */
+    public static void initialize(String dbName, String dbUser, String dbPassword) {
+        initialize(DEFAULT_IP, DEFAULT_PORT, dbName, dbUser, dbPassword);
+    }
+
+    /**
      * Initialize the singleton instance of postgres, connecting to the database.
      * Must be done before any static methods can be used.
      */
-    public static void initialize(String port, String ip, String dbName, String dbUser) {
-        initialize(port, ip, dbName, dbUser, "");
-    }
-
-    public static void initialize(String port, String ip, String dbName, String dbUser, String dbPassword) {
-        if (postgres == null){
+    public static void initialize(String ip, String port, String dbName, String dbUser, String dbPassword) {
+        if (postgresInstance == null){
             logger.info("Initializing database");
-            postgres = new Postgres(port, ip, dbName, dbUser, dbPassword);
+            postgresInstance = new Postgres(ip, port, dbName, dbUser, dbPassword);
         } else {
             logger.info("Database already initialized");
         }
@@ -93,9 +99,9 @@ public class Postgres {
     public Connection makeConnection(String ip, String port){
         try {
             Class.forName("org.postgresql.Driver");
-            db = DriverManager
+            dbConn = DriverManager
                     .getConnection("jdbc:postgresql://" + ip + ":" + port + "/" + this.dbName, this.dbUser, this.dbPassword);
-            return db;
+            return dbConn;
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error connecting to database : " + e.getClass().getName()+": "+e.getMessage());
@@ -104,9 +110,33 @@ public class Postgres {
     }
 
     /**
+     * Creates a DB if it does not exist.
+     */
+    public static void createDBIfNotExist(String rootPassword, String dbName, String dbOwner) throws SQLException
+    {
+        // First check it DB exists.
+        String checkDB = "SELECT datname FROM pg_catalog.pg_database "
+                + "WHERE datname = '" + dbName + "';";
+        try (Connection rootConn = getRootConnection(rootPassword);
+             Statement stmt = rootConn.createStatement();
+             ResultSet result = stmt.executeQuery(checkDB))
+        {
+            if (!result.next())
+            {
+                // If there was no DB with this name, then create it.
+                makeDatabase(rootPassword);
+            }
+        } catch (SQLException e)
+        {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
      * Creates the user if it does not exist.
      */
-    public static CompletionStage<Void> createUserIfNotExists(String user, String password) {
+    public static CompletionStage<Void> createUserIfNotExists(String rootPassword, String user, String password) {
         return CompletableFuture.runAsync(() -> {
             String createUser = "DO\n" +
                     "$body$\n" +
@@ -121,22 +151,51 @@ public class Postgres {
                     "   END IF;\n" +
                     "END\n" +
                     "$body$;";
-            executeCommand(createUser);
+            try (Connection rootConn = getRootConnection(rootPassword))
+            {
+                executeCommand(createUser, rootConn);
+            }
+            catch(SQLException e)
+            {
+                e.printStackTrace();
+                logger.severe("Error creating user:" +
+                        e.getClass().getName() + ": " + e.getMessage());
+            }
         });
+    }
+
+    /**
+     * Gets a connection to the root user.
+     */
+    private static Connection getRootConnection(String rootPwd) throws SQLException
+    {
+        Properties connectionProps = new Properties();
+        connectionProps.put("user", ROOT_USER);
+        connectionProps.put("password", rootPwd);
+        return DriverManager.getConnection(DEFAULT_DB_URL + "/" + BASE_DB, connectionProps);
+    }
+
+    /**
+     * Executes the given SQL command in the database, using the already set up, default connection.
+     * @param command SQL commmand string
+     */
+    public static void executeCommand(String command)
+    {
+        executeCommand(command, Postgres.dbConn);
     }
 
     /**
      * Executes the given SQL command in the database.
      * @param command SQL commmand string
      */
-    public static void executeCommand(String command){
-        if(db == null){
+    public static void executeCommand(String command, Connection connection){
+        if(connection == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         } else {
             logger.info(String.format("Executing command: %s", command));
             Statement st = null;
             try {
-                st = db.createStatement();
+                st = connection.createStatement();
                 st.execute(command);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -179,7 +238,7 @@ public class Postgres {
     public static CompletionStage<Void> listAllDatabases() {
         return CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement ps = db
+                PreparedStatement ps = dbConn
                         .prepareStatement("SELECT datname FROM pg_database WHERE datistemplate = false;");
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
@@ -230,7 +289,7 @@ public class Postgres {
     /**
      * Creates a postgres database.
      */
-    public static CompletionStage<Void> makeDatabase(){
+    public static CompletionStage<Void> makeDatabase(String rootPassword){
         return CompletableFuture.runAsync(() -> {
             logger.info("Creating database.");
             executeCommand("CREATE DATABASE " + dbName
@@ -302,10 +361,10 @@ public class Postgres {
             );
 
             executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
-                    "id           serial PRIMARY KEY," +
-                    "timestamp    TIMESTAMP NOT NULL," +
-                    "external_id  varchar(255) NOT NULL," +
-                    "name         varchar(255)" +
+                    "id                 serial PRIMARY KEY," +
+                    "received_at        timestampz NOT NULL DEFAULT now()," +
+                    "umbox_external_id  varchar(255) NOT NULL," +
+                    "info               varchar(255)" +
                     ");"
             );
 
@@ -313,7 +372,7 @@ public class Postgres {
                     "id                 serial PRIMARY KEY, " +
                     "umbox_external_id  varchar(255) NOT NULL, " +
                     "device_id          int NOT NULL, " +
-                    "started_at         TIMESTAMP NOT NULL " +
+                    "started_at         timestampz NOT NULL DEFAULT now()" +
                     ");"
             );
 
@@ -364,12 +423,12 @@ public class Postgres {
             logger.info(String.format("Finiding by id = %d in %s", id, tableName));
             PreparedStatement st = null;
             ResultSet rs = null;
-            if(db == null){
+            if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             try{
-                st = db.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
+                st = dbConn.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
                 st.setInt(1, id);
                 rs = st.executeQuery();
                 // Moves the result set to the first row if it exists. Returns null otherwise.
@@ -394,12 +453,12 @@ public class Postgres {
      */
     private static ResultSet getAllFromTable(String tableName){
         ResultSet rs = null;
-        if(db == null){
+        if(dbConn == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         try{
-            Statement st = db.createStatement();
+            Statement st = dbConn.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName);
             // This line closes the result set too
 //            st.close();
@@ -455,12 +514,12 @@ public class Postgres {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
-            if (db == null) {
+            if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             try {
-                st = db.prepareStatement("SELECT * FROM device_history WHERE device_id = ?");
+                st = dbConn.prepareStatement("SELECT * FROM device_history WHERE device_id = ?");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
             } catch (Exception e) {
@@ -522,12 +581,12 @@ public class Postgres {
     public static CompletionStage<Integer> insertDeviceHistory(DeviceHistory deviceHistory){
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Inserting device_history: " + deviceHistory.toString());
-            if(db == null){
+            if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try{
-                PreparedStatement update = db.prepareStatement
+                PreparedStatement update = dbConn.prepareStatement
                         ("INSERT INTO device_history(device_id, attributes, timestamp) values(?,?,?)");
                 update.setInt(1, deviceHistory.deviceId);
                 update.setObject(2, deviceHistory.attributes);
@@ -536,7 +595,7 @@ public class Postgres {
                 update.executeUpdate();
 
                 int serialNum = 0;
-                Statement stmt = db.createStatement();
+                Statement stmt = dbConn.createStatement();
 
                 // get the postgresql serial field value with this query
                 String query = "select currval('device_id_seq')";
@@ -563,12 +622,12 @@ public class Postgres {
     public static CompletionStage<Integer> updateDeviceHistory(DeviceHistory deviceHistory){
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Updating DeviceHistory with id=" + deviceHistory.id);
-            if (db == null) {
+            if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try {
-                PreparedStatement update = db.prepareStatement
+                PreparedStatement update = dbConn.prepareStatement
                         ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
                                 "WHERE id=?");
 
@@ -634,12 +693,12 @@ public class Postgres {
     public static CompletionStage<Integer> insertDevice(Device device){
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Inserting device: " + device);
-            if(db == null){
+            if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try{
-                PreparedStatement update = db.prepareStatement
+                PreparedStatement update = dbConn.prepareStatement
                         ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
                                 "history_size, sampling_rate, policy_file, policy_file_name) values(?,?,?,?,?,?,?,?,?)");
                 update.setString(1, device.getDescription());
@@ -655,7 +714,7 @@ public class Postgres {
                 update.executeUpdate();
 
                 int serialNum = 0;
-                Statement stmt = db.createStatement();
+                Statement stmt = dbConn.createStatement();
 
                 // get the postgresql serial field value with this query
                 String query = "select currval('device_id_seq')";
@@ -690,14 +749,14 @@ public class Postgres {
     public static CompletionStage<Integer> updateDevice(Device device) {
         return CompletableFuture.supplyAsync(() -> {
             logger.info(String.format("Updating Device with id = %d with values: %s", device.getId(), device));
-            if (db == null) {
+            if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             } else {
                 try {
                     // Delete existing tags
                     executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
-                    PreparedStatement update = db.prepareStatement("UPDATE device " +
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
                             "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ?, policy_file = ?, policy_file_name = ? " +
                             "WHERE id = ?");
                     update.setString(1, device.getName());
@@ -735,13 +794,13 @@ public class Postgres {
      */
     public static CompletionStage<List<Device>> getAllDevices(){
         return CompletableFuture.supplyAsync(() -> {
-            if(db == null){
+            if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             List<Device> devices = new ArrayList<Device>();
             try{
-                Statement st = db.createStatement();
+                Statement st = dbConn.createStatement();
                 ResultSet rs = st.executeQuery("SELECT * FROM device");
                 while (rs.next())
                 {
@@ -820,7 +879,7 @@ public class Postgres {
                 ResultSet tagRs = null;
 
                 try {
-                    st = db.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?");
+                    st = dbConn.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?");
                     st.setInt(1, id);
                     tagRs = st.executeQuery();
 
@@ -856,7 +915,7 @@ public class Postgres {
                 // Delete associated tags
                 executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", id));
 
-                st = db.prepareStatement("DELETE FROM device WHERE id = ?");
+                st = dbConn.prepareStatement("DELETE FROM device WHERE id = ?");
                 st.setInt(1, id);
                 st.executeUpdate();
                 return true;
@@ -881,12 +940,12 @@ public class Postgres {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
-            if(db == null){
+            if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             try{
-                st = db.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
+                st = dbConn.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
             }
@@ -945,14 +1004,14 @@ public class Postgres {
     public static List<AlertHistory> getAlertHistory(List<String> externalIds) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if(db == null){
+        if(dbConn == null){
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         List<AlertHistory> alertHistories = new ArrayList<AlertHistory>();
         for(String externalId : externalIds) {
             try {
-                st = db.prepareStatement("SELECT * FROM alert_history WHERE external_id = ?");
+                st = dbConn.prepareStatement("SELECT * FROM alert_history WHERE umbox_external_id = ?");
                 st.setString(1, externalId);
                 rs = st.executeQuery();
             } catch (Exception e) {
@@ -981,10 +1040,10 @@ public class Postgres {
     private static AlertHistory rsToAlertHistory(ResultSet rs){
         AlertHistory alertHistory = null;
         try{
-            int id = rs.getInt(1);
-            Timestamp timestamp = rs.getTimestamp(2);
-            String externalId = rs.getString(3);
-            String name = rs.getString(4);
+            int id = rs.getInt("id");
+            Timestamp timestamp = rs.getTimestamp("received_at");
+            String externalId = rs.getString("umbox_external_id");
+            String name = rs.getString("info");
             alertHistory = new AlertHistory(id, timestamp, externalId, name);
         }
         catch(Exception e){
@@ -1003,12 +1062,12 @@ public class Postgres {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
-            if(db == null){
+            if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             try{
-                st = db.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?");
+                st = dbConn.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
             }
@@ -1041,10 +1100,10 @@ public class Postgres {
     private static UmboxInstance rsToUmboxInstance(ResultSet rs){
         UmboxInstance umboxInstance = null;
         try{
-            int id = rs.getInt(1);
-            String umboxExternalId = rs.getString(2);
-            int deviceId = rs.getInt(3);
-            Timestamp startedAt = rs.getTimestamp(4);
+            int id = rs.getInt("id");
+            String umboxExternalId = rs.getString("umbox_external_id");
+            int deviceId = rs.getInt("device_id");
+            Timestamp startedAt = rs.getTimestamp("started_at");
             umboxInstance = new UmboxInstance(id, umboxExternalId, deviceId, startedAt);
         }
         catch(Exception e){
@@ -1059,7 +1118,7 @@ public class Postgres {
             logger.info("Adding umbox image: " + u);
             PreparedStatement st = null;
             try {
-                st = db.prepareStatement("INSERT INTO umbox_image (name, path) VALUES (?, ?)");
+                st = dbConn.prepareStatement("INSERT INTO umbox_image (name, path) VALUES (?, ?)");
                 st.setString(1, u.getName());
                 st.setString(2, u.getPath());
                 st.executeUpdate();
@@ -1079,7 +1138,7 @@ public class Postgres {
             logger.info("Editing umbox image: " + u);
             PreparedStatement st = null;
             try {
-                st = db.prepareStatement("UPDATE umbox_image " +
+                st = dbConn.prepareStatement("UPDATE umbox_image " +
                         "SET name = ?, path = ? " +
                         "WHERE id = ?");
                 st.setString(1, u.getName());
@@ -1103,7 +1162,7 @@ public class Postgres {
             logger.info(String.format("Deleting by id = %d in %s", id, table));
             PreparedStatement st = null;
             try {
-                st = db.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
+                st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
                 st.setInt(1, id);
                 st.executeUpdate();
                 return true;
@@ -1296,12 +1355,12 @@ public class Postgres {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             try {
-                st = db.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
+                st = dbConn.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
                 st.setString(1, name);
                 st.executeUpdate();
 
                 int serialNum = 0;
-                Statement stmt = db.createStatement();
+                Statement stmt = dbConn.createStatement();
 
                 // get the postgresql serial field value with this query
                 String query = String.format("select currval('%s_id_seq')", table);
