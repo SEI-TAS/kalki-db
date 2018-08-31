@@ -7,17 +7,17 @@ public class AlertHistory {
     private int id;
     private Timestamp timestamp;
     private String umboxExternalId;
-    private String name;
+    private String info;
 
     public AlertHistory() {
 
     }
 
-    public AlertHistory(int id, Timestamp timestamp, String umboxExternalId, String name) {
+    public AlertHistory(int id, Timestamp timestamp, String umboxExternalId, String info) {
         this.id = id;
         this.timestamp = timestamp;
         this.umboxExternalId = umboxExternalId;
-        this.name = name;
+        this.info = info;
     }
 
     public int getId() {
@@ -44,12 +44,12 @@ public class AlertHistory {
         this.umboxExternalId = umboxExternalId;
     }
 
-    public String getName() {
-        return name;
+    public String getInfo() {
+        return info;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setInfo(String info) {
+        this.info = info;
     }
 
 }

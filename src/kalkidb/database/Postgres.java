@@ -9,8 +9,6 @@ import java.util.logging.Logger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static java.lang.Thread.sleep;
-
 public class Postgres {
     private static final String DEFAULT_IP = "localhost";
     private static final String DEFAULT_PORT = "5432";
@@ -62,31 +60,6 @@ public class Postgres {
     }
 
     /**
-     * First time database setup.
-     * Creates necessary extensions, databases, and tables
-     */
-    public static void setupDatabase(){
-        logger.info("Setting up database.");
-        createHstoreExtension();
-        makeTables();
-        insertDefaultTypes();
-        createTriggers();
-    }
-
-    /**
-     * Drops and recreates all tables.
-     */
-    public static CompletionStage<Void> resetDatabase(){
-        logger.info("Resetting Database.");
-        return dropTables().thenRunAsync(() -> {
-            makeTables().thenRunAsync(() -> {
-                insertDefaultTypes();
-                createTriggers();
-            });
-        });
-    }
-
-    /**
      * Connects to the postgres database, allowing for database ops.
      * @return a connection to the database.
      */
@@ -106,7 +79,7 @@ public class Postgres {
     /**
      * Creates a DB if it does not exist.
      */
-    public static boolean createDBIfNotExist(String rootPassword, String dbName, String dbOwner) throws SQLException
+    public static boolean createDBIfNotExists(String rootPassword, String dbName, String dbOwner) throws SQLException
     {
         // First check it DB exists.
         String checkDB = "SELECT datname FROM pg_catalog.pg_database "
@@ -118,7 +91,7 @@ public class Postgres {
             if (!result.next())
             {
                 // If there was no DB with this name, then create it.
-                makeDatabase(rootPassword);
+                makeDatabase(rootConn, dbName, dbOwner);
                 return true;
             }
         } catch (SQLException e)
@@ -127,6 +100,52 @@ public class Postgres {
             throw e;
         }
         return false;
+    }
+
+    /**
+     * Creates a postgres database.
+     */
+    public static void makeDatabase(Connection rootConnection, String dbName, String dbOwner){
+        logger.info("Creating database.");
+        executeCommand("CREATE DATABASE " + dbName
+                + " WITH OWNER= " + dbOwner
+                + " ENCODING = 'UTF8' TEMPLATE = template0 "
+                + " CONNECTION LIMIT = -1;", rootConnection);
+    }
+
+    /**
+     * Removes the database.
+     */
+    public static void removeDatabase(String rootPassword, String dbName)
+    {
+        logger.info("Removing database.");
+        try (Connection rootConn = getRootConnection(rootPassword))
+        {
+            executeCommand("DROP DATABASE IF EXISTS " + dbName + ";", rootConn);
+        }
+        catch(SQLException e)
+        {
+            e.printStackTrace();
+            logger.severe("Error removing database:" + e.getClass().getName() + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Removes the user.
+     */
+    public static void removeUser(String rootPassword, String userName)
+    {
+        logger.info("Removing user.");
+        try (Connection rootConn = getRootConnection(rootPassword))
+        {
+            executeCommand("DROP ROLE IF EXISTS " + userName + ";", rootConn);
+        }
+        catch(SQLException e)
+        {
+            e.printStackTrace();
+            logger.severe("Error removing user:" + e.getClass().getName() + ": " + e.getMessage());
+        }
+
     }
 
     /**
@@ -141,7 +160,7 @@ public class Postgres {
                 "      FROM   pg_catalog.pg_user\n" +
                 "      WHERE  usename = '" + user + "') THEN\n" +
                 "\n" +
-                "      CREATE ROLE " + user + " LOGIN PASSWORD '"
+                "      CREATE ROLE " + user + " SUPERUSER LOGIN PASSWORD '"
                 + password + "';\n" +
                 "   END IF;\n" +
                 "END\n" +
@@ -153,8 +172,7 @@ public class Postgres {
         catch(SQLException e)
         {
             e.printStackTrace();
-            logger.severe("Error creating user:" +
-                    e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Error creating user:" + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
@@ -205,25 +223,180 @@ public class Postgres {
     }
 
     /**
+     * First time database setup.
+     * Creates necessary extensions, databases, and tables
+     */
+    public static void setupDatabase(){
+        logger.info("Setting up database.");
+        createHstoreExtension();
+        makeTables();
+        insertDefaultTypes();
+        createTriggers();
+    }
+
+    /**
+     * Add the hstore extension to the postgres database.
+     */
+    public static void createHstoreExtension(){
+        logger.info("Adding hstore extension.");
+        executeCommand("CREATE EXTENSION IF NOT EXISTS hstore;");
+    }
+
+    /**
+     * Drops and recreates all tables.
+     */
+    public static void resetDatabase(){
+        logger.info("Resetting Database.");
+        dropTables();
+        setupDatabase();
+    }
+
+    /**
+     * Drops all tables from the database.
+     */
+    public static void dropTables(){
+        logger.info("Dropping tables.");
+        List<String> tableNames = new ArrayList<String>();
+        tableNames.add("device");
+        tableNames.add("device_history");
+        tableNames.add("state_history");
+        tableNames.add("device_tag");
+        tableNames.add("tag");
+        tableNames.add("type");
+        tableNames.add("device_group");
+        tableNames.add("alert_history");
+        tableNames.add("umbox_instance");
+        tableNames.add("umbox_image");
+        for(String tableName: tableNames){
+            dropTable(tableName);
+        }
+    }
+
+    /**
+     * Drop a table from the database.
+     * @param tableName name of the table to be dropped
+     */
+    public static void dropTable(String tableName){
+        executeCommand("DROP TABLE IF EXISTS " + tableName);
+    }
+
+    /**
+     * Create tables for each model.
+     */
+    public static void makeTables(){
+        logger.info("Making tables.");
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device(" +
+                "id             serial   PRIMARY KEY," +
+                "name           varchar(255) NOT NULL," +
+                "description    varchar(255)," +
+                "type_id        int NOT NULL," +
+                "group_id       int," +
+                "ip_address     varchar(255)," +
+                "history_size   int NOT NULL," +
+                "sampling_rate  int NOT NULL," +
+                "policy_file    bytea," +
+                "policy_file_name    varchar(255)" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
+                "device_id     int NOT NULL," +
+                "attributes    hstore," +
+                "timestamp     TIMESTAMP," +
+                "id            serial    PRIMARY KEY" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
+                "id           serial PRIMARY KEY," +
+                "device_id    int NOT NULL," +
+                "timestamp    TIMESTAMP," +
+                "state        varchar(255) NOT NULL" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
+                "device_id    int NOT NULL, " +
+                "tag_id       int NOT NULL" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
+                "id           serial PRIMARY KEY, " +
+                "name         varchar(255) NOT NULL" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS type(" +
+                "id    serial PRIMARY KEY, " +
+                "name  varchar(255)" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
+                "id    serial PRIMARY KEY, " +
+                "name  varchar(255)" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
+                "id                 serial PRIMARY KEY," +
+                "received_at        timestamp NOT NULL DEFAULT now()," +
+                "umbox_external_id  varchar(255) NOT NULL," +
+                "info               varchar(255)" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
+                "id                 serial PRIMARY KEY, " +
+                "umbox_external_id  varchar(255) NOT NULL, " +
+                "device_id          int NOT NULL, " +
+                "started_at         timestamp NOT NULL DEFAULT now()" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS umbox_image(" +
+                "id           serial PRIMARY KEY," +
+                "name         varchar(255) NOT NULL," +
+                "path         varchar(255) NOT NULL" +
+                ");"
+        );
+    }
+
+    /**
+     * Insert the default types into the database.
+     */
+    public static void insertDefaultTypes() {
+        logger.info("Inserting default types.");
+        List<String> typeNames = new ArrayList<String>();
+        typeNames.add("Hue Light");
+        typeNames.add("Dlink Camera");
+        typeNames.add("WeMo Insight");
+        typeNames.add("Udoo Neo");
+        for(String typeName: typeNames){
+            executeCommand("INSERT INTO type (name) VALUES ('" + typeName + "')");
+        }
+    }
+
+    /**
      * Creates all necessary triggers in the database, and necessary helper functions.
      * Namely, creates a trigger and function to send notifications on device insert.
      */
-    public static CompletionStage<Void> createTriggers(){
-        return CompletableFuture.runAsync(() -> {
-            executeCommand("CREATE OR REPLACE FUNCTION \"deviceNotify\"()\n" +
-                    "  RETURNS TRIGGER AS $$\n" +
-                    "DECLARE\n" +
-                    "  payload TEXT;\n" +
-                    "BEGIN\n" +
-                    "  payload := NEW.id;\n" +
-                    "  PERFORM pg_notify('deviceinsert', payload);\n" +
-                    "  RETURN NEW;\n" +
-                    "END;\n" +
-                    "$$ LANGUAGE plpgsql;");
-            executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
-                    "AFTER INSERT ON device\n" +
-                    "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
-        });
+    public static void createTriggers(){
+        executeCommand("CREATE OR REPLACE FUNCTION \"deviceNotify\"()\n" +
+                "  RETURNS TRIGGER AS $$\n" +
+                "DECLARE\n" +
+                "  payload TEXT;\n" +
+                "BEGIN\n" +
+                "  payload := NEW.id;\n" +
+                "  PERFORM pg_notify('deviceinsert', payload);\n" +
+                "  RETURN NEW;\n" +
+                "END;\n" +
+                "$$ LANGUAGE plpgsql;");
+        executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
+                "AFTER INSERT ON device\n" +
+                "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
     }
 
     /**
@@ -244,165 +417,6 @@ public class Postgres {
             catch (Exception e) {
                 e.printStackTrace();
             }
-        });
-    }
-
-    /**
-     * Drops all tables from the database.
-     */
-    public static CompletionStage<Void> dropTables(){
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Dropping tables.");
-            List<String> tableNames = new ArrayList<String>();
-            tableNames.add("device");
-            tableNames.add("device_history");
-            tableNames.add("state_history");
-            tableNames.add("device_tag");
-            tableNames.add("tag");
-            tableNames.add("type");
-            tableNames.add("device_group");
-            tableNames.add("alert_history");
-            tableNames.add("umbox_instance");
-            tableNames.add("umbox_image");
-            for(String tableName: tableNames){
-                dropTable(tableName);
-            }
-        });
-    }
-
-    /**
-     * Drop a table from the database.
-     * @param tableName name of the table to be dropped
-     */
-    public static CompletionStage<Void> dropTable(String tableName){
-        return CompletableFuture.runAsync(() -> {
-            executeCommand("DROP TABLE IF EXISTS " + tableName);
-        });
-    }
-
-    /**
-     * Creates a postgres database.
-     */
-    public static CompletionStage<Void> makeDatabase(String rootPassword){
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Creating database.");
-            executeCommand("CREATE DATABASE " + dbName
-                    + " WITH OWNER= " + dbUser
-                    + " ENCODING = 'UTF8' TEMPLATE = template0 "
-                    + " CONNECTION LIMIT = -1;");
-        });
-    }
-
-    /**
-     * Create tables for each model.
-     */
-    public static CompletionStage<Void> makeTables(){
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Making tables.");
-
-            executeCommand("CREATE TABLE IF NOT EXISTS device(" +
-                    "id             serial   PRIMARY KEY," +
-                    "name           varchar(255) NOT NULL," +
-                    "description    varchar(255)," +
-                    "type_id        int NOT NULL," +
-                    "group_id       int," +
-                    "ip_address     varchar(255)," +
-                    "history_size   int NOT NULL," +
-                    "sampling_rate  int NOT NULL," +
-                    "policy_file    bytea," +
-                    "policy_file_name    varchar(255)" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
-                    "device_id     int NOT NULL," +
-                    "attributes    hstore," +
-                    "timestamp     TIMESTAMP," +
-                    "id            serial    PRIMARY KEY" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
-                    "id           serial PRIMARY KEY," +
-                    "device_id    int NOT NULL," +
-                    "timestamp    TIMESTAMP," +
-                    "state        varchar(255) NOT NULL" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
-                    "device_id    int NOT NULL, " +
-                    "tag_id       int NOT NULL" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
-                    "id           serial PRIMARY KEY, " +
-                    "name         varchar(255) NOT NULL" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS type(" +
-                    "id    serial PRIMARY KEY, " +
-                    "name  varchar(255)" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
-                    "id    serial PRIMARY KEY, " +
-                    "name  varchar(255)" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
-                    "id                 serial PRIMARY KEY," +
-                    "received_at        timestampz NOT NULL DEFAULT now()," +
-                    "umbox_external_id  varchar(255) NOT NULL," +
-                    "info               varchar(255)" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
-                    "id                 serial PRIMARY KEY, " +
-                    "umbox_external_id  varchar(255) NOT NULL, " +
-                    "device_id          int NOT NULL, " +
-                    "started_at         timestampz NOT NULL DEFAULT now()" +
-                    ");"
-            );
-
-            executeCommand("CREATE TABLE IF NOT EXISTS umbox_image(" +
-                    "id           serial PRIMARY KEY," +
-                    "name         varchar(255) NOT NULL," +
-                    "path         varchar(255) NOT NULL" +
-                    ");"
-            );
-        });
-    }
-
-    /**
-     * Insert the default types into the database.
-     */
-    public static CompletionStage<Void> insertDefaultTypes() {
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Inserting default types.");
-            List<String> typeNames = new ArrayList<String>();
-            typeNames.add("Hue Light");
-            typeNames.add("Dlink Camera");
-            typeNames.add("WeMo Insight");
-            typeNames.add("Udoo Neo");
-            for(String typeName: typeNames){
-                executeCommand("INSERT INTO type (name) VALUES ('" + typeName + "')");
-            }
-        });
-    }
-
-    /**
-     * Add the hstore extension to the postgres database.
-     */
-    public static CompletionStage<Void> createHstoreExtension(){
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Adding hstore extension.");
-            executeCommand("CREATE EXTENSION hstore;");
         });
     }
 
@@ -464,21 +478,9 @@ public class Postgres {
         return rs;
     }
 
-    private static void executeStatement(PreparedStatement update) {
-        try{
-            update.executeUpdate();
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            logger.severe("Error executing statement: " + e.getClass().getName()+": "+e.getMessage());
-        }
-    }
-
     /*
      *     DeviceHistory specific methods
      */
-
-
     /**
      * Finds all DeviceHistories in the database.
      * @return a list of all DeviceHistories in the database.
@@ -565,6 +567,33 @@ public class Postgres {
             logger.severe("Error converting rs to DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
         return deviceHistory;
+    }
+
+    public static CompletionStage<Integer> insertAlertHistory(AlertHistory alertHistory)
+    {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting device_history: " + alertHistory.toString());
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try
+            {
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history (umbox_external_id, info) VALUES (?,?);");
+                insertAlert.setString(1, alertHistory.getUmboxExternalId());
+                insertAlert.setString(2, alertHistory.getInfo());
+
+                // Not sure about the use of this... return id? Sequence? Why?
+                insertAlert.execute();
+                return 0;
+            }
+            catch (SQLException e)
+            {
+                e.printStackTrace();
+                logger.severe("Error inserting AlertHistory: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            return -1;
+        });
     }
 
     /**
