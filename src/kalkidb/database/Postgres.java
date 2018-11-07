@@ -294,9 +294,7 @@ public class Postgres {
                 "group_id       int," +
                 "ip_address     varchar(255)," +
                 "history_size   int NOT NULL," +
-                "sampling_rate  int NOT NULL," +
-                "policy_file    bytea," +
-                "policy_file_name    varchar(255)" +
+                "sampling_rate  int NOT NULL"  +
                 ");"
         );
 
@@ -331,6 +329,8 @@ public class Postgres {
         executeCommand("CREATE TABLE IF NOT EXISTS type(" +
                 "id    serial PRIMARY KEY, " +
                 "name  varchar(255)" +
+                "policy_file    bytea," +
+                "policy_file_name    varchar(255)" +
                 ");"
         );
 
@@ -351,6 +351,7 @@ public class Postgres {
         executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
                 "id                 serial PRIMARY KEY, " +
                 "umbox_external_id  varchar(255) NOT NULL, " +
+                "umbox_image_id     int NOT NULL," +
                 "device_id          int NOT NULL, " +
                 "started_at         timestamp NOT NULL DEFAULT now()" +
                 ");"
@@ -384,6 +385,8 @@ public class Postgres {
      * Namely, creates a trigger and function to send notifications on device insert.
      */
     public static void createTriggers(){
+        // deviceNotify
+        // when a device is inserted
         executeCommand("CREATE OR REPLACE FUNCTION \"deviceNotify\"()\n" +
                 "  RETURNS TRIGGER AS $$\n" +
                 "DECLARE\n" +
@@ -397,6 +400,38 @@ public class Postgres {
         executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
                 "AFTER INSERT ON device\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
+
+        // deviceHistoryNotify
+        // when a DeviceHistory is inserted
+        executeCommand("CREATE OR REPLACE FUNCTION \"deviceHistoryNotify\"()\n" +
+                "  RETURNS TRIGGER AS $$\n" +
+                "DECLARE\n" +
+                "  payload TEXT;\n" +
+                "BEGIN\n" +
+                "  payload := NEW.id;\n" +
+                "  PERFORM pg_notify('devicehistoryinsert', payload);\n" +
+                "  RETURN NEW;\n" +
+                "END;\n" +
+                "$$ LANGUAGE plpgsql;");
+        executeCommand("CREATE TRIGGER \"deviceHistoryNotify\"\n" +
+                "AFTER INSERT ON device_history\n" +
+                "FOR EACH ROW EXECUTE PROCEDURE \"deviceHistoryNotify\"()");
+
+        // alertHistoryNotify
+        // when an AlertHistory is inserted
+        executeCommand("CREATE OR REPLACE FUNCTION \"alertHistoryNotify\"()\n" +
+                "  RETURNS TRIGGER AS $$\n" +
+                "DECLARE\n" +
+                "  payload TEXT;\n" +
+                "BEGIN\n" +
+                "  payload := NEW.id;\n" +
+                "  PERFORM pg_notify('alerthistoryinsert', payload);\n" +
+                "  RETURN NEW;\n" +
+                "END;\n" +
+                "$$ LANGUAGE plpgsql;");
+        executeCommand("CREATE TRIGGER \"alertHistoryNotify\"\n" +
+                "AFTER INSERT ON alert_history\n" +
+                "FOR EACH ROW EXECUTE PROCEDURE \"alertHistoryNotify\"()");
     }
 
     /**
@@ -572,18 +607,17 @@ public class Postgres {
     public static CompletionStage<Integer> insertAlertHistory(AlertHistory alertHistory)
     {
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting device_history: " + alertHistory.toString());
+            logger.info("Inserting alert_history: " + alertHistory.toString());
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try
             {
-                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history (umbox_external_id, info) VALUES (?,?);");
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history(umbox_external_id, info) VALUES (?,?);");
                 insertAlert.setString(1, alertHistory.getUmboxExternalId());
                 insertAlert.setString(2, alertHistory.getInfo());
 
-                // Not sure about the use of this... return id? Sequence? Why?
                 insertAlert.execute();
                 return 0;
             }
@@ -723,7 +757,7 @@ public class Postgres {
             try{
                 PreparedStatement update = dbConn.prepareStatement
                         ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                                "history_size, sampling_rate, policy_file, policy_file_name) values(?,?,?,?,?,?,?,?,?)");
+                                "history_size, sampling_rate) values(?,?,?,?,?,?,?)");
                 update.setString(1, device.getDescription());
                 update.setString(2, device.getName());
                 update.setInt(3, device.getTypeId());
@@ -731,8 +765,6 @@ public class Postgres {
                 update.setString(5, device.getIp());
                 update.setInt(6, device.getHistorySize());
                 update.setInt(7, device.getSamplingRate());
-                update.setBytes(8, device.getPolicyFile());
-                update.setString(9, device.getPolicyFileName());
 
                 update.executeUpdate();
 
@@ -780,7 +812,7 @@ public class Postgres {
                     executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                     PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ?, policy_file = ?, policy_file_name = ? " +
+                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ?" +
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
@@ -789,9 +821,7 @@ public class Postgres {
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getHistorySize());
                     update.setInt(7, device.getSamplingRate());
-                    update.setBytes(8, device.getPolicyFile());
-                    update.setString(9, device.getPolicyFileName());
-                    update.setInt(10, device.getId());
+                    update.setInt(8, device.getId());
                     update.executeUpdate();
 
                     // Insert tags into device_tag
@@ -856,10 +886,8 @@ public class Postgres {
             String ip = rs.getString(6);
             int historySize = rs.getInt(7);
             int samplingRate = rs.getInt(8);
-            byte[] policyFile = rs.getBytes(9);
-            String policyFileName = rs.getString(10);
 
-            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate, policyFile, policyFileName);
+            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -1056,6 +1084,21 @@ public class Postgres {
     }
 
     /**
+     * Finds an AlertHistory from the databse with the given id
+     * @param id The id of the desired AlertHistory
+     * @return An AlertHistory with desired id
+     */
+    public static CompletionStage<AlertHistory> getAlertHistory(int id) {
+        return findById(id, "alert_history").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                return rsToAlertHistory(rs);
+            }
+        });
+    }
+
+    /**
      * Extract an AlertHistory from the result set of a database query.
      * @param rs ResultSet from a AlertHistory query.
      * @return The AlertHistory that was found.
@@ -1116,6 +1159,40 @@ public class Postgres {
     }
 
     /**
+     * Find a umbox instance by its external id
+     * @param id The ID of desired UmboxInstance
+     * @return The desired UmboxInstance
+     */
+    public static CompletionStage<UmboxInstance> getUmboxInstance(String externalId){
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = dbConn.prepareStatement(String.format("SELECT * FROM umbox_instance WHERE umbox_external_id = ?"));
+                st.setString(1, externalId);
+                rs = st.executeQuery();
+                // Moves the result set to the first row if it exists. Returns null otherwise.
+                if(!rs.next()) {
+                    return null;
+                }
+                // closes rs. Need to close it somewhere else
+//            st.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Exception finding by ID: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return rsToUmboxInstance(rs);
+        });
+
+    }
+
+
+    /**
      * Extract a UmboxInstance from the result set of a database query.
      * @param rs ResultSet from a UmboxInstance query.
      * @return The UmboxInstance that was found.
@@ -1125,15 +1202,92 @@ public class Postgres {
         try{
             int id = rs.getInt("id");
             String umboxExternalId = rs.getString("umbox_external_id");
+            int imageId = rs.getInt("umbox_image_id");
             int deviceId = rs.getInt("device_id");
             Timestamp startedAt = rs.getTimestamp("started_at");
-            umboxInstance = new UmboxInstance(id, umboxExternalId, deviceId, startedAt);
+            umboxInstance = new UmboxInstance(id, umboxExternalId, imageId, deviceId, startedAt);
         }
         catch(Exception e){
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxInstance: " + e.getClass().getName()+": "+e.getMessage());
         }
         return umboxInstance;
+    }
+
+    /**
+     * Adds the desired UmboxInstance to the database
+     * @param u UmboxInstance to add
+     * @return
+     */
+    public static CompletionStage<Void> insertUmboxInstance(UmboxInstance u){
+        return CompletableFuture.runAsync(() -> {
+           logger.info("Adding umbox instance: "+ u);
+           PreparedStatement st = null;
+           try{
+               st = dbConn.prepareStatement("INSERT INTO umbox_instance (umbox_external_id, umbox_image_id, device_id, started_at) VALUES (?,?,?,?)");
+               st.setString(1, u.getUmboxExternalId());
+               st.setInt(2, u.getUmboxImageId());
+               st.setInt(3, u.getDeviceId());
+               st.setTimestamp(4, u.getStartedAt());
+               st.executeUpdate();
+           }
+           catch (SQLException e){
+               e.printStackTrace();
+               logger.severe("SQL exception adding umbox instance: " + e.getClass().getName()+": "+e.getMessage());
+           }
+        });
+    }
+
+    /**
+     * Edit desired UmboxInstance
+     * @param u The instance to be updated
+     * @return
+     */
+    public static CompletionStage<Void> editUmboxInstance(UmboxInstance u) {
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Editing umbox intance: " + u);
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("UPDATE umbox_instance " +
+                        "SET umbox_external_id = ?, umbox_image_id = ?, device_id = ?, started_at = ?" +
+                        "WHERE id = ?");
+                st.setString(1, u.getUmboxExternalId());
+                st.setInt(2, u.getUmboxImageId());
+                st.setInt(3, u.getDeviceId());
+                st.setTimestamp(4, u.getStartedAt());
+                st.executeUpdate();
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQL exception editing umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            catch (NumberFormatException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+        });
+    }
+
+    /**
+     * Deletes a UmboxInstance by its id.
+     * @param id id of the UmboxInstance to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static CompletionStage<Boolean> deleteUmboxInstance(int id) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Deleting UmboxInstance with id = %d", id));
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("DELETE FROM umbox_instance WHERE id = ?");
+                st.setInt(1, id);
+                st.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return false;
+        });
     }
 
     public static CompletionStage<Void> addUmboxImage(UmboxImage u) {
@@ -1241,6 +1395,23 @@ public class Postgres {
     }
 
     /**
+     * Finds a Group from the database by its id.
+     * @param id id of the Group to find.
+     * @return the Group if it exists in the database, else null.
+     */
+    public static CompletionStage<Group> findGroup(int id){
+        logger.info("Finding group with id = " + id);
+        return findById(id, "device_group").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                Group group = rsToGroup(rs);
+                return group;
+            }
+        });
+    }
+
+    /**
      * Finds all Groups in the database.
      * @return a list of all Groups in the database.
      */
@@ -1281,6 +1452,58 @@ public class Postgres {
         }
         return group;
     }
+
+    /**
+     * Saves given Device Group to the database.
+     * @param device Device Group to be inserted.
+     * @return auto incremented id
+     */
+    public static CompletionStage<Integer> insertGroup(Group group){
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting group: " + group);
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try{
+                PreparedStatement update = dbConn.prepareStatement
+                        ("INSERT INTO device_group(name)" +
+                                "values(?,?,?)");
+                update.setString(1, group.getName());
+
+                update.executeUpdate();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+                logger.severe("Error inserting Group: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return 1;
+        });
+    }
+
+
+    /**
+     * Deletes a Group by its id.
+     * @param id id of the Group to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static CompletionStage<Boolean> deleteGroup(int id) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Deleting group with id = %d", id));
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("DELETE FROM device_group WHERE id = ?");
+                st.setInt(1, id);
+                st.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return false;
+        });
+    }
+
 
     /**
      * Finds all Types in the database.
