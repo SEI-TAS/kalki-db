@@ -38,20 +38,17 @@ light.insertOrUpdate();
 Device device = Postgres.findDevice(deviceId);
 ```
              
-##Design    
+## Design    
 
-
-####AlertHistory
-#####Schema:
-
-  |Property        |Type     |
-  |---------------:|:--------|
-  |id              |int      |  
-  |timestamp       |Timestamp|
-  |umboxExternalId |String   | 
-  |info            |String   |  
-  
-######Actions:  
+### AlertHistory
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|timestamp       |Timestamp|
+|umboxExternalId |String   | 
+|info            |String   |  
+###### Actions:  
 |Function Definition                             |Return Type|
 |:-----------------------------------------------|:--------|
 |`getAlertHistory(List<String> externalIds)`     |`List<AlertHistory>` |  
@@ -59,8 +56,8 @@ Device device = Postgres.findDevice(deviceId);
 |`insertAlertHistory(AlertHistory alertHistory)` |`CompletionStage<Integer>`   | 
 
 
-####Device
-######Schema:
+### Device
+###### Schema:
 |Property        |Type         |
 |---------------:|:------------|
 |id              |int          |  
@@ -71,9 +68,9 @@ Device device = Postgres.findDevice(deviceId);
 |ip              |String       |
 |historySize     |int          |
 |samplingRate    |int          |
-|tagIds          |List<Integer>|
-######Actions:  
-|Function Definition                             |Return Type|
+|tagIds          |List<Integer>|  
+###### Actions:  
+|Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
 |`getAllDevices()`                     |`CompletionStage<List<Device>>` |  
 |`insertDevice(Device device)`         |`CompletionStage<Integer>`|
@@ -81,8 +78,8 @@ Device device = Postgres.findDevice(deviceId);
 |`updateDevice(Device device)`         |`CompletionStage<Integer>`|
 
 
-####DeviceHistory
-######Schema:
+### DeviceHistory
+###### Schema:
 |Property        |Type              |
 |---------------:|:-----------------|
 |id              |int               |
@@ -90,7 +87,7 @@ Device device = Postgres.findDevice(deviceId);
 |timestamp       |Timestamp         |
 |attributes      |Map<String,String>| 
 |deviceId        |int               |
-######Actions:
+###### Actions:
 |Function Definition | Return Type |  
 |:---|:---|  
 |`findDevice(int id)`                                         |`CompletionStage<Device> `|
@@ -103,13 +100,13 @@ Device device = Postgres.findDevice(deviceId);
 |`deleteDevice(int id)`                                       |`CompletionStage<Boolean>`|
     
 
-####Group
-######Schema:
+### Group
+###### Schema:
 |Property     |Type     |
 |------------:|:--------|
 |id           |int      |  
 |name         |String   |
-######Actions:  
+###### Actions:  
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findGroup(int id)`        |`CompletionStage<Group>`|
@@ -118,54 +115,54 @@ Device device = Postgres.findDevice(deviceId);
 |`deleteGroup(int id)`      |`CompletionStage<Boolean>`|
  
 
-####StateHistory
-######Schema:
+### StateHistory
+###### Schema:
 |Property  |Type      |
 |---------:|:---------|
 |id        |int       |  
 |deviceId  |int       |
 |timestamp |Timestamp | 
 |state     |String    |
-######Actions:
+###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
 |`getStateHistory(int deviceId)`|`CompletionStage<List<StateHistory>>`|
 
 
-####Tag
-######Schema:
+### Tag
+###### Schema:
 |Property   |Type   |
 |----------:|:------|
 |id         |int    |  
 |name       |String |
-######Actions:
+###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
 |`getAllTags()`|`CompletionStage<List<Tag>>`|
 
 
-####Type
-######Schema:
+### Type
+###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
 |name            |String   |
 |policyFile      |byte[]   | 
 |policyFileName  |String   | 
-######Actions:
+###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
 |`getAllTypes()`|`CompletionStage<List<Type>>`|
 
 
-####UmboxImage
-######Schema:
+### UmboxImage
+###### Schema:
 |Property  |Type     |
 |---------:|:------|
 |id        |int |  
 |name      |String |
 |path      |String | 
-######Actions:
+###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
 |`getAllUmboxImages()`          |`CompletionStage<List<UmboxImage>>`|
@@ -173,8 +170,8 @@ Device device = Postgres.findDevice(deviceId);
 |`editUmboxImage(UmboxImage u)` |`CompletionStage<Void>`|
 
 
-####UmboxInstance
-######Schema:
+### UmboxInstance
+###### Schema:
 |Property        |Type      |
 |---------------:|:---------|
 |id              |String    |  
@@ -182,7 +179,7 @@ Device device = Postgres.findDevice(deviceId);
 |umboxImageId    |String    | 
 |deviceId        |int       |
 |startedAt       |Timestamp |
-######Actions:
+###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
 |`getUmboxInstance(String externalId)`  |`CompletionStage<UmboxInstance>`|
