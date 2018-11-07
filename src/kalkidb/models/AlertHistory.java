@@ -13,6 +13,13 @@ public class AlertHistory {
 
     }
 
+    public AlertHistory(Timestamp timestamp, String umboxExternalId, String info) {
+        this.timestamp = timestamp;
+        this.umboxExternalId = umboxExternalId;
+        this.info = info;
+    }
+
+
     public AlertHistory(int id, Timestamp timestamp, String umboxExternalId, String info) {
         this.id = id;
         this.timestamp = timestamp;
@@ -52,4 +59,7 @@ public class AlertHistory {
         this.info = info;
     }
 
+    public String toString() {
+        return "AlertHistory Info: id: "+Integer.toString(id)+", umboxExternalId: "+umboxExternalId+", info: "+info;
+    }
 }

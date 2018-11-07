@@ -38,6 +38,14 @@ public class DeviceHistory {
 
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
     public void addAttribute(String key, String value){
         attributes.put(key, value);
     }

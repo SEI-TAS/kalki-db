@@ -1,11 +1,13 @@
 package kalkidb.models;
 
 import java.sql.Timestamp;
+import kalkidb.database.Postgres;
 
 public class UmboxInstance {
 
     private int id;
     private String umboxExternalId;
+    private int umboxImageId;
     private int deviceId;
     private Timestamp startedAt;
 
@@ -13,9 +15,10 @@ public class UmboxInstance {
 
     }
 
-    public UmboxInstance(int id, String umboxExternalId, int deviceId, Timestamp startedAt) {
+    public UmboxInstance(int id, String umboxExternalId, int umboxImageId, int deviceId, Timestamp startedAt) {
         this.id = id;
         this.umboxExternalId = umboxExternalId;
+        this.umboxImageId = umboxImageId;
         this.deviceId = deviceId;
         this.startedAt = startedAt;
     }
@@ -36,6 +39,10 @@ public class UmboxInstance {
         this.umboxExternalId = umboxExternalId;
     }
 
+    public int getUmboxImageId() { return umboxImageId; }
+
+    public void setUmboxImageId(int umboxImageId) { this.umboxImageId = umboxImageId; }
+
     public int getDeviceId() {
         return deviceId;
     }
@@ -52,4 +59,5 @@ public class UmboxInstance {
         this.startedAt = startedAt;
     }
 
+    public void insert() { Postgres.insertUmboxInstance(this); }
 }

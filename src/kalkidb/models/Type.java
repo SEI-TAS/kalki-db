@@ -4,6 +4,8 @@ public class Type {
 
     private int id;
     private String name;
+    private byte[] policyFile;
+    private String policyFileName;
 
     public Type() {
 
@@ -12,6 +14,13 @@ public class Type {
     public Type(int id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    public Type(int id, String name, byte[] policyFile, String policyFileName) {
+        this.id = id;
+        this.name = name;
+        this.policyFile = policyFile;
+        this.policyFileName = policyFileName;
     }
 
     public int getId() {
@@ -30,4 +39,19 @@ public class Type {
         this.name = name;
     }
 
+    public byte[] getPolicyFile() {
+        return policyFile;
+    }
+
+    public void setPolicyFile(byte[] policyFile) {
+        this.policyFile = policyFile;
+    }
+
+    public String getPolicyFileName() {
+        return policyFileName;
+    }
+
+    public void setPolicyFileName(String policyFileName) {
+        this.policyFileName = policyFileName;
+    }
 }
