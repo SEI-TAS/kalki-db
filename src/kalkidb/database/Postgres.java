@@ -352,6 +352,7 @@ public class Postgres {
                 "id                 serial PRIMARY KEY, " +
                 "alerter_id         varchar(255) NOT NULL, " +
                 "umbox_image_id     int NOT NULL," +
+                "container_id       varchar(255) NOT NULL," +
                 "device_id          int NOT NULL, " +
                 "started_at         timestamp NOT NULL DEFAULT now()" +
                 ");"
@@ -1203,9 +1204,10 @@ public class Postgres {
             int id = rs.getInt("id");
             String alerterId = rs.getString("alerter_id");
             int imageId = rs.getInt("umbox_image_id");
+            String containerId = rs.getString("container_id");
             int deviceId = rs.getInt("device_id");
             Timestamp startedAt = rs.getTimestamp("started_at");
-            umboxInstance = new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
+            umboxInstance = new UmboxInstance(id, alerterId, imageId, containerId, deviceId, startedAt);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -1224,11 +1226,12 @@ public class Postgres {
            logger.info("Adding umbox instance: "+ u);
            PreparedStatement st = null;
            try{
-               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerterId, umbox_image_id, device_id, started_at) VALUES (?,?,?,?)");
+               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerterId, umbox_image_id, container_id, device_id, started_at) VALUES (?,?,?,?)");
                st.setString(1, u.getAlerterId());
                st.setInt(2, u.getUmboxImageId());
-               st.setInt(3, u.getDeviceId());
-               st.setTimestamp(4, u.getStartedAt());
+               st.setString(3, u.getContainerId());
+               st.setInt(4, u.getDeviceId());
+               st.setTimestamp(5, u.getStartedAt());
                st.executeUpdate();
            }
            catch (SQLException e){
@@ -1249,12 +1252,13 @@ public class Postgres {
             PreparedStatement st = null;
             try {
                 st = dbConn.prepareStatement("UPDATE umbox_instance " +
-                        "SET alerter_id = ?, umbox_image_id = ?, device_id = ?, started_at = ?" +
+                        "SET alerter_id = ?, umbox_image_id = ?, container_id = ?, device_id = ?, started_at = ?" +
                         "WHERE id = ?");
                 st.setString(1, u.getAlerterId());
                 st.setInt(2, u.getUmboxImageId());
-                st.setInt(3, u.getDeviceId());
-                st.setTimestamp(4, u.getStartedAt());
+                st.setString(3, u.getContainerId());
+                st.setInt(4, u.getDeviceId());
+                st.setTimestamp(5, u.getStartedAt());
                 st.executeUpdate();
             }
             catch (SQLException e) {

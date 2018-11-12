@@ -8,6 +8,7 @@ public class UmboxInstance {
     private int id;
     private String alerterId;
     private int umboxImageId;
+    private String containerId;
     private int deviceId;
     private Timestamp startedAt;
 
@@ -15,10 +16,11 @@ public class UmboxInstance {
 
     }
 
-    public UmboxInstance(int id, String alerterId, int umboxImageId, int deviceId, Timestamp startedAt) {
+    public UmboxInstance(int id, String alerterId, int umboxImageId, String containerId, int deviceId, Timestamp startedAt) {
         this.id = id;
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
+        this.containerId = containerId;
         this.deviceId = deviceId;
         this.startedAt = startedAt;
     }
@@ -42,6 +44,14 @@ public class UmboxInstance {
     public int getUmboxImageId() { return umboxImageId; }
 
     public void setUmboxImageId(int umboxImageId) { this.umboxImageId = umboxImageId; }
+
+    public String getContainerId() {
+        return containerId;
+    }
+
+    public void setContainerId(String containerId){
+        this.containerId = containerId;
+    }
 
     public int getDeviceId() {
         return deviceId;

@@ -176,7 +176,8 @@ Device device = Postgres.findDevice(deviceId);
 |---------------:|:---------|
 |id              |String    |  
 |alerterId       |String    |
-|umboxImageId    |String    | 
+|umboxImageId    |String    |
+|containerId     |String    | 
 |deviceId        |int       |
 |startedAt       |Timestamp |
 |containerId     |String    |
