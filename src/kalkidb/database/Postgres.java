@@ -456,6 +456,10 @@ public class Postgres {
         });
     }
 
+    /*
+        Generic DB Actions
+    */
+
     /**
      * Finds a database entry in a given table by id
      * @param id id of the entry to find
@@ -514,99 +518,149 @@ public class Postgres {
         return rs;
     }
 
-    /*
-     *     DeviceHistory specific methods
-     */
     /**
-     * Finds all DeviceHistories in the database.
-     * @return a list of all DeviceHistories in the database.
+     * Saves given tag/type/group to the database.
+     * @param name name of the tag/type/group to be inserted.
+     * @param table one of tag, type, or group where the name should be inserted.
+     * @return auto incremented id
      */
-    public static CompletionStage<List<DeviceHistory>> getAllDeviceHistories() {
+    public static CompletionStage<Integer> addRowToTable(String table, String name) {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = getAllFromTable("device_history");
-            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
+            PreparedStatement st = null;
             try {
-                while (rs.next()) {
-                    deviceHistories.add(rsToDeviceHistory(rs));
+                st = dbConn.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
+                st.setString(1, name);
+                st.executeUpdate();
+
+                int serialNum = 0;
+                Statement stmt = dbConn.createStatement();
+
+                // get the postgresql serial field value with this query
+                String query = String.format("select currval('%s_id_seq')", table);
+                ResultSet rs = stmt.executeQuery(query);
+                if ( rs.next() )
+                {
+                    serialNum = rs.getInt(1);
+                    return serialNum;
                 }
-                rs.close();
-            } catch (SQLException e) {
-                logger.severe("Sql exception getting all device histories.");
+                stmt.close();
             }
-            return deviceHistories;
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Error adding row to table: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+            return -1;
         });
     }
 
     /**
-     * Finds all DeviceHistories from the database for the given device.
-     * @param deviceId the id of the device.
-     * @return a list of all DeviceHistories in the database where the device_id field is equal to deviceId.
+     * Delete a row with the given id from the given table
+     * @param table The name of the table for the row to be deleted
+     * @param id The id of the row to be deleted
+     * @return True if the deletion was successful
      */
-    public static CompletionStage<List<DeviceHistory>> getDeviceHistory(int deviceId) {
+    public static CompletionStage<Boolean> deleteById(String table, int id) {
         return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Deleting by id = %d in %s", id, table));
             PreparedStatement st = null;
-            ResultSet rs = null;
-            if (dbConn == null) {
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return null;
-            }
             try {
-                st = dbConn.prepareStatement("SELECT * FROM device_history WHERE device_id = ?");
-                st.setInt(1, deviceId);
+                st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
+                st.setInt(1, id);
+                st.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return false;
+        });
+    }
+
+    /*
+     *      AlertHistory specific actions.
+     */
+    /**
+     * Finds an AlertHistory from the databse with the given id
+     * @param id The id of the desired AlertHistory
+     * @return An AlertHistory with desired id
+     */
+    public static CompletionStage<AlertHistory> findAlertHistory(int id) {
+        return findById(id, "alert_history").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                return rsToAlertHistory(rs);
+            }
+        });
+    }
+
+    /**
+     * Finds all AlertHistories from the database for the given list of UmboxInstance alerterIds.
+     * @param alerterIds a list of alerterIds of UmboxInstances.
+     * @return a list of all AlertHistories in the database where the the alert was created by a UmboxInstance with
+     *         alerterId in alerterIds.
+     */
+    public static List<AlertHistory> findAlertHistories(List<String> alerterIds) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        List<AlertHistory> alertHistories = new ArrayList<AlertHistory>();
+        for(String alerterId : alerterIds) {
+            try {
+                st = dbConn.prepareStatement("SELECT * FROM alert_history WHERE alerter_id = ?");
+                st.setString(1, alerterId);
                 rs = st.executeQuery();
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error getting device histories: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
             }
-            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
             try {
                 while (rs.next()) {
-                    deviceHistories.add(rsToDeviceHistory(rs));
+                    alertHistories.add(rsToAlertHistory(rs));
                 }
             } catch (SQLException e) {
-                logger.severe("Sql exception getting all device histories: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
             } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                } catch (Exception e) {
-                }
-                try {
-                    if (st != null) {
-                        st.close();
-                    }
-                } catch (Exception e) {
-                }
+                try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+                try { if (st != null) { st.close(); } } catch (Exception e) {}
             }
-            return deviceHistories;
-        });
+        }
+        return alertHistories;
     }
 
     /**
-     * Extract a DeviceHistory from the result set of a database query.
-     * @param rs ResultSet from a DeviceHistory query.
-     * @return The DeviceHistory that was found.
+     * Extract an AlertHistory from the result set of a database query.
+     * @param rs ResultSet from a AlertHistory query.
+     * @return The AlertHistory that was found.
      */
-    private static DeviceHistory rsToDeviceHistory(ResultSet rs){
-        DeviceHistory deviceHistory = null;
+    private static AlertHistory rsToAlertHistory(ResultSet rs){
+        AlertHistory alertHistory = null;
         try{
-            int deviceId = rs.getInt(1);
-            Map<String, String> attributes = HStoreConverter.fromString(rs.getString(2));
-            Timestamp timestamp = rs.getTimestamp(3);
-            int historyId = rs.getInt(4);
-
-            deviceHistory = new DeviceHistory(deviceId, attributes, timestamp, historyId);
+            int id = rs.getInt("id");
+            Timestamp timestamp = rs.getTimestamp("received_at");
+            String alerterId = rs.getString("alerter_id");
+            String name = rs.getString("info");
+            alertHistory = new AlertHistory(id, timestamp, alerterId, name);
         }
-        catch(SQLException e){
+        catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to AlertHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return deviceHistory;
+        return alertHistory;
     }
 
-    public static CompletionStage<Integer> insertAlertHistory(AlertHistory alertHistory)
-    {
+    /**
+     * Insert a row into the alert_history table
+     * @param alertHistory The AlertHistory to be added
+     * @return 0 for succesful insert. -1 on error
+     */
+    public static CompletionStage<Integer> insertAlertHistory(AlertHistory alertHistory) {
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Inserting alert_history: " + alertHistory.toString());
             if(dbConn == null){
@@ -631,117 +685,102 @@ public class Postgres {
         });
     }
 
-    /**
-     * Saves given DeviceHistory to the database.
-     * @param deviceHistory DeviceHistory to be inserted.
-     * @return auto incremented id
+    /*
+     *       Device specific actions
      */
-    public static CompletionStage<Integer> insertDeviceHistory(DeviceHistory deviceHistory){
-        return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting device_history: " + deviceHistory.toString());
-            if(dbConn == null){
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return -1;
-            }
-            try{
-                PreparedStatement update = dbConn.prepareStatement
-                        ("INSERT INTO device_history(device_id, attributes, timestamp) values(?,?,?)");
-                update.setInt(1, deviceHistory.deviceId);
-                update.setObject(2, deviceHistory.attributes);
-                update.setTimestamp(3, deviceHistory.timestamp);
-
-                update.executeUpdate();
-
-                int serialNum = 0;
-                Statement stmt = dbConn.createStatement();
-
-                // get the postgresql serial field value with this query
-                String query = "select currval('device_id_seq')";
-                ResultSet rs = stmt.executeQuery(query);
-                if ( rs.next() )
-                {
-                    serialNum = rs.getInt(1);
-                    return serialNum;
-                }
-                stmt.close();
-            }
-            catch(Exception e){
-                e.printStackTrace();
-                logger.severe("Error inserting DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            return -1;
-        });
-    }
-
     /**
-     * Updates DeviceHistory with given id to have the parameters of the given DeviceHistory.
-     * @param deviceHistory DeviceHistory holding new parameters to be saved in the database.
+     * Finds a Device from the database by its id.
+     * @param id id of the Device to find.
+     * @return the Device if it exists in the database, else null.
      */
-    public static CompletionStage<Integer> updateDeviceHistory(DeviceHistory deviceHistory){
-        return CompletableFuture.supplyAsync(() -> {
-            logger.info("Updating DeviceHistory with id=" + deviceHistory.id);
-            if (dbConn == null) {
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return -1;
-            }
-            try {
-                PreparedStatement update = dbConn.prepareStatement
-                        ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
-                                "WHERE id=?");
-
-                update.setInt(1, deviceHistory.deviceId);
-                update.setObject(2, deviceHistory.attributes);
-                update.setTimestamp(3, deviceHistory.timestamp);
-                update.setInt(4, deviceHistory.id);
-                update.setInt(5, deviceHistory.id);
-
-                update.executeUpdate();
-                return deviceHistory.id;
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating DeviceHistory: " + e.getClass().getName() + ": " + e.getMessage());
-                return -1;
-            }
-        });
-    }
-
-    /**
-     * First, attempts to find the DeviceHistory in the database.
-     * If successful, updates the existing DeviceHistory with the given DeviceHistory's parameters Otherwise,
-     * inserts the given DeviceHistory.
-     * @param deviceHistory DeviceHistory to be inserted or updated.
-     */
-    public static CompletionStage<Integer> insertOrUpdateDeviceHistory(DeviceHistory deviceHistory){
-        return findDeviceHistory(deviceHistory.id).thenApplyAsync(d -> {
-            if(d == null) {
-                insertDeviceHistory(deviceHistory);
-                return 0;
-            } else {
-                updateDeviceHistory(deviceHistory);
-                return 1;
-            }
-        });
-    }
-
-
-    /**
-     * Finds a DeviceHistory from the database by its id.
-     * @param id id of the DeviceHistory to find.
-     * @return the DeviceHistory if it exists in the database, else null.
-     */
-    public static CompletionStage<DeviceHistory> findDeviceHistory(int id){
-        return findById(id, "device_history").thenApplyAsync(rs -> {
+    public static CompletionStage<Device> findDevice(int id){
+        logger.info("Finding device with id = " + id);
+        return findById(id, "device").thenApplyAsync(rs -> {
             if(rs == null) {
                 return null;
             } else {
-                return rsToDeviceHistory(rs);
+                Device device = rsToDevice(rs);
+                PreparedStatement st = null;
+                ResultSet tagRs = null;
+
+                try {
+                    st = dbConn.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?");
+                    st.setInt(1, id);
+                    tagRs = st.executeQuery();
+
+                    List<Integer> tagIds = new ArrayList<Integer>();
+                    while(tagRs.next()) {
+                        tagIds.add(tagRs.getInt(2));
+                    }
+                    device.setTagIds(tagIds);
+                }
+                catch(SQLException e) {
+                    e.printStackTrace();
+                    logger.severe("Error finding device by id: " + e.getClass().getName()+": "+e.getMessage());
+                }
+                finally {
+                    try { if (tagRs != null) tagRs.close(); } catch (Exception e) {}
+                    try { if (st != null) st.close(); } catch (Exception e) {}
+                }
+                return device;
             }
         });
     }
 
-    /*
-     *       Device specific methods
+    /**
+     * Finds all Devices in the database.
+     * @return a list of all Devices in the database.
      */
+    public static CompletionStage<List<Device>> findAllDevices(){
+        return CompletableFuture.supplyAsync(() -> {
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            List<Device> devices = new ArrayList<Device>();
+            try{
+                Statement st = dbConn.createStatement();
+                ResultSet rs = st.executeQuery("SELECT * FROM device");
+                while (rs.next())
+                {
+                    devices.add(rsToDevice(rs));
+                }
+                rs.close();
+                st.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting all Devices: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return devices;
+        });
+    }
+
+    /**
+     * Extract a Device from the result set of a database query.
+     * @param rs ResultSet from a Device query.
+     * @return The Device that was found.
+     */
+    private static Device rsToDevice(ResultSet rs){
+        Device device = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            String description = rs.getString(3);
+            int typeId = rs.getInt(4);
+            int groupId = rs.getInt(5);
+            String ip = rs.getString(6);
+            int historySize = rs.getInt(7);
+            int samplingRate = rs.getInt(8);
+
+            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to Device: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return device;
+    }
 
     /**
      * Saves given Device to the database.
@@ -798,6 +837,24 @@ public class Postgres {
     }
 
     /**
+     * First, attempts to find the Device in the database.
+     * If successful, updates the existing Device with the given Device's parameters Otherwise,
+     * inserts the given Device.
+     * @param device Device to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateDevice(Device device){
+        return findDevice(device.getId()).thenApplyAsync(d -> {
+            if(d == null) {
+                insertDevice(device);
+                return 0;
+            } else {
+                updateDevice(device);
+                return 1;
+            }
+        });
+    }
+
+    /**
      * Updates Device with given id to have the parameters of the given Device.
      * @param device Device holding new parameters to be saved in the database.
      * @return the id of the updated device
@@ -843,118 +900,6 @@ public class Postgres {
     }
 
     /**
-     * Finds all Devices in the database.
-     * @return a list of all Devices in the database.
-     */
-    public static CompletionStage<List<Device>> getAllDevices(){
-        return CompletableFuture.supplyAsync(() -> {
-            if(dbConn == null){
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return null;
-            }
-            List<Device> devices = new ArrayList<Device>();
-            try{
-                Statement st = dbConn.createStatement();
-                ResultSet rs = st.executeQuery("SELECT * FROM device");
-                while (rs.next())
-                {
-                    devices.add(rsToDevice(rs));
-                }
-                rs.close();
-                st.close();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error getting all Devices: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            return devices;
-        });
-    }
-
-    /**
-     * Extract a Device from the result set of a database query.
-     * @param rs ResultSet from a Device query.
-     * @return The Device that was found.
-     */
-    private static Device rsToDevice(ResultSet rs){
-        Device device = null;
-        try{
-            int id = rs.getInt(1);
-            String name = rs.getString(2);
-            String description = rs.getString(3);
-            int typeId = rs.getInt(4);
-            int groupId = rs.getInt(5);
-            String ip = rs.getString(6);
-            int historySize = rs.getInt(7);
-            int samplingRate = rs.getInt(8);
-
-            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate);
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            logger.severe("Error converting rs to Device: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return device;
-    }
-
-    /**
-     * First, attempts to find the Device in the database.
-     * If successful, updates the existing Device with the given Device's parameters Otherwise,
-     * inserts the given Device.
-     * @param device Device to be inserted or updated.
-     */
-    public static CompletionStage<Integer> insertOrUpdateDevice(Device device){
-        return findDevice(device.getId()).thenApplyAsync(d -> {
-            if(d == null) {
-                insertDevice(device);
-                return 0;
-            } else {
-                updateDevice(device);
-                return 1;
-            }
-        });
-    }
-
-    /**
-     * Finds a Device from the database by its id.
-     * @param id id of the Device to find.
-     * @return the Device if it exists in the database, else null.
-     */
-    public static CompletionStage<Device> findDevice(int id){
-        logger.info("Finding device with id = " + id);
-        return findById(id, "device").thenApplyAsync(rs -> {
-            if(rs == null) {
-                return null;
-            } else {
-                Device device = rsToDevice(rs);
-                PreparedStatement st = null;
-                ResultSet tagRs = null;
-
-                try {
-                    st = dbConn.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?");
-                    st.setInt(1, id);
-                    tagRs = st.executeQuery();
-
-                    List<Integer> tagIds = new ArrayList<Integer>();
-                    while(tagRs.next()) {
-                        tagIds.add(tagRs.getInt(2));
-                    }
-                    device.setTagIds(tagIds);
-                }
-                catch(SQLException e) {
-                    e.printStackTrace();
-                    logger.severe("Error finding device by id: " + e.getClass().getName()+": "+e.getMessage());
-                }
-                finally {
-                    try { if (tagRs != null) tagRs.close(); } catch (Exception e) {}
-                    try { if (st != null) st.close(); } catch (Exception e) {}
-                }
-                return device;
-            }
-        });
-    }
-
-    /**
      * Deletes a Device by its id.
      * @param id id of the Device to delete.
      * @return true if the deletion succeeded, false otherwise.
@@ -980,424 +925,206 @@ public class Postgres {
     }
 
     /*
-     *      StateHistory specific methods
+     *     DeviceHistory specific actions
      */
-
     /**
-     * Finds all StateHistories from the database for the given device.
-     * @param deviceId the id of the device.
-     * @return a list of all StateHistories in the database where the device_id field is equal to deviceId.
+     * Finds a DeviceHistory from the database by its id.
+     * @param id id of the DeviceHistory to find.
+     * @return the DeviceHistory if it exists in the database, else null.
      */
-    public static CompletionStage<List<StateHistory>> getStateHistory(int deviceId) {
-        return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
-            ResultSet rs = null;
-            if(dbConn == null){
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return null;
-            }
-            try{
-                st = dbConn.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
-                st.setInt(1, deviceId);
-                rs = st.executeQuery();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error getting state histories: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            List<StateHistory> stateHistories = new ArrayList<StateHistory>();
-            try {
-                while (rs.next()) {
-                    stateHistories.add(rsToStateHistory(rs));
-                }
-            }
-            catch(SQLException e) {
-                logger.severe("Sql exception getting all state histories: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            finally {
-                try { if(rs != null) { rs.close(); } } catch(Exception e) {}
-                try { if(st != null) { st.close(); } } catch(Exception e) {}
-            }
-            return stateHistories;
-        });
-    }
-
-    /**
-     * Extract a StateHistory from the result set of a database query.
-     * @param rs ResultSet from a StateHistory query.
-     * @return The StateHistory that was found.
-     */
-    private static StateHistory rsToStateHistory(ResultSet rs){
-        StateHistory stateHistory = null;
-        try{
-            int id = rs.getInt(1);
-            int deviceId = rs.getInt(2);
-            Timestamp timestamp = rs.getTimestamp(3);
-            String state = rs.getString(4);
-            stateHistory = new StateHistory(id, deviceId, timestamp, state);
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            logger.severe("Error converting rs to StateHistory: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return stateHistory;
-    }
-
-    /*
-     *      AlertHistory specific methods.
-     */
-
-    /**
-     * Finds all AlertHistories from the database for the given list of UmboxInstance alerterIds.
-     * @param alerterIds a list of alerterIds of UmboxInstances.
-     * @return a list of all AlertHistories in the database where the the alert was created by a UmboxInstance with
-     *         alerterId in alerterIds.
-     */
-    public static List<AlertHistory> getAlertHistory(List<String> alerterIds) {
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        if(dbConn == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
-        List<AlertHistory> alertHistories = new ArrayList<AlertHistory>();
-        for(String alerterId : alerterIds) {
-            try {
-                st = dbConn.prepareStatement("SELECT * FROM alert_history WHERE alerter_id = ?");
-                st.setString(1, alerterId);
-                rs = st.executeQuery();
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
-            }
-            try {
-                while (rs.next()) {
-                    alertHistories.add(rsToAlertHistory(rs));
-                }
-            } catch (SQLException e) {
-                logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
-            } finally {
-                try { if (rs != null) { rs.close(); } } catch (Exception e) {}
-                try { if (st != null) { st.close(); } } catch (Exception e) {}
-            }
-        }
-        return alertHistories;
-    }
-
-    /**
-     * Finds an AlertHistory from the databse with the given id
-     * @param id The id of the desired AlertHistory
-     * @return An AlertHistory with desired id
-     */
-    public static CompletionStage<AlertHistory> getAlertHistory(int id) {
-        return findById(id, "alert_history").thenApplyAsync(rs -> {
+    public static CompletionStage<DeviceHistory> findDeviceHistory(int id){
+        return findById(id, "device_history").thenApplyAsync(rs -> {
             if(rs == null) {
                 return null;
             } else {
-                return rsToAlertHistory(rs);
+                return rsToDeviceHistory(rs);
             }
         });
     }
 
     /**
-     * Extract an AlertHistory from the result set of a database query.
-     * @param rs ResultSet from a AlertHistory query.
-     * @return The AlertHistory that was found.
-     */
-    private static AlertHistory rsToAlertHistory(ResultSet rs){
-        AlertHistory alertHistory = null;
-        try{
-            int id = rs.getInt("id");
-            Timestamp timestamp = rs.getTimestamp("received_at");
-            String alerterId = rs.getString("alerter_id");
-            String name = rs.getString("info");
-            alertHistory = new AlertHistory(id, timestamp, alerterId, name);
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            logger.severe("Error converting rs to AlertHistory: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return alertHistory;
-    }
-
-    /**
-     * Finds all UmboxInstances from the database for the given device.
+     * Finds all DeviceHistories from the database for the given device.
      * @param deviceId the id of the device.
-     * @return a list of all UmboxInstaces in the database where the device_id field is equal to deviceId.
+     * @return a list of all DeviceHistories in the database where the device_id field is equal to deviceId.
      */
-    public static CompletionStage<List<UmboxInstance>> getUmboxInstances(int deviceId) {
+    public static CompletionStage<List<DeviceHistory>> findDeviceHistories(int deviceId) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
-            if(dbConn == null){
+            if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
-            try{
-                st = dbConn.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?");
+            try {
+                st = dbConn.prepareStatement("SELECT * FROM device_history WHERE device_id = ?");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error getting UmboxInstances: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("Error getting device histories: " + e.getClass().getName() + ": " + e.getMessage());
             }
-            List<UmboxInstance> umboxInstances = new ArrayList<UmboxInstance>();
+            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
             try {
                 while (rs.next()) {
-                    umboxInstances.add(rsToUmboxInstance(rs));
+                    deviceHistories.add(rsToDeviceHistory(rs));
+                }
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device histories: " + e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                } catch (Exception e) {
+                }
+                try {
+                    if (st != null) {
+                        st.close();
+                    }
+                } catch (Exception e) {
                 }
             }
-            catch(SQLException e) {
-                logger.severe("Sql exception getting all UmboxInstances: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            finally {
-                try { if(rs != null) { rs.close(); } } catch(Exception e) {}
-                try { if(st != null) { st.close(); } } catch(Exception e) {}
-            }
-            return umboxInstances;
+            return deviceHistories;
         });
     }
 
     /**
-     * Find a umbox instance by its alerter id
-     * @param id The ID of desired UmboxInstance
-     * @return The desired UmboxInstance
+     * Finds all DeviceHistories in the database.
+     * @return a list of all DeviceHistories in the database.
      */
-    public static CompletionStage<UmboxInstance> getUmboxInstance(String alerterId){
+    public static CompletionStage<List<DeviceHistory>> findAllDeviceHistories() {
         return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
-            ResultSet rs = null;
-            if(dbConn == null){
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return null;
-            }
-            try{
-                st = dbConn.prepareStatement(String.format("SELECT * FROM umbox_instance WHERE alerter_id = ?"));
-                st.setString(1, alerterId);
-                rs = st.executeQuery();
-                // Moves the result set to the first row if it exists. Returns null otherwise.
-                if(!rs.next()) {
-                    return null;
-                }
-                // closes rs. Need to close it somewhere else
-//            st.close();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Exception finding by ID: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            return rsToUmboxInstance(rs);
-        });
-
-    }
-
-
-    /**
-     * Extract a UmboxInstance from the result set of a database query.
-     * @param rs ResultSet from a UmboxInstance query.
-     * @return The UmboxInstance that was found.
-     */
-    private static UmboxInstance rsToUmboxInstance(ResultSet rs){
-        UmboxInstance umboxInstance = null;
-        try{
-            int id = rs.getInt("id");
-            String alerterId = rs.getString("alerter_id");
-            int imageId = rs.getInt("umbox_image_id");
-            String containerId = rs.getString("container_id");
-            int deviceId = rs.getInt("device_id");
-            Timestamp startedAt = rs.getTimestamp("started_at");
-            umboxInstance = new UmboxInstance(id, alerterId, imageId, containerId, deviceId, startedAt);
-        }
-        catch(Exception e){
-            e.printStackTrace();
-            logger.severe("Error converting rs to UmboxInstance: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return umboxInstance;
-    }
-
-    /**
-     * Adds the desired UmboxInstance to the database
-     * @param u UmboxInstance to add
-     * @return
-     */
-    public static CompletionStage<Void> insertUmboxInstance(UmboxInstance u){
-        return CompletableFuture.runAsync(() -> {
-           logger.info("Adding umbox instance: "+ u);
-           PreparedStatement st = null;
-           try{
-               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerterId, umbox_image_id, container_id, device_id, started_at) VALUES (?,?,?,?)");
-               st.setString(1, u.getAlerterId());
-               st.setInt(2, u.getUmboxImageId());
-               st.setString(3, u.getContainerId());
-               st.setInt(4, u.getDeviceId());
-               st.setTimestamp(5, u.getStartedAt());
-               st.executeUpdate();
-           }
-           catch (SQLException e){
-               e.printStackTrace();
-               logger.severe("SQL exception adding umbox instance: " + e.getClass().getName()+": "+e.getMessage());
-           }
-        });
-    }
-
-    /**
-     * Edit desired UmboxInstance
-     * @param u The instance to be updated
-     * @return
-     */
-    public static CompletionStage<Void> editUmboxInstance(UmboxInstance u) {
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Editing umbox intance: " + u);
-            PreparedStatement st = null;
-            try {
-                st = dbConn.prepareStatement("UPDATE umbox_instance " +
-                        "SET alerter_id = ?, umbox_image_id = ?, container_id = ?, device_id = ?, started_at = ?" +
-                        "WHERE id = ?");
-                st.setString(1, u.getAlerterId());
-                st.setInt(2, u.getUmboxImageId());
-                st.setString(3, u.getContainerId());
-                st.setInt(4, u.getDeviceId());
-                st.setTimestamp(5, u.getStartedAt());
-                st.executeUpdate();
-            }
-            catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("SQL exception editing umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            catch (NumberFormatException e) {}
-            finally {
-                try { if(st != null) st.close(); } catch (Exception e) {}
-            }
-        });
-    }
-
-    /**
-     * Deletes a UmboxInstance by its id.
-     * @param id id of the UmboxInstance to delete.
-     * @return true if the deletion succeeded, false otherwise.
-     */
-    public static CompletionStage<Boolean> deleteUmboxInstance(int id) {
-        return CompletableFuture.supplyAsync(() -> {
-            logger.info(String.format("Deleting UmboxInstance with id = %d", id));
-            PreparedStatement st = null;
-            try {
-                st = dbConn.prepareStatement("DELETE FROM umbox_instance WHERE id = ?");
-                st.setInt(1, id);
-                st.executeUpdate();
-                return true;
-            } catch (SQLException e) {
-            } finally {
-                try { if (st != null) st.close(); } catch (Exception e) {}
-            }
-            return false;
-        });
-    }
-
-    public static CompletionStage<Void> addUmboxImage(UmboxImage u) {
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Adding umbox image: " + u);
-            PreparedStatement st = null;
-            try {
-                st = dbConn.prepareStatement("INSERT INTO umbox_image (name, path) VALUES (?, ?)");
-                st.setString(1, u.getName());
-                st.setString(2, u.getPath());
-                st.executeUpdate();
-            }
-            catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("SQL exception adding umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            finally {
-                try { if(st != null) st.close(); } catch (Exception e) {}
-            }
-        });
-    }
-
-    public static CompletionStage<Void> editUmboxImage(UmboxImage u) {
-        return CompletableFuture.runAsync(() -> {
-            logger.info("Editing umbox image: " + u);
-            PreparedStatement st = null;
-            try {
-                st = dbConn.prepareStatement("UPDATE umbox_image " +
-                        "SET name = ?, path = ? " +
-                        "WHERE id = ?");
-                st.setString(1, u.getName());
-                st.setString(2, u.getPath());
-                st.setInt(3, u.getId());
-                st.executeUpdate();
-            }
-            catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("SQL exception editing umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            catch (NumberFormatException e) {}
-            finally {
-                try { if(st != null) st.close(); } catch (Exception e) {}
-            }
-        });
-    }
-
-    public static CompletionStage<Boolean> deleteById(String table, int id) {
-        return CompletableFuture.supplyAsync(() -> {
-            logger.info(String.format("Deleting by id = %d in %s", id, table));
-            PreparedStatement st = null;
-            try {
-                st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
-                st.setInt(1, id);
-                st.executeUpdate();
-                return true;
-            } catch (SQLException e) {
-            } finally {
-                try { if (st != null) st.close(); } catch (Exception e) {}
-            }
-            return false;
-        });
-    }
-
-    /**
-     * Finds all UmboxImages in the database.
-     * @return a list of all UmboxImages in the database.
-     */
-    public static CompletionStage<List<UmboxImage>> getAllUmboxImages() {
-        return CompletableFuture.supplyAsync(() -> {
-            logger.info("Getting umbox images.");
-            ResultSet rs = getAllFromTable("umbox_image");
-            List<UmboxImage> umboxImages = new ArrayList<UmboxImage>();
+            ResultSet rs = getAllFromTable("device_history");
+            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
             try {
                 while (rs.next()) {
-                    umboxImages.add(rsToUmboxImage(rs));
+                    deviceHistories.add(rsToDeviceHistory(rs));
                 }
                 rs.close();
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device histories.");
             }
-            catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("Sql exception getting all umbox images: " + e.getClass().getName()+": "+e.getMessage());
-            }
-            return umboxImages;
+            return deviceHistories;
         });
     }
 
     /**
-     * Extract a UmboxImage from the result set of a database query.
-     * @param rs ResultSet from a UmboxImage query.
-     * @return The first UmboxImage in rs.
+     * Extract a DeviceHistory from the result set of a database query.
+     * @param rs ResultSet from a DeviceHistory query.
+     * @return The DeviceHistory that was found.
      */
-    private static UmboxImage rsToUmboxImage(ResultSet rs){
-        UmboxImage umboxImage = null;
+    private static DeviceHistory rsToDeviceHistory(ResultSet rs){
+        DeviceHistory deviceHistory = null;
         try{
-            int id = rs.getInt(1);
-            String name = rs.getString(2);
-            String path = rs.getString(3);
-            umboxImage = new UmboxImage(id, name, path);
+            int deviceId = rs.getInt(1);
+            Map<String, String> attributes = HStoreConverter.fromString(rs.getString(2));
+            Timestamp timestamp = rs.getTimestamp(3);
+            int historyId = rs.getInt(4);
+
+            deviceHistory = new DeviceHistory(deviceId, attributes, timestamp, historyId);
         }
-        catch(Exception e){
+        catch(SQLException e){
             e.printStackTrace();
-            logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return umboxImage;
+        return deviceHistory;
     }
 
+    /**
+     * Saves given DeviceHistory to the database.
+     * @param deviceHistory DeviceHistory to be inserted.
+     * @return auto incremented id
+     */
+    public static CompletionStage<Integer> insertDeviceHistory(DeviceHistory deviceHistory){
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting device_history: " + deviceHistory.toString());
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try{
+                PreparedStatement update = dbConn.prepareStatement
+                        ("INSERT INTO device_history(device_id, attributes, timestamp) values(?,?,?)");
+                update.setInt(1, deviceHistory.deviceId);
+                update.setObject(2, deviceHistory.attributes);
+                update.setTimestamp(3, deviceHistory.timestamp);
+
+                update.executeUpdate();
+
+                int serialNum = 0;
+                Statement stmt = dbConn.createStatement();
+
+                // get the postgresql serial field value with this query
+                String query = "select currval('device_id_seq')";
+                ResultSet rs = stmt.executeQuery(query);
+                if ( rs.next() )
+                {
+                    serialNum = rs.getInt(1);
+                    return serialNum;
+                }
+                stmt.close();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+                logger.severe("Error inserting DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * First, attempts to find the DeviceHistory in the database.
+     * If successful, updates the existing DeviceHistory with the given DeviceHistory's parameters Otherwise,
+     * inserts the given DeviceHistory.
+     * @param deviceHistory DeviceHistory to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateDeviceHistory(DeviceHistory deviceHistory){
+        return findDeviceHistory(deviceHistory.id).thenApplyAsync(d -> {
+            if(d == null) {
+                insertDeviceHistory(deviceHistory);
+                return 0;
+            } else {
+                updateDeviceHistory(deviceHistory);
+                return 1;
+            }
+        });
+    }
+
+    /**
+     * Updates DeviceHistory with given id to have the parameters of the given DeviceHistory.
+     * @param deviceHistory DeviceHistory holding new parameters to be saved in the database.
+     */
+    public static CompletionStage<Integer> updateDeviceHistory(DeviceHistory deviceHistory){
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Updating DeviceHistory with id=" + deviceHistory.id);
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try {
+                PreparedStatement update = dbConn.prepareStatement
+                        ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ?, id = ? " +
+                                "WHERE id=?");
+
+                update.setInt(1, deviceHistory.deviceId);
+                update.setObject(2, deviceHistory.attributes);
+                update.setTimestamp(3, deviceHistory.timestamp);
+                update.setInt(4, deviceHistory.id);
+                update.setInt(5, deviceHistory.id);
+
+                update.executeUpdate();
+                return deviceHistory.id;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error updating DeviceHistory: " + e.getClass().getName() + ": " + e.getMessage());
+                return -1;
+            }
+        });
+    }
+
+    /*
+     *      Group specific actions
+     */
     /**
      * Finds a Group from the database by its id.
      * @param id id of the Group to find.
@@ -1419,7 +1146,7 @@ public class Postgres {
      * Finds all Groups in the database.
      * @return a list of all Groups in the database.
      */
-    public static CompletionStage<List<Group>> getAllGroups() {
+    public static CompletionStage<List<Group>> findAllGroups() {
         return CompletableFuture.supplyAsync(() -> {
             ResultSet rs = getAllFromTable("device_group");
             List<Group> groups = new ArrayList<Group>();
@@ -1485,7 +1212,6 @@ public class Postgres {
         });
     }
 
-
     /**
      * Deletes a Group by its id.
      * @param id id of the Group to delete.
@@ -1508,55 +1234,77 @@ public class Postgres {
         });
     }
 
-
-    /**
-     * Finds all Types in the database.
-     * @return a list of all Types in the database.
+    /*
+     *      StateHistory specific actions
      */
-    public static CompletionStage<List<Type>> getAllTypes() {
+    /**
+     * Finds all StateHistories from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all StateHistories in the database where the device_id field is equal to deviceId.
+     */
+    public static CompletionStage<List<StateHistory>> findStateHistories(int deviceId) {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = getAllFromTable("type");
-            List<Type> types = new ArrayList<Type>();
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = dbConn.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting state histories: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            List<StateHistory> stateHistories = new ArrayList<StateHistory>();
             try {
                 while (rs.next()) {
-                    types.add(rsToType(rs));
+                    stateHistories.add(rsToStateHistory(rs));
                 }
             }
-            catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("SQLException getting all Types: " + e.getClass().getName()+": "+e.getMessage());
+            catch(SQLException e) {
+                logger.severe("Sql exception getting all state histories: " + e.getClass().getName()+": "+e.getMessage());
             }
             finally {
-                try { if(rs != null) rs.close(); } catch (Exception e) {}
+                try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+                try { if(st != null) { st.close(); } } catch(Exception e) {}
             }
-            return types;
+            return stateHistories;
         });
     }
 
     /**
-     * Extract a Type from the result set of a database query.
-     * @param rs ResultSet from a Type query.
-     * @return The first Type in rs.
+     * Extract a StateHistory from the result set of a database query.
+     * @param rs ResultSet from a StateHistory query.
+     * @return The StateHistory that was found.
      */
-    private static Type rsToType(ResultSet rs){
-        Type type = null;
+    private static StateHistory rsToStateHistory(ResultSet rs){
+        StateHistory stateHistory = null;
         try{
             int id = rs.getInt(1);
-            String name = rs.getString(2);
-            type = new Type(id, name);
+            int deviceId = rs.getInt(2);
+            Timestamp timestamp = rs.getTimestamp(3);
+            String state = rs.getString(4);
+            stateHistory = new StateHistory(id, deviceId, timestamp, state);
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to Type: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to StateHistory: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return type;
+        return stateHistory;
     }
 
+    /*
+     *      Tag specific actions
+     */
     /**
      * Finds all Tags in the database.
      * @return a list of all Tags in the database.
      */
-    public static CompletionStage<List<Tag>> getAllTags() {
+    public static CompletionStage<List<Tag>> findAllTags() {
         return CompletableFuture.supplyAsync(() -> {
             ResultSet rs = getAllFromTable("tag");
             List<Tag> tags = new ArrayList<Tag>();
@@ -1595,41 +1343,326 @@ public class Postgres {
         return tag;
     }
 
-    /**
-     * Saves given tag/type/group to the database.
-     * @param name name of the tag/type/group to be inserted.
-     * @param table one of tag, type, or group where the name should be inserted.
-     * @return auto incremented id
+    /*
+     *      Type specific actions
      */
-    public static CompletionStage<Integer> addRowToTable(String table, String name) {
+    /**
+     * Finds all Types in the database.
+     * @return a list of all Types in the database.
+     */
+    public static CompletionStage<List<Type>> findAllTypes() {
         return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
+            ResultSet rs = getAllFromTable("type");
+            List<Type> types = new ArrayList<Type>();
             try {
-                st = dbConn.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
-                st.setString(1, name);
-                st.executeUpdate();
-
-                int serialNum = 0;
-                Statement stmt = dbConn.createStatement();
-
-                // get the postgresql serial field value with this query
-                String query = String.format("select currval('%s_id_seq')", table);
-                ResultSet rs = stmt.executeQuery(query);
-                if ( rs.next() )
-                {
-                    serialNum = rs.getInt(1);
-                    return serialNum;
+                while (rs.next()) {
+                    types.add(rsToType(rs));
                 }
-                stmt.close();
             }
             catch (SQLException e) {
                 e.printStackTrace();
-                logger.severe("Error adding row to table: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("SQLException getting all Types: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(rs != null) rs.close(); } catch (Exception e) {}
+            }
+            return types;
+        });
+    }
+
+    /**
+     * Extract a Type from the result set of a database query.
+     * @param rs ResultSet from a Type query.
+     * @return The first Type in rs.
+     */
+    private static Type rsToType(ResultSet rs){
+        Type type = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            type = new Type(id, name);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to Type: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return type;
+    }
+
+    /*
+     *      UmboxImage specific actions
+     */
+    /**
+     * Finds all UmboxImages in the database.
+     * @return a list of all UmboxImages in the database.
+     */
+    public static CompletionStage<List<UmboxImage>> findAllUmboxImages() {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Getting umbox images.");
+            ResultSet rs = getAllFromTable("umbox_image");
+            List<UmboxImage> umboxImages = new ArrayList<UmboxImage>();
+            try {
+                while (rs.next()) {
+                    umboxImages.add(rsToUmboxImage(rs));
+                }
+                rs.close();
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Sql exception getting all umbox images: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return umboxImages;
+        });
+    }
+
+    /**
+     * Extract a UmboxImage from the result set of a database query.
+     * @param rs ResultSet from a UmboxImage query.
+     * @return The first UmboxImage in rs.
+     */
+    private static UmboxImage rsToUmboxImage(ResultSet rs){
+        UmboxImage umboxImage = null;
+        try{
+            int id = rs.getInt(1);
+            String name = rs.getString(2);
+            String path = rs.getString(3);
+            umboxImage = new UmboxImage(id, name, path);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return umboxImage;
+    }
+
+    /**
+     * Inserts given UmboxImage into the database
+     * @param u the UmboxImage to be inserted
+     * @return
+     */
+    public static CompletionStage<Void> insertUmboxImage(UmboxImage u) {
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Adding umbox image: " + u);
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("INSERT INTO umbox_image (name, path) VALUES (?, ?)");
+                st.setString(1, u.getName());
+                st.setString(2, u.getPath());
+                st.executeUpdate();
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQL exception adding umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
             }
             finally {
                 try { if(st != null) st.close(); } catch (Exception e) {}
             }
-            return -1;
+        });
+    }
+
+    /**
+     * Updates given UmboxImage in the database
+     * @param u the UmboxImage to be updated
+     * @return
+     */
+    public static CompletionStage<Void> updateUmboxImage(UmboxImage u) {
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Editing umbox image: " + u);
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("UPDATE umbox_image " +
+                        "SET name = ?, path = ? " +
+                        "WHERE id = ?");
+                st.setString(1, u.getName());
+                st.setString(2, u.getPath());
+                st.setInt(3, u.getId());
+                st.executeUpdate();
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQL exception editing umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            catch (NumberFormatException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+        });
+    }
+
+
+    /*
+     *      UmboxInstance specific actions
+     */
+    /**
+     * Find a umbox instance by its alerter id
+     * @param id The ID of desired UmboxInstance
+     * @return The desired UmboxInstance
+     */
+    public static CompletionStage<UmboxInstance> findUmboxInstance(String alerterId){
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = dbConn.prepareStatement(String.format("SELECT * FROM umbox_instance WHERE alerter_id = ?"));
+                st.setString(1, alerterId);
+                rs = st.executeQuery();
+                // Moves the result set to the first row if it exists. Returns null otherwise.
+                if(!rs.next()) {
+                    return null;
+                }
+                // closes rs. Need to close it somewhere else
+//            st.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Exception finding by ID: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            return rsToUmboxInstance(rs);
+        });
+
+    }
+
+    /**
+     * Finds all UmboxInstances from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all UmboxInstaces in the database where the device_id field is equal to deviceId.
+     */
+    public static CompletionStage<List<UmboxInstance>> findUmboxInstances(int deviceId) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try{
+                st = dbConn.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting UmboxInstances: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            List<UmboxInstance> umboxInstances = new ArrayList<UmboxInstance>();
+            try {
+                while (rs.next()) {
+                    umboxInstances.add(rsToUmboxInstance(rs));
+                }
+            }
+            catch(SQLException e) {
+                logger.severe("Sql exception getting all UmboxInstances: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+                try { if(st != null) { st.close(); } } catch(Exception e) {}
+            }
+            return umboxInstances;
+        });
+    }
+
+    /**
+     * Extract a UmboxInstance from the result set of a database query.
+     * @param rs ResultSet from a UmboxInstance query.
+     * @return The UmboxInstance that was found.
+     */
+    private static UmboxInstance rsToUmboxInstance(ResultSet rs){
+        UmboxInstance umboxInstance = null;
+        try{
+            int id = rs.getInt("id");
+            String alerterId = rs.getString("alerter_id");
+            int imageId = rs.getInt("umbox_image_id");
+            String containerId = rs.getString("container_id");
+            int deviceId = rs.getInt("device_id");
+            Timestamp startedAt = rs.getTimestamp("started_at");
+            umboxInstance = new UmboxInstance(id, alerterId, imageId, containerId, deviceId, startedAt);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to UmboxInstance: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return umboxInstance;
+    }
+
+    /**
+     * Adds the desired UmboxInstance to the database
+     * @param u UmboxInstance to add
+     * @return
+     */
+    public static CompletionStage<Void> insertUmboxInstance(UmboxInstance u){
+        return CompletableFuture.runAsync(() -> {
+           logger.info("Adding umbox instance: "+ u);
+           PreparedStatement st = null;
+           try{
+               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerterId, umbox_image_id, container_id, device_id, started_at) VALUES (?,?,?,?)");
+               st.setString(1, u.getAlerterId());
+               st.setInt(2, u.getUmboxImageId());
+               st.setString(3, u.getContainerId());
+               st.setInt(4, u.getDeviceId());
+               st.setTimestamp(5, u.getStartedAt());
+               st.executeUpdate();
+           }
+           catch (SQLException e){
+               e.printStackTrace();
+               logger.severe("SQL exception adding umbox instance: " + e.getClass().getName()+": "+e.getMessage());
+           }
+        });
+    }
+
+    /**
+     * Edit desired UmboxInstance
+     * @param u The instance to be updated
+     * @return
+     */
+    public static CompletionStage<Void> updateUmboxInstance(UmboxInstance u) {
+        return CompletableFuture.runAsync(() -> {
+            logger.info("Editing umbox intance: " + u);
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("UPDATE umbox_instance " +
+                        "SET alerter_id = ?, umbox_image_id = ?, container_id = ?, device_id = ?, started_at = ?" +
+                        "WHERE id = ?");
+                st.setString(1, u.getAlerterId());
+                st.setInt(2, u.getUmboxImageId());
+                st.setString(3, u.getContainerId());
+                st.setInt(4, u.getDeviceId());
+                st.setTimestamp(5, u.getStartedAt());
+                st.executeUpdate();
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQL exception editing umbox iamge: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            catch (NumberFormatException e) {}
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+        });
+    }
+
+    /**
+     * Deletes a UmboxInstance by its id.
+     * @param id id of the UmboxInstance to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static CompletionStage<Boolean> deleteUmboxInstance(int id) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Deleting UmboxInstance with id = %d", id));
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("DELETE FROM umbox_instance WHERE id = ?");
+                st.setInt(1, id);
+                st.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+            } finally {
+                try { if (st != null) st.close(); } catch (Exception e) {}
+            }
+            return false;
         });
     }
 
