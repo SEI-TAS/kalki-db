@@ -343,14 +343,14 @@ public class Postgres {
         executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
                 "id                 serial PRIMARY KEY," +
                 "received_at        timestamp NOT NULL DEFAULT now()," +
-                "umbox_external_id  varchar(255) NOT NULL," +
+                "alerter_id  varchar(255) NOT NULL," +
                 "info               varchar(255)" +
                 ");"
         );
 
         executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
                 "id                 serial PRIMARY KEY, " +
-                "umbox_external_id  varchar(255) NOT NULL, " +
+                "alerter_id         varchar(255) NOT NULL, " +
                 "umbox_image_id     int NOT NULL," +
                 "device_id          int NOT NULL, " +
                 "started_at         timestamp NOT NULL DEFAULT now()" +
@@ -614,8 +614,8 @@ public class Postgres {
             }
             try
             {
-                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history(umbox_external_id, info) VALUES (?,?);");
-                insertAlert.setString(1, alertHistory.getUmboxExternalId());
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history(alerter_id, info) VALUES (?,?);");
+                insertAlert.setString(1, alertHistory.getAlerterId());
                 insertAlert.setString(2, alertHistory.getInfo());
 
                 insertAlert.execute();
@@ -1047,12 +1047,12 @@ public class Postgres {
      */
 
     /**
-     * Finds all AlertHistories from the database for the given list of UmboxInstance externalIds.
-     * @param externalIds a list of externalIds of UmboxInstances.
+     * Finds all AlertHistories from the database for the given list of UmboxInstance alerterIds.
+     * @param alerterIds a list of alerterIds of UmboxInstances.
      * @return a list of all AlertHistories in the database where the the alert was created by a UmboxInstance with
-     *         externalId in externalIds.
+     *         alerterId in alerterIds.
      */
-    public static List<AlertHistory> getAlertHistory(List<String> externalIds) {
+    public static List<AlertHistory> getAlertHistory(List<String> alerterIds) {
         PreparedStatement st = null;
         ResultSet rs = null;
         if(dbConn == null){
@@ -1060,10 +1060,10 @@ public class Postgres {
             return null;
         }
         List<AlertHistory> alertHistories = new ArrayList<AlertHistory>();
-        for(String externalId : externalIds) {
+        for(String alerterId : alerterIds) {
             try {
-                st = dbConn.prepareStatement("SELECT * FROM alert_history WHERE umbox_external_id = ?");
-                st.setString(1, externalId);
+                st = dbConn.prepareStatement("SELECT * FROM alert_history WHERE alerter_id = ?");
+                st.setString(1, alerterId);
                 rs = st.executeQuery();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1108,9 +1108,9 @@ public class Postgres {
         try{
             int id = rs.getInt("id");
             Timestamp timestamp = rs.getTimestamp("received_at");
-            String externalId = rs.getString("umbox_external_id");
+            String alerterId = rs.getString("alerter_id");
             String name = rs.getString("info");
-            alertHistory = new AlertHistory(id, timestamp, externalId, name);
+            alertHistory = new AlertHistory(id, timestamp, alerterId, name);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -1159,11 +1159,11 @@ public class Postgres {
     }
 
     /**
-     * Find a umbox instance by its external id
+     * Find a umbox instance by its alerter id
      * @param id The ID of desired UmboxInstance
      * @return The desired UmboxInstance
      */
-    public static CompletionStage<UmboxInstance> getUmboxInstance(String externalId){
+    public static CompletionStage<UmboxInstance> getUmboxInstance(String alerterId){
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
@@ -1172,8 +1172,8 @@ public class Postgres {
                 return null;
             }
             try{
-                st = dbConn.prepareStatement(String.format("SELECT * FROM umbox_instance WHERE umbox_external_id = ?"));
-                st.setString(1, externalId);
+                st = dbConn.prepareStatement(String.format("SELECT * FROM umbox_instance WHERE alerter_id = ?"));
+                st.setString(1, alerterId);
                 rs = st.executeQuery();
                 // Moves the result set to the first row if it exists. Returns null otherwise.
                 if(!rs.next()) {
@@ -1201,11 +1201,11 @@ public class Postgres {
         UmboxInstance umboxInstance = null;
         try{
             int id = rs.getInt("id");
-            String umboxExternalId = rs.getString("umbox_external_id");
+            String alerterId = rs.getString("alerter_id");
             int imageId = rs.getInt("umbox_image_id");
             int deviceId = rs.getInt("device_id");
             Timestamp startedAt = rs.getTimestamp("started_at");
-            umboxInstance = new UmboxInstance(id, umboxExternalId, imageId, deviceId, startedAt);
+            umboxInstance = new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -1224,8 +1224,8 @@ public class Postgres {
            logger.info("Adding umbox instance: "+ u);
            PreparedStatement st = null;
            try{
-               st = dbConn.prepareStatement("INSERT INTO umbox_instance (umbox_external_id, umbox_image_id, device_id, started_at) VALUES (?,?,?,?)");
-               st.setString(1, u.getUmboxExternalId());
+               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerterId, umbox_image_id, device_id, started_at) VALUES (?,?,?,?)");
+               st.setString(1, u.getAlerterId());
                st.setInt(2, u.getUmboxImageId());
                st.setInt(3, u.getDeviceId());
                st.setTimestamp(4, u.getStartedAt());
@@ -1249,9 +1249,9 @@ public class Postgres {
             PreparedStatement st = null;
             try {
                 st = dbConn.prepareStatement("UPDATE umbox_instance " +
-                        "SET umbox_external_id = ?, umbox_image_id = ?, device_id = ?, started_at = ?" +
+                        "SET alerter_id = ?, umbox_image_id = ?, device_id = ?, started_at = ?" +
                         "WHERE id = ?");
-                st.setString(1, u.getUmboxExternalId());
+                st.setString(1, u.getAlerterId());
                 st.setInt(2, u.getUmboxImageId());
                 st.setInt(3, u.getDeviceId());
                 st.setTimestamp(4, u.getStartedAt());

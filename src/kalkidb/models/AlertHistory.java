@@ -6,24 +6,24 @@ public class AlertHistory {
 
     private int id;
     private Timestamp timestamp;
-    private String umboxExternalId;
+    private String alerterId;
     private String info;
 
     public AlertHistory() {
 
     }
 
-    public AlertHistory(Timestamp timestamp, String umboxExternalId, String info) {
+    public AlertHistory(Timestamp timestamp, String alerterId, String info) {
         this.timestamp = timestamp;
-        this.umboxExternalId = umboxExternalId;
+        this.alerterId = alerterId;
         this.info = info;
     }
 
 
-    public AlertHistory(int id, Timestamp timestamp, String umboxExternalId, String info) {
+    public AlertHistory(int id, Timestamp timestamp, String alerterId, String info) {
         this.id = id;
         this.timestamp = timestamp;
-        this.umboxExternalId = umboxExternalId;
+        this.alerterId = alerterId;
         this.info = info;
     }
 
@@ -43,12 +43,12 @@ public class AlertHistory {
         this.timestamp = timestamp;
     }
 
-    public String getUmboxExternalId() {
-        return umboxExternalId;
+    public String getAlerterId() {
+        return alerterId;
     }
 
-    public void setUmboxExternalId(String umboxExternalId) {
-        this.umboxExternalId = umboxExternalId;
+    public void setAlerterId(String alerterId) {
+        this.alerterId = alerterId;
     }
 
     public String getInfo() {

@@ -6,7 +6,7 @@ import kalkidb.database.Postgres;
 public class UmboxInstance {
 
     private int id;
-    private String umboxExternalId;
+    private String alerterId;
     private int umboxImageId;
     private int deviceId;
     private Timestamp startedAt;
@@ -15,9 +15,9 @@ public class UmboxInstance {
 
     }
 
-    public UmboxInstance(int id, String umboxExternalId, int umboxImageId, int deviceId, Timestamp startedAt) {
+    public UmboxInstance(int id, String alerterId, int umboxImageId, int deviceId, Timestamp startedAt) {
         this.id = id;
-        this.umboxExternalId = umboxExternalId;
+        this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
         this.deviceId = deviceId;
         this.startedAt = startedAt;
@@ -31,12 +31,12 @@ public class UmboxInstance {
         this.id = id;
     }
 
-    public String getUmboxExternalId() {
-        return umboxExternalId;
+    public String getAlerterId() {
+        return alerterId;
     }
 
-    public void setUmboxExternalId(String umboxExternalId) {
-        this.umboxExternalId = umboxExternalId;
+    public void setAlerterId(String alerterId) {
+        this.alerterId = alerterId;
     }
 
     public int getUmboxImageId() { return umboxImageId; }

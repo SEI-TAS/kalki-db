@@ -46,12 +46,12 @@ Device device = Postgres.findDevice(deviceId);
 |---------------:|:--------|
 |id              |int      |  
 |timestamp       |Timestamp|
-|umboxExternalId |String   | 
+|alerterId       |String   |
 |info            |String   |  
 ###### Actions:  
 |Function Definition                             |Return Type|
 |:-----------------------------------------------|:--------|
-|`getAlertHistory(List<String> externalIds)`     |`List<AlertHistory>` |  
+|`getAlertHistory(List<String> alerterIds)`      |`List<AlertHistory>` |  
 |`getAlertHistory(int id) `                      |`CompletionStage<AlertHistory>`|
 |`insertAlertHistory(AlertHistory alertHistory)` |`CompletionStage<Integer>`   | 
 
@@ -175,14 +175,15 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type      |
 |---------------:|:---------|
 |id              |String    |  
-|umboxExternalId |String    |
+|alerterId       |String    |
 |umboxImageId    |String    | 
 |deviceId        |int       |
 |startedAt       |Timestamp |
+|containerId     |String    |
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`getUmboxInstance(String externalId)`  |`CompletionStage<UmboxInstance>`|
+|`getUmboxInstance(String alerterId)`   |`CompletionStage<UmboxInstance>`|
 |`getUmboxInstances(int deviceId)`      |`CompletionStage<List<UmboxInstance>>`|
 |`insertUmboxInstance(UmboxInstance u)` |`CompletionStage<Void>`|
 |`editUmboxInstance(UmboxInstance u)`   |`CompletionStage<Void>`|
