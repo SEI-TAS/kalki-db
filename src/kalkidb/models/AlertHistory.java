@@ -60,6 +60,6 @@ public class AlertHistory {
     }
 
     public String toString() {
-        return "AlertHistory Info: id: "+Integer.toString(id)+", umboxExternalId: "+umboxExternalId+", info: "+info;
+        return "AlertHistory Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", info: "+info;
     }
 }
