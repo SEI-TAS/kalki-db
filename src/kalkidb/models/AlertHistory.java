@@ -1,6 +1,7 @@
 package kalkidb.models;
 
 import java.sql.Timestamp;
+import kalkidb.database.Postgres;
 
 public class AlertHistory {
 
@@ -11,6 +12,13 @@ public class AlertHistory {
 
     public AlertHistory() {
 
+    }
+
+    public AlertHistory(String alerterId, String info) {
+        this.alerterId = alerterId;
+        this.info = info;
+        long millis = System.currentTimeMillis() % 1000;
+        this.timestamp = new Timestamp(millis);
     }
 
     public AlertHistory(Timestamp timestamp, String alerterId, String info) {
@@ -57,6 +65,13 @@ public class AlertHistory {
 
     public void setInfo(String info) {
         this.info = info;
+    }
+
+    public void insert() {
+        Postgres.insertAlertHistory(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
     }
 
     public String toString() {

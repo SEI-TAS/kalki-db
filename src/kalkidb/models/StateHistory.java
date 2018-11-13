@@ -1,6 +1,7 @@
 package kalkidb.models;
 
 import java.sql.Timestamp;
+import kalkidb.database.Postgres;
 
 public class StateHistory {
 
@@ -11,6 +12,13 @@ public class StateHistory {
 
     public StateHistory() {
 
+    }
+
+    public StateHistory(int deviceId, String state) {
+        this.deviceId = deviceId;
+        this.state = state;
+        long millis = System.currentTimeMillis() % 1000;
+        this.timestamp = new Timestamp(millis);
     }
 
     public StateHistory(int id, int deviceId, Timestamp timestamp, String state) {
@@ -52,4 +60,10 @@ public class StateHistory {
         this.state = state;
     }
 
+    public void insert(){
+        Postgres.insertStateHistory(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
+    }
 }

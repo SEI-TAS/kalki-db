@@ -1,4 +1,5 @@
 package kalkidb.models;
+import kalkidb.database.Postgres;
 
 public class Type {
 
@@ -14,6 +15,12 @@ public class Type {
     public Type(int id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    public Type(String name, byte[] policyFile, String policyFileName) {
+        this.name = name;
+        this.policyFile = policyFile;
+        this.policyFileName = policyFileName;
     }
 
     public Type(int id, String name, byte[] policyFile, String policyFileName) {
@@ -53,5 +60,12 @@ public class Type {
 
     public void setPolicyFileName(String policyFileName) {
         this.policyFileName = policyFileName;
+    }
+
+    public void insert(){
+        Postgres.insertType(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
     }
 }

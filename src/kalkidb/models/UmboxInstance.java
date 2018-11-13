@@ -16,6 +16,23 @@ public class UmboxInstance {
 
     }
 
+    public UmboxInstance(String alerterId, int umboxImageId, String containerId, int deviceId){
+        this.alerterId = alerterId;
+        this.umboxImageId = umboxImageId;
+        this.containerId = containerId;
+        this.deviceId = deviceId;
+        long millis = System.currentTimeMillis() % 1000;
+        this.startedAt = new Timestamp(millis);
+    }
+
+    public UmboxInstance(String alerterId, int umboxImageId, String containerId, int deviceId, Timestamp timestamp){
+        this.alerterId = alerterId;
+        this.umboxImageId = umboxImageId;
+        this.containerId = containerId;
+        this.deviceId = deviceId;
+        this.startedAt = timestamp;
+    }
+
     public UmboxInstance(int id, String alerterId, int umboxImageId, String containerId, int deviceId, Timestamp startedAt) {
         this.id = id;
         this.alerterId = alerterId;
@@ -69,5 +86,10 @@ public class UmboxInstance {
         this.startedAt = startedAt;
     }
 
-    public void insert() { Postgres.insertUmboxInstance(this); }
+    public void insert() {
+        Postgres.insertUmboxInstance(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
+    }
 }

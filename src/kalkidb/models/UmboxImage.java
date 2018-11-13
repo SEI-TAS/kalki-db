@@ -2,6 +2,7 @@ package kalkidb.models;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import kalkidb.database.Postgres;
 
 public class UmboxImage {
 
@@ -12,6 +13,11 @@ public class UmboxImage {
 
     public UmboxImage() {
 
+    }
+
+    public UmboxImage(String name, String path){
+        this.name = name;
+        this.path = path;
     }
 
     public UmboxImage(int id, String name, String path) {
@@ -54,4 +60,10 @@ public class UmboxImage {
         }
     }
 
+    public void insert() {
+        Postgres.insertUmboxImage(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
+    }
 }

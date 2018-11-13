@@ -24,6 +24,16 @@ public class Device {
 
     }
 
+    public Device(String name, String description, int typeId, int groupId, String ip, int historySize, int samplingRate){
+        this.name = name;
+        this.description = description;
+        this.typeId = typeId;
+        this.groupId = groupId;
+        this.ip = ip;
+        this.historySize = historySize;
+        this.samplingRate = samplingRate;
+    }
+
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
                   int historySize, int samplingRate) {
         this.id = id;
@@ -109,7 +119,10 @@ public class Device {
     }
 
     public void insert(){
-        Postgres.insertDevice(this);
+        Postgres.insertDevice(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
     }
 
     public CompletionStage<Integer> insertOrUpdate(){

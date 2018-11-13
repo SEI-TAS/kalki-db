@@ -1,5 +1,7 @@
 package kalkidb.models;
 
+import kalkidb.database.Postgres;
+
 public class Group {
 
     private int id;
@@ -7,6 +9,10 @@ public class Group {
 
     public Group() {
 
+    }
+
+    public Group(String name) {
+        this.name = name;
     }
 
     public Group(int id, String name) {
@@ -30,4 +36,10 @@ public class Group {
         this.name = name;
     }
 
+    public void insert(){
+        Postgres.insertGroup(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
+    }
 }

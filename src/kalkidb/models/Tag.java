@@ -1,4 +1,5 @@
 package kalkidb.models;
+import kalkidb.database.Postgres;
 
 public class Tag {
 
@@ -7,6 +8,10 @@ public class Tag {
 
     public Tag() {
 
+    }
+
+    public Tag(String name){
+        this.name = name;
     }
 
     public Tag(int id, String name) {
@@ -30,4 +35,10 @@ public class Tag {
         this.name = name;
     }
 
+    public void insert(){
+        Postgres.insertTag(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
+    }
 }
