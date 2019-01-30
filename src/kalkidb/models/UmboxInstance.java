@@ -2,6 +2,8 @@ package kalkidb.models;
 
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
+import java.util.concurrent.CompletionStage;
+
 
 public class UmboxInstance {
 
@@ -86,8 +88,8 @@ public class UmboxInstance {
         this.startedAt = startedAt;
     }
 
-    public void insert() {
-        Postgres.insertUmboxInstance(this).thenApplyAsync(id -> {
+    public CompletionStage<Integer> insert() {
+        return Postgres.insertUmboxInstance(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });

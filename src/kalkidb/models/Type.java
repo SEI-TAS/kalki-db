@@ -1,5 +1,6 @@
 package kalkidb.models;
 import kalkidb.database.Postgres;
+import java.util.concurrent.CompletionStage;
 
 public class Type {
 
@@ -62,8 +63,8 @@ public class Type {
         this.policyFileName = policyFileName;
     }
 
-    public void insert(){
-        Postgres.insertType(this).thenApplyAsync(id -> {
+    public CompletionStage<Integer> insert(){
+        return Postgres.insertType(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });
