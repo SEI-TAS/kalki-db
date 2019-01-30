@@ -258,7 +258,7 @@ public class Postgres {
         logger.info("Dropping tables.");
         List<String> tableNames = new ArrayList<String>();
         tableNames.add("device");
-        tableNames.add("device_history");
+        tableNames.add("device_status");
         tableNames.add("state_history");
         tableNames.add("device_tag");
         tableNames.add("tag");
@@ -287,18 +287,19 @@ public class Postgres {
         logger.info("Making tables.");
 
         executeCommand("CREATE TABLE IF NOT EXISTS device(" +
-                "id             serial   PRIMARY KEY," +
-                "name           varchar(255) NOT NULL," +
-                "description    varchar(255)," +
-                "type_id        int NOT NULL," +
-                "group_id       int," +
-                "ip_address     varchar(255)," +
-                "history_size   int NOT NULL," +
-                "sampling_rate  int NOT NULL"  +
+                "id                 serial   PRIMARY KEY," +
+                "name               varchar(255) NOT NULL," +
+                "description        varchar(255)," +
+                "type_id            int NOT NULL," +
+                "group_id           int," +
+                "ip_address         varchar(255)," +
+                "status_history_size       int NOT NULL," +
+                "sampling_rate      int NOT NULL"  +
+                "current_state_id   int" +
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS device_history(" +
+        executeCommand("CREATE TABLE IF NOT EXISTS device_status(" +
                 "device_id     int NOT NULL," +
                 "attributes    hstore," +
                 "timestamp     TIMESTAMP," +
@@ -402,21 +403,21 @@ public class Postgres {
                 "AFTER INSERT ON device\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
 
-        // deviceHistoryNotify
-        // when a DeviceHistory is inserted
-        executeCommand("CREATE OR REPLACE FUNCTION \"deviceHistoryNotify\"()\n" +
+        // deviceStatusNotify
+        // when a DeviceStatus is inserted
+        executeCommand("CREATE OR REPLACE FUNCTION \"deviceStatusNotify\"()\n" +
                 "  RETURNS TRIGGER AS $$\n" +
                 "DECLARE\n" +
                 "  payload TEXT;\n" +
                 "BEGIN\n" +
                 "  payload := NEW.id;\n" +
-                "  PERFORM pg_notify('devicehistoryinsert', payload);\n" +
+                "  PERFORM pg_notify('devicestatusinsert', payload);\n" +
                 "  RETURN NEW;\n" +
                 "END;\n" +
                 "$$ LANGUAGE plpgsql;");
-        executeCommand("CREATE TRIGGER \"deviceHistoryNotify\"\n" +
-                "AFTER INSERT ON device_history\n" +
-                "FOR EACH ROW EXECUTE PROCEDURE \"deviceHistoryNotify\"()");
+        executeCommand("CREATE TRIGGER \"deviceStatusNotify\"\n" +
+                "AFTER INSERT ON device_status\n" +
+                "FOR EACH ROW EXECUTE PROCEDURE \"deviceStatusNotify\"()");
 
         // alertHistoryNotify
         // when an AlertHistory is inserted
@@ -811,10 +812,10 @@ public class Postgres {
             int typeId = rs.getInt(4);
             int groupId = rs.getInt(5);
             String ip = rs.getString(6);
-            int historySize = rs.getInt(7);
+            int statusHistorySize = rs.getInt(7);
             int samplingRate = rs.getInt(8);
 
-            device = new Device(id, name, description, typeId, groupId, ip, historySize, samplingRate);
+            device = new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -838,13 +839,13 @@ public class Postgres {
             try{
                 PreparedStatement update = dbConn.prepareStatement
                         ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                                "history_size, sampling_rate) values(?,?,?,?,?,?,?)");
+                                "status_history_size, sampling_rate) values(?,?,?,?,?,?,?)");
                 update.setString(1, device.getDescription());
                 update.setString(2, device.getName());
                 update.setInt(3, device.getTypeId());
                 update.setInt(4, device.getGroupId());
                 update.setString(5, device.getIp());
-                update.setInt(6, device.getHistorySize());
+                update.setInt(6, device.getStatusHistorySize());
                 update.setInt(7, device.getSamplingRate());
 
                 update.executeUpdate();
@@ -900,14 +901,14 @@ public class Postgres {
                     executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                     PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, history_size = ?, sampling_rate = ?" +
+                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?" +
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
                     update.setInt(3, device.getTypeId());
                     update.setInt(4, device.getGroupId());
                     update.setString(5, device.getIp());
-                    update.setInt(6, device.getHistorySize());
+                    update.setInt(6, device.getStatusHistorySize());
                     update.setInt(7, device.getSamplingRate());
                     update.setInt(8, device.getId());
                     update.executeUpdate();
@@ -951,29 +952,29 @@ public class Postgres {
     }
 
     /*
-     *     DeviceHistory specific actions
+     *     DeviceStatus specific actions
      */
     /**
-     * Finds a DeviceHistory from the database by its id.
-     * @param id id of the DeviceHistory to find.
-     * @return the DeviceHistory if it exists in the database, else null.
+     * Finds a DeviceStatus from the database by its id.
+     * @param id id of the DeviceStatus to find.
+     * @return the DeviceStatus if it exists in the database, else null.
      */
-    public static CompletionStage<DeviceHistory> findDeviceHistory(int id){
-        return findById(id, "device_history").thenApplyAsync(rs -> {
+    public static CompletionStage<DeviceStatus> findDeviceStatus(int id){
+        return findById(id, "device_status").thenApplyAsync(rs -> {
             if(rs == null) {
                 return null;
             } else {
-                return rsToDeviceHistory(rs);
+                return rsToDeviceStatus(rs);
             }
         });
     }
 
     /**
-     * Finds all DeviceHistories from the database for the given device.
+     * Finds all DeviceStatuses from the database for the given device.
      * @param deviceId the id of the device.
-     * @return a list of all DeviceHistories in the database where the device_id field is equal to deviceId.
+     * @return a list of all DeviceStatuses in the database where the device_id field is equal to deviceId.
      */
-    public static CompletionStage<List<DeviceHistory>> findDeviceHistories(int deviceId) {
+    public static CompletionStage<List<DeviceStatus>> findDeviceStatuses(int deviceId) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
@@ -982,20 +983,20 @@ public class Postgres {
                 return null;
             }
             try {
-                st = dbConn.prepareStatement("SELECT * FROM device_history WHERE device_id = ?");
+                st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ?");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
 
-                List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
+                List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
                 while (rs.next()) {
-                    deviceHistories.add(rsToDeviceHistory(rs));
+                    deviceHistories.add(rsToDeviceStatus(rs));
                 }
                 return deviceHistories;
             } catch (SQLException e) {
-                logger.severe("Sql exception getting all device histories: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error getting device histories: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
             } finally {
                 try { if (rs != null) { rs.close(); } } catch (Exception e) { }
                 try { if (st != null) { st.close(); } } catch (Exception e) { }
@@ -1005,16 +1006,54 @@ public class Postgres {
     }
 
     /**
+     * Returns a list of device statuses for devices with the given type id. One device status per device
+     * @param typeId The typeid for the requested devices
+     * @return
+     */
+    public static CompletionStage<List<DeviceStatus>> findDeviceHistoriesByType(int typeId){
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            List<DeviceStatus> ds = new ArrayList<DeviceStatus>();
+            try {
+                st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
+                st.setInt(1, typeId);
+                rs = st.executeQuery();
+                while (rs.next()) {
+                    Device d = rsToDevice(rs);
+                    PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? COUNT 1");
+                    statement.setInt(1, d.getId());
+                    ResultSet resultSet = statement.executeQuery();
+                    ds.add(rsToDeviceStatus(resultSet));
+                }
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting devices for type: "+ typeId+" "+ e.getClass().getName() + ": " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting devices for type: "+ typeId+" " + e.getClass().getName() + ": " + e.getMessage());
+            }  finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+                try { if (st != null) { st.close(); } } catch (Exception e) {}
+            }
+            return ds;
+        });
+    }
+
+    /**
      * Finds all DeviceHistories in the database.
      * @return a list of all DeviceHistories in the database.
      */
-    public static CompletionStage<List<DeviceHistory>> findAllDeviceHistories() {
+    public static CompletionStage<List<DeviceStatus>> findAllDeviceHistories() {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = getAllFromTable("device_history");
-            List<DeviceHistory> deviceHistories = new ArrayList<DeviceHistory>();
+            ResultSet rs = getAllFromTable("device_status");
+            List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
             try {
                 while (rs.next()) {
-                    deviceHistories.add(rsToDeviceHistory(rs));
+                    deviceHistories.add(rsToDeviceStatus(rs));
                 }
                 rs.close();
             } catch (SQLException e) {
@@ -1025,52 +1064,52 @@ public class Postgres {
     }
 
     /**
-     * Extract a DeviceHistory from the result set of a database query.
-     * @param rs ResultSet from a DeviceHistory query.
-     * @return The DeviceHistory that was found.
+     * Extract a DeviceStatus from the result set of a database query.
+     * @param rs ResultSet from a DeviceStatus query.
+     * @return The DeviceStatus that was found.
      */
-    private static DeviceHistory rsToDeviceHistory(ResultSet rs){
-        DeviceHistory deviceHistory = null;
+    private static DeviceStatus rsToDeviceStatus(ResultSet rs){
+        DeviceStatus deviceStatus = null;
         try{
             int deviceId = rs.getInt("device_id");
             Map<String, String> attributes = HStoreConverter.fromString(rs.getString("attributes"));
             Timestamp timestamp = rs.getTimestamp("timestamp");
             int historyId = rs.getInt("id");
 
-            deviceHistory = new DeviceHistory(deviceId, attributes, timestamp, historyId);
+            deviceStatus = new DeviceStatus(deviceId, attributes, timestamp, historyId);
         }
         catch(SQLException e){
             e.printStackTrace();
-            logger.severe("Error converting rs to DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to DeviceStatus: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return deviceHistory;
+        return deviceStatus;
     }
 
     /**
-     * Saves given DeviceHistory to the database.
-     * @param deviceHistory DeviceHistory to be inserted.
+     * Saves given DeviceStatus to the database.
+     * @param deviceStatus DeviceStatus to be inserted.
      * @return auto incremented id
      */
-    public static CompletionStage<Integer> insertDeviceHistory(DeviceHistory deviceHistory){
+    public static CompletionStage<Integer> insertDeviceStatus(DeviceStatus deviceStatus){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting device_history: " + deviceHistory.toString());
+            logger.info("Inserting device_status: " + deviceStatus.toString());
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try{
                 PreparedStatement update = dbConn.prepareStatement
-                        ("INSERT INTO device_history(device_id, timestamp, attributes) values(?,?,?)");
-                update.setInt(1, deviceHistory.getDeviceId());
-                update.setTimestamp(2, deviceHistory.getTimestamp());
-                update.setObject(3, deviceHistory.getAttributes());
+                        ("INSERT INTO device_status(device_id, timestamp, attributes) values(?,?,?)");
+                update.setInt(1, deviceStatus.getDeviceId());
+                update.setTimestamp(2, deviceStatus.getTimestamp());
+                update.setObject(3, deviceStatus.getAttributes());
                 update.executeUpdate();
 
-                return getLatestId("device_history");
+                return getLatestId("device_status");
             }
             catch(Exception e){
                 e.printStackTrace();
-                logger.severe("Error inserting DeviceHistory: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("Error inserting DeviceStatus: " + e.getClass().getName()+": "+e.getMessage());
             }
             return -1;
         });
@@ -1078,60 +1117,60 @@ public class Postgres {
 
 
     /**
-     * First, attempts to find the DeviceHistory in the database.
-     * If successful, updates the existing DeviceHistory with the given DeviceHistory's parameters Otherwise,
-     * inserts the given DeviceHistory.
-     * @param deviceHistory DeviceHistory to be inserted or updated.
+     * First, attempts to find the DeviceStatus in the database.
+     * If successful, updates the existing DeviceStatus with the given DeviceStatus's parameters Otherwise,
+     * inserts the given DeviceStatus.
+     * @param deviceStatus DeviceStatus to be inserted or updated.
      */
-    public static CompletionStage<Integer> insertOrUpdateDeviceHistory(DeviceHistory deviceHistory){
-        return findDeviceHistory(deviceHistory.getId()).thenApplyAsync(d -> {
+    public static CompletionStage<Integer> insertOrUpdateDeviceStatus(DeviceStatus deviceStatus){
+        return findDeviceStatus(deviceStatus.getId()).thenApplyAsync(d -> {
             if(d == null) {
-                insertDeviceHistory(deviceHistory);
+                insertDeviceStatus(deviceStatus);
                 return 0;
             } else {
-                updateDeviceHistory(deviceHistory);
+                updateDeviceStatus(deviceStatus);
                 return 1;
             }
         });
     }
 
     /**
-     * Updates DeviceHistory with given id to have the parameters of the given DeviceHistory.
-     * @param deviceHistory DeviceHistory holding new parameters to be saved in the database.
+     * Updates DeviceStatus with given id to have the parameters of the given DeviceStatus.
+     * @param deviceStatus DeviceStatus holding new parameters to be saved in the database.
      */
-    public static CompletionStage<Integer> updateDeviceHistory(DeviceHistory deviceHistory){
+    public static CompletionStage<Integer> updateDeviceStatus(DeviceStatus deviceStatus){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Updating DeviceHistory with id=" + deviceHistory.getId());
+            logger.info("Updating DeviceStatus with id=" + deviceStatus.getId());
             if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try {
                 PreparedStatement update = dbConn.prepareStatement
-                        ("UPDATE device_history SET device_id = ?, attributes = ?, timestamp = ? " +
+                        ("UPDATE device_status SET device_id = ?, attributes = ?, timestamp = ? " +
                                 "WHERE id=?");
 
-                update.setInt(1, deviceHistory.getDeviceId());
-                update.setObject(2, deviceHistory.getAttributes());
-                update.setTimestamp(3, deviceHistory.getTimestamp());
-                update.setInt(4, deviceHistory.getId());
+                update.setInt(1, deviceStatus.getDeviceId());
+                update.setObject(2, deviceStatus.getAttributes());
+                update.setTimestamp(3, deviceStatus.getTimestamp());
+                update.setInt(4, deviceStatus.getId());
                 update.executeUpdate();
-                return deviceHistory.getId();
+                return deviceStatus.getId();
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error updating DeviceHistory: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Error updating DeviceStatus: " + e.getClass().getName() + ": " + e.getMessage());
                 return -1;
             }
         });
     }
 
     /**
-     * Deletes an DeviceHistory by its id.
-     * @param id id of the DeviceHistory to delete.
+     * Deletes an DeviceStatus by its id.
+     * @param id id of the DeviceStatus to delete.
      * @return true if the deletion succeeded, false otherwise.
      */
-    public static CompletionStage<Boolean> deleteDeviceHistory(int id) {
-        return deleteById("device_history", id);
+    public static CompletionStage<Boolean> deleteDeviceStatus(int id) {
+        return deleteById("device_status", id);
     }
 
     /*
@@ -1551,6 +1590,21 @@ public class Postgres {
     /*
      *      Type specific actions
      */
+    /**
+     * Finds a Type from the database by its id.
+     * @param id id of the Type to find.
+     * @return the Type if it exists in the database, else null.
+     */
+    public static CompletionStage<Type> findType(int id) {
+        return findById(id, "type").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                Type type = rsToType(rs);
+                return type;
+            }
+        });
+    }
     /**
      * Finds all Types in the database.
      * @return a list of all Types in the database.

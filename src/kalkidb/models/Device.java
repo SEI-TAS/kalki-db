@@ -14,9 +14,10 @@ public class Device {
     private int typeId;
     private int groupId;
     private String ip;
-    private int historySize;
+    private int statusHistorySize;
     private int samplingRate;
     private List<Integer> tagIds;
+    private StateHistory current_state;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -24,24 +25,24 @@ public class Device {
 
     }
 
-    public Device(String name, String description, int typeId, int groupId, String ip, int historySize, int samplingRate){
+    public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate){
         this.name = name;
         this.description = description;
         this.typeId = typeId;
         this.groupId = groupId;
         this.ip = ip;
-        this.historySize = historySize;
+        this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
-                  int historySize, int samplingRate) {
+                  int statusHistorySize, int samplingRate) {
         this.id = id;
         this.description = description;
         this.name = name;
         this.typeId = typeId;
         this.groupId = groupId;
-        this.historySize = historySize;
+        this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
         this.ip = ip;
     }
@@ -86,12 +87,12 @@ public class Device {
         this.ip = ip;
     }
 
-    public int getHistorySize() {
-        return historySize;
+    public int getStatusHistorySize() {
+        return statusHistorySize;
     }
 
-    public void setHistorySize(int historySize) {
-        this.historySize = historySize;
+    public void setStatusHistorySize(int statusHistorySize) {
+        this.statusHistorySize = statusHistorySize;
     }
 
     public int getSamplingRate() {
@@ -116,6 +117,14 @@ public class Device {
 
     public void setTagIds(List<Integer> tagIds) {
         this.tagIds = tagIds;
+    }
+
+    public StateHistory getCurrent_state() {
+        return current_state;
+    }
+
+    public void setCurrent_state(StateHistory state){
+        this.current_state = state;
     }
 
     public void insert(){

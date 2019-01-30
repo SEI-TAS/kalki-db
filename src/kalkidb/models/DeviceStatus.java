@@ -7,33 +7,33 @@ import java.util.Map;
 import java.util.UUID;
 import kalkidb.database.Postgres;
 
-public class DeviceHistory {
+public class DeviceStatus {
 
     private int id;
     private Timestamp timestamp;
     private Map<String, String> attributes;
     private int deviceId;
 
-    public DeviceHistory(int deviceId){
+    public DeviceStatus(int deviceId){
         this.attributes = new HashMap<String, String>();
         long millis = System.currentTimeMillis() % 1000;
         this.timestamp = new Timestamp(millis);
         this.deviceId = deviceId;
     }
 
-    public DeviceHistory(int deviceId, Map<String, String> attributes) {
+    public DeviceStatus(int deviceId, Map<String, String> attributes) {
         this(deviceId);
         this.attributes = attributes;
         long millis = System.currentTimeMillis() % 1000;
         this.timestamp = new Timestamp(millis);
     }
 
-    public DeviceHistory(int deviceId, Map<String, String> attributes, Timestamp timestamp) {
+    public DeviceStatus(int deviceId, Map<String, String> attributes, Timestamp timestamp) {
         this(deviceId, attributes);
         this.timestamp = timestamp;
     }
 
-    public DeviceHistory(int deviceId, Map<String, String> attributes, Timestamp timestamp, int id) {
+    public DeviceStatus(int deviceId, Map<String, String> attributes, Timestamp timestamp, int id) {
         this(deviceId, attributes, timestamp);
         this.id = id;
     }
@@ -59,22 +59,22 @@ public class DeviceHistory {
     public void setDeviceId(int id) { this.deviceId = id; }
 
     public void insert(){
-        Postgres.insertDeviceHistory(this).thenApplyAsync(id -> {
+        Postgres.insertDeviceStatus(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });
     }
 
     public void update(){
-        Postgres.updateDeviceHistory(this);
+        Postgres.updateDeviceStatus(this);
     }
 
     public void insertOrUpdate(){
-        Postgres.insertOrUpdateDeviceHistory(this);
+        Postgres.insertOrUpdateDeviceStatus(this);
     }
 
     public String toString() {
-        String result = "DeviceHistory Info: deviceId: " + Integer.toString(deviceId) + ",";
+        String result = "DeviceStatus Info: deviceId: " + Integer.toString(deviceId) + ",";
         for(String key : attributes.keySet()){
             result += key + ": " + attributes.get(key) + ", ";
         }

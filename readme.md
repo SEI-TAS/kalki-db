@@ -32,7 +32,7 @@ Now, you can use the database and models.
 
 Examples:
 ```
-DeviceHistory newLight = new DeviceHistory(deviceId);
+DeviceStatus newLight = new DeviceStatus(deviceId);
 light.insertOrUpdate();
             
 Device device = Postgres.findDevice(deviceId);
@@ -59,28 +59,29 @@ Device device = Postgres.findDevice(deviceId);
 
 ### Device
 ###### Schema:
-|Property        |Type         |
-|---------------:|:------------|
-|id              |int          |  
-|name            |String       |
-|description     |String       | 
-|typeId          |int          | 
-|groupId         |int          |
-|ip              |String       |
-|historySize     |int          |
-|samplingRate    |int          |
-|tagIds          |List<Integer>|  
+|Property              |Type         |
+|---------------------:|:------------|
+|id                    |int          |  
+|name                  |String       |
+|description           |String       | 
+|typeId                |int          | 
+|groupId               |int          |
+|ip                    |String       |
+|statusHistorySize     |int          |
+|samplingRate          |int          |
+|tagIds                |List<Integer>|  
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
 |`findDevice(int id)`                  |`CompletionStage<Device>`       |
+|`findDeviceByType(int typeId)`        |`CompletionStage<List<Device>>` |
 |`findAllDevices()`                    |`CompletionStage<List<Device>>` |  
 |`insertDevice(Device device)`         |`CompletionStage<Integer>`      |
 |`insertOrUpdateDevice(Device device)` |`CompletionStage<Integer>`      | 
 |`updateDevice(Device device)`         |`CompletionStage<Integer>`      |
 |`deleteDevice(int id)`                |`CompletionStage<Boolean>`      |
 
-### DeviceHistory
+### DeviceStatus
 ###### Schema:
 |Property        |Type              |
 |---------------:|:-----------------|
@@ -91,13 +92,13 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---|  
-|`findDeviceHistory(int id)`                                  |`CompletionStage<DeviceHistory>`      |
-|`findDeviceHistories(int deviceId)`                          |`CompletionStage<List<DeviceHistory>>`|
-|`findAllDeviceHistories()`                                   |`CompletionStage<List<DeviceHistory>>`|
-|`insertDeviceHistory(DeviceHistory deviceHistory)`           |`CompletionStage<Integer>`            |
-|`insertOrUpdateDeviceHistory(DeviceHistory deviceHistory)`   |`CompletionStage<Integer>`            |
-|`updateDeviceHistory(DeviceHistory deviceHistory)`           |`CompletionStage<Integer>`            |
-|`deleteDeviceHistory(int id)`                                |`CompletionStage<Boolean>`            |
+|`findDeviceStatus(int id)`                                  |`CompletionStage<DeviceStatus>`      |
+|`findDeviceStatuses(int deviceId)`                          |`CompletionStage<List<DeviceStatus>>`|
+|`findAllDeviceStatuses()`                                   |`CompletionStage<List<DeviceStatus>>`|
+|`insertDeviceStatus(DeviceStatus deviceStatus)`             |`CompletionStage<Integer>`            |
+|`insertOrUpdateDeviceStatus(DeviceStatus deviceStatus)`     |`CompletionStage<Integer>`            |
+|`updateDeviceStatus(DeviceStatus deviceStatus)`             |`CompletionStage<Integer>`            |
+|`deleteDeviceStatus(int id)`                                |`CompletionStage<Boolean>`            |
 
 ### Group
 ###### Schema:
@@ -156,6 +157,7 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
+|`findType(int id)`     |`CompletionStage<Type>`      |
 |`findAllTypes()`       |`CompletionStage<List<Type>>`|
 |`insertType(Type type)`|`CompletionStage<Integer>`   |
 |`updateType(Type type)`|`CompletionStage<Integer>`   |
