@@ -17,7 +17,7 @@ public class Device {
     private int statusHistorySize;
     private int samplingRate;
     private List<Integer> tagIds;
-    private StateHistory current_state;
+    private SecurityState currentState;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -119,12 +119,12 @@ public class Device {
         this.tagIds = tagIds;
     }
 
-    public StateHistory getCurrent_state() {
-        return current_state;
+    public SecurityState getCurrentState() {
+        return currentState;
     }
 
-    public void setCurrent_state(StateHistory state){
-        this.current_state = state;
+    public void setCurrentState(SecurityState state){
+        this.currentState = state;
     }
 
     public void insert(){

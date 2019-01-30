@@ -70,6 +70,7 @@ Device device = Postgres.findDevice(deviceId);
 |statusHistorySize     |int          |
 |samplingRate          |int          |
 |tagIds                |List<Integer>|  
+|currentState          |SecurityState|
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
@@ -116,7 +117,7 @@ Device device = Postgres.findDevice(deviceId);
 |`deleteGroup(int id)`      |`CompletionStage<Boolean>`    |
  
 
-### StateHistory
+### SecurityState
 ###### Schema:
 |Property  |Type      |
 |---------:|:---------|
@@ -127,10 +128,12 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findStateHistories(int deviceId)`             |`CompletionStage<List<StateHistory>>`|
-|`insertStateHistory(StateHistory stateHistory)`|`CompletionStage<Integer>`           |
-|`updateStateHistory(StateHistory stateHistory)`|`CompletionStage<Integer>`           |
-|`deleteStateHistory(int id)`                   |`CompletionStage<Boolean>`           |
+|`findSecurityState(int id)`                        |`SecurityState`|
+|`findSecurityStateByDevice(int deviceId)`          |`SecurityState`|
+|`findSecurityStateHistory(int deviceId)`           |`CompletionStage<List<SecurityState>>`|
+|`insertSecurityState(SecurityState securityState)` |`CompletionStage<Integer>`           |
+|`updateSecurityState(SecurityState securityState)` |`CompletionStage<Integer>`           |
+|`deleteSecurityState(int id)`                      |`CompletionStage<Boolean>`           |
 
 ### Tag
 ###### Schema:

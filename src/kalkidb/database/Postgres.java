@@ -259,7 +259,7 @@ public class Postgres {
         List<String> tableNames = new ArrayList<String>();
         tableNames.add("device");
         tableNames.add("device_status");
-        tableNames.add("state_history");
+        tableNames.add("security_state");
         tableNames.add("device_tag");
         tableNames.add("tag");
         tableNames.add("type");
@@ -307,7 +307,7 @@ public class Postgres {
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS state_history(" +
+        executeCommand("CREATE TABLE IF NOT EXISTS security_state(" +
                 "id           serial PRIMARY KEY," +
                 "device_id    int NOT NULL," +
                 "timestamp    TIMESTAMP," +
@@ -764,6 +764,10 @@ public class Postgres {
                 Device device = rsToDevice(rs);
                 List<Integer> tagIds = findTagIds(device.getId());
                 device.setTagIds(tagIds);
+
+                SecurityState ss = findSecurityStateByDevice(device.getId());
+                device.setCurrentState(ss);
+
                 return device;
             }
         });
@@ -786,6 +790,9 @@ public class Postgres {
                     Device d = rsToDevice(rs);
                     List<Integer> tagIds = findTagIds(d.getId());
                     d.setTagIds(tagIds);
+                    SecurityState ss = findSecurityStateByDevice(d.getId());
+                    d.setCurrentState(ss);
+
                     devices.add(d);
                 }
                 rs.close();
@@ -901,7 +908,7 @@ public class Postgres {
                     executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                     PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?" +
+                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?, current_state = ?" +
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
@@ -910,7 +917,8 @@ public class Postgres {
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getStatusHistorySize());
                     update.setInt(7, device.getSamplingRate());
-                    update.setInt(8, device.getId());
+                    update.setInt(8, device.getCurrentState().getId());
+                    update.setInt(9, device.getId());
                     update.executeUpdate();
 
                     // Insert tags into device_tag
@@ -1074,9 +1082,9 @@ public class Postgres {
             int deviceId = rs.getInt("device_id");
             Map<String, String> attributes = HStoreConverter.fromString(rs.getString("attributes"));
             Timestamp timestamp = rs.getTimestamp("timestamp");
-            int historyId = rs.getInt("id");
+            int statusId = rs.getInt("id");
 
-            deviceStatus = new DeviceStatus(deviceId, attributes, timestamp, historyId);
+            deviceStatus = new DeviceStatus(deviceId, attributes, timestamp, statusId);
         }
         catch(SQLException e){
             e.printStackTrace();
@@ -1300,134 +1308,215 @@ public class Postgres {
     }
 
     /*
-     *      StateHistory specific actions
+     *      SecurityState specific actions
      */
+
     /**
-     * Finds all StateHistories from the database for the given device.
-     * @param deviceId the id of the device.
-     * @return a list of all StateHistories in the database where the device_id field is equal to deviceId.
+     * Finds the most recent SecurityState from the database for the given device
+     * @param deviceId the id of the device
+     * @return the most recent SecurityState entered for a device
      */
-    public static CompletionStage<List<StateHistory>> findStateHistories(int deviceId) {
+    public static SecurityState findSecurityState(int id){
+//        return CompletableFuture.supplyAsync(() -> {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        SecurityState ss = new SecurityState();
+
+        if(dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return ss;
+        }
+
+        try{
+            st = dbConn.prepareStatement("SELECT * FROM security_state WHERE id = ? ");
+            st.setInt(1, id);
+            rs = st.executeQuery();
+
+            while(rs.next()){
+                ss = rsToSecurityState(rs);
+            }
+        }
+        catch (SQLException e){
+            logger.severe("SQL exception getting the security state: "+e.getClass().getName()+": "+e.getMessage());
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            logger.severe("Error getting security state: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        finally {
+            try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+            try { if(st != null) { st.close(); } } catch(Exception e) {}
+        }
+        return ss;
+//        });
+    }
+
+    /**
+     * Finds the most recent SecurityState from the database for the given device
+     * @param deviceId the id of the device
+     * @return the most recent SecurityState entered for a device
+     */
+    public static SecurityState findSecurityStateByDevice(int deviceId){
+//        return CompletableFuture.supplyAsync(() -> {
+           PreparedStatement st = null;
+           ResultSet rs = null;
+           SecurityState ss = new SecurityState();
+
+           if(dbConn == null) {
+               logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+               return null;
+           }
+
+           try{
+               st = dbConn.prepareStatement("SELECT * FROM security_state WHERE id = (SELECT MAX(id) FROM security_state WHERE device_id=?) ");
+               st.setInt(1, deviceId);
+               rs = st.executeQuery();
+
+               while(rs.next()){
+                   ss = rsToSecurityState(rs);
+               }
+           }
+           catch (SQLException e){
+               logger.severe("SQL exception getting the security state: "+e.getClass().getName()+": "+e.getMessage());
+           }
+           catch (Exception e){
+               e.printStackTrace();
+               logger.severe("Error getting security state: " + e.getClass().getName()+": "+e.getMessage());
+           }
+           finally {
+               try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+               try { if(st != null) { st.close(); } } catch(Exception e) {}
+           }
+            return ss;
+//        });
+    }
+
+    /**
+     * Finds all SecurityState from the database for the given device.
+     * @param deviceId the id of the device.
+     * @return a list of all SecurityStates in the database where the device_id field is equal to deviceId.
+     */
+    public static CompletionStage<List<SecurityState>> findSecurityStates(int deviceId) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
-            List<StateHistory> stateHistories = new ArrayList<StateHistory>();
+            List<SecurityState> securityStateList = new ArrayList<SecurityState>();
 
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             try{
-                st = dbConn.prepareStatement("SELECT * FROM state_history WHERE device_id = ?");
+                st = dbConn.prepareStatement("SELECT * FROM security_state WHERE device_id = ?");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
 
                 while (rs.next()) {
-                    stateHistories.add(rsToStateHistory(rs));
+                    securityStateList.add(rsToSecurityState(rs));
                 }
             }
             catch(SQLException e) {
-                logger.severe("Sql exception getting all state histories: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("Sql exception getting all security states: " + e.getClass().getName()+": "+e.getMessage());
             }
             catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error getting state histories: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("Error getting security states: " + e.getClass().getName()+": "+e.getMessage());
             }
             finally {
                 try { if(rs != null) { rs.close(); } } catch(Exception e) {}
                 try { if(st != null) { st.close(); } } catch(Exception e) {}
             }
-            return stateHistories;
+            return securityStateList;
         });
     }
 
     /**
-     * Extract a StateHistory from the result set of a database query.
-     * @param rs ResultSet from a StateHistory query.
-     * @return The StateHistory that was found.
+     * Extract a SecurityState from the result set of a database query.
+     * @param rs ResultSet from a SecurityState query.
+     * @return The SecurityState that was found.
      */
-    private static StateHistory rsToStateHistory(ResultSet rs){
-        StateHistory stateHistory = null;
+    private static SecurityState rsToSecurityState(ResultSet rs){
+        SecurityState securityState = null;
         try{
             int id = rs.getInt("id");
             int deviceId = rs.getInt("device_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
             String state = rs.getString("state");
-            stateHistory = new StateHistory(id, deviceId, timestamp, state);
+            securityState = new SecurityState(id, deviceId, timestamp, state);
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to StateHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to SecurityState: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return stateHistory;
+        return securityState;
     }
 
     /**
-     * Saves given StateHistory to the database.
-     * @param stateHistory StateHistory to be inserted.
+     * Saves given SecurityState to the database.
+     * @param securityState SecurityState to be inserted.
      * @return auto incremented id
      */
-    public static CompletionStage<Integer> insertStateHistory(StateHistory stateHistory){
+    public static CompletionStage<Integer> insertSecurityState(SecurityState securityState){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting StateHistory: " + stateHistory.getId());
+            logger.info("Inserting SecurityState: " + securityState.getId());
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try{
                 PreparedStatement update = dbConn.prepareStatement
-                        ("INSERT INTO state_history(device_id, timestamp, state)" +
+                        ("INSERT INTO security_state(device_id, timestamp, state)" +
                                 "values(?,?,?)");
-                update.setInt(1, stateHistory.getDeviceId());
-                update.setTimestamp(2, stateHistory.getTimestamp());
-                update.setString(3, stateHistory.getState());
+                update.setInt(1, securityState.getDeviceId());
+                update.setTimestamp(2, securityState.getTimestamp());
+                update.setString(3, securityState.getState());
                 update.executeUpdate();
-                return getLatestId("state_history");
+                return getLatestId("security_state");
             }
             catch(Exception e){
                 e.printStackTrace();
-                logger.severe("Error inserting Group: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("Error inserting SecurityState: " + e.getClass().getName()+": "+e.getMessage());
             }
             return -1;
         });
     }
 
     /**
-     * Updates StateHistory with given id to have the parameters of the given StateHistory.
-     * @param stateHistory StateHistory holding new parameters to be saved in the database.
+     * Updates SecurityState with given id to have the parameters of the given SecurityState.
+     * @param securityState SecurityState holding new parameters to be saved in the database.
      */
-    public static CompletionStage<Integer> updateStateHistory(StateHistory stateHistory){
+    public static CompletionStage<Integer> updateSecurityState(SecurityState securityState){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Updating StateHistory with id=" + stateHistory.getId());
+            logger.info("Updating SecurityState with id=" + securityState.getId());
             if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try {
                 PreparedStatement update = dbConn.prepareStatement
-                        ("UPDATE state_history SET device_id = ?, timestamp = ?, state = ?" +
+                        ("UPDATE security_state SET device_id = ?, timestamp = ?, state = ?" +
                                 "WHERE id=?");
-                update.setInt(1, stateHistory.getDeviceId());
-                update.setTimestamp(2, stateHistory.getTimestamp());
-                update.setString(3, stateHistory.getState());
-                update.setInt(4, stateHistory.getId());
+                update.setInt(1, securityState.getDeviceId());
+                update.setTimestamp(2, securityState.getTimestamp());
+                update.setString(3, securityState.getState());
+                update.setInt(4, securityState.getId());
                 update.executeUpdate();
-                return stateHistory.getId();
+                return securityState.getId();
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error updating StateHistory: " + e.getClass().toString() + ": " + e.getMessage());
+                logger.severe("Error updating SecurityState: " + e.getClass().toString() + ": " + e.getMessage());
             }
             return -1;
         });
     }
 
     /**
-     * Deletes a StateHistory by its id.
-     * @param id id of the StateHistory to delete.
+     * Deletes a SecurityState by its id.
+     * @param id id of the SecurityState to delete.
      * @return true if the deletion succeeded, false otherwise.
      */
-    public static CompletionStage<Boolean> deleteStateHistory(int id) {
-        return deleteById("state_history", id);
+    public static CompletionStage<Boolean> deleteSecurityState(int id) {
+        return deleteById("security_state", id);
     }
 
     /*
