@@ -344,9 +344,11 @@ public class Postgres {
 
         executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
                 "id                 serial PRIMARY KEY," +
-                "timestamp        timestamp NOT NULL DEFAULT now()," +
-                "alerter_id  varchar(255) NOT NULL," +
-                "info               varchar(255)" +
+                "name               varchar(255) NOT NULL,"+
+                "timestamp          timestamp NOT NULL DEFAULT now()," +
+                "source               varchar(255)," +
+                "alerter_id         varchar(255)," +
+                "device_status_id   int"+
                 ");"
         );
 
@@ -669,10 +671,12 @@ public class Postgres {
         AlertHistory alertHistory = null;
         try {
             int id = rs.getInt("id");
+            String name = rs.getString("name");
             Timestamp timestamp = rs.getTimestamp("timestamp");
+            String source = rs.getString("source");
             String alerterId = rs.getString("alerter_id");
-            String name = rs.getString("info");
-            alertHistory = new AlertHistory(id, timestamp, alerterId, name);
+            int deviceStatusId = rs.getInt("device_status_id");
+            alertHistory = new AlertHistory(id, name, timestamp, source, alerterId, deviceStatusId);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -694,10 +698,12 @@ public class Postgres {
                 return -1;
             }
             try {
-                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history(timestamp, alerter_id, info) VALUES (?,?,?);");
-                insertAlert.setTimestamp(1, alertHistory.getTimestamp());
-                insertAlert.setString(2, alertHistory.getAlerterId());
-                insertAlert.setString(3, alertHistory.getInfo());
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history(name, timestamp, source, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
+                insertAlert.setString(1, alertHistory.getName());
+                insertAlert.setTimestamp(2, alertHistory.getTimestamp());
+                insertAlert.setString(3, alertHistory.getSource());
+                insertAlert.setString(4, alertHistory.getAlerterId());
+                insertAlert.setInt(5, alertHistory.getDeviceStatusId());
                 insertAlert.executeUpdate();
                 return getLatestId("alert_history");
             } catch (SQLException e) {
@@ -721,12 +727,14 @@ public class Postgres {
             } else {
                 try {
                     PreparedStatement update = dbConn.prepareStatement("UPDATE alert_history " +
-                            "SET timestamp = ?, alerter_id = ?, info = ?" +
+                            "SET name = ?, timestamp = ?, source = ?, alerter_id = ?, device_status_id = ?" +
                             "WHERE id = ?");
-                    update.setTimestamp(1, alertHistory.getTimestamp());
-                    update.setString(2, alertHistory.getAlerterId());
-                    update.setString(3, alertHistory.getInfo());
-                    update.setInt(4, alertHistory.getId());
+                    update.setString(1, alertHistory.getName());
+                    update.setTimestamp(2, alertHistory.getTimestamp());
+                    update.setString(3, alertHistory.getSource());
+                    update.setString(4, alertHistory.getAlerterId());
+                    update.setInt(5, alertHistory.getDeviceStatusId());
+                    update.setInt(6, alertHistory.getId());
                     update.executeUpdate();
 
                     return alertHistory.getId();
@@ -1174,7 +1182,6 @@ public class Postgres {
     private static DeviceStatus rsToDeviceStatus(ResultSet rs){
         DeviceStatus deviceStatus = null;
         try{
-            logger.severe("Column count: "+rs.getMetaData().getColumnCount());
             int deviceId = rs.getInt("device_id");
             Map<String, String> attributes = HStoreConverter.fromString(rs.getString("attributes"));
             Timestamp timestamp = rs.getTimestamp("timestamp");

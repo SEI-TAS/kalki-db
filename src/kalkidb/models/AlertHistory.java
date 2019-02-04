@@ -6,33 +6,42 @@ import kalkidb.database.Postgres;
 public class AlertHistory {
 
     private int id;
+    private String name;
     private Timestamp timestamp;
+    private String source;
     private String alerterId;
-    private String info;
+    private int deviceStatusId;
 
     public AlertHistory() {
 
     }
 
-    public AlertHistory(String alerterId, String info) {
+    public AlertHistory(String name, String source, String alerterId, int deviceStatusId) {
+        this.name = name;
+        this.source = source;
         this.alerterId = alerterId;
-        this.info = info;
+        this.deviceStatusId = deviceStatusId;
+
         long millis = System.currentTimeMillis() % 1000;
         this.timestamp = new Timestamp(millis);
     }
 
-    public AlertHistory(Timestamp timestamp, String alerterId, String info) {
+    public AlertHistory(String name, Timestamp timestamp, String source, String alerterId, int deviceStatusId) {
+        this.name = name;
         this.timestamp = timestamp;
+        this.source = source;
         this.alerterId = alerterId;
-        this.info = info;
+        this.deviceStatusId = deviceStatusId;
     }
 
 
-    public AlertHistory(int id, Timestamp timestamp, String alerterId, String info) {
+    public AlertHistory(int id, String name, Timestamp timestamp, String source, String alerterId, int deviceStatusId) {
         this.id = id;
+        this.name = name;
         this.timestamp = timestamp;
+        this.source = source;
         this.alerterId = alerterId;
-        this.info = info;
+        this.deviceStatusId = deviceStatusId;
     }
 
     public int getId() {
@@ -43,12 +52,28 @@ public class AlertHistory {
         this.id = id;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Timestamp getTimestamp() {
         return timestamp;
     }
 
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public String getAlerterId() {
@@ -59,12 +84,12 @@ public class AlertHistory {
         this.alerterId = alerterId;
     }
 
-    public String getInfo() {
-        return info;
+    public int getDeviceStatusId() {
+        return deviceStatusId;
     }
 
-    public void setInfo(String info) {
-        this.info = info;
+    public void setDeviceStatusId(int deviceStatusId) {
+        this.deviceStatusId = deviceStatusId;
     }
 
     public void insert() {
@@ -75,6 +100,6 @@ public class AlertHistory {
     }
 
     public String toString() {
-        return "AlertHistory Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", info: "+info;
+        return "AlertHistory Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", name: "+name;
     }
 }
