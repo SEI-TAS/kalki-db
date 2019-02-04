@@ -18,6 +18,7 @@ public class Device {
     private int samplingRate;
     private List<Integer> tagIds;
     private SecurityState currentState;
+    private AlertHistory lastAlert;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -127,6 +128,14 @@ public class Device {
         this.currentState = state;
     }
 
+    public AlertHistory getLastAlert() {
+        return lastAlert;
+    }
+
+    public void setLastAlert(AlertHistory lastAlert) {
+        this.lastAlert = lastAlert;
+    }
+
     public void insert(){
         Postgres.insertDevice(this).thenApplyAsync(id -> {
             this.id = id;
@@ -145,6 +154,14 @@ public class Device {
         catch (JsonProcessingException e) {
             return "Bad device";
         }
+    }
+
+    public CompletionStage<List<DeviceStatus>> lastNSamples(int N){
+        return Postgres.findNDeviceStatuses(this.id, N);
+    }
+
+    public CompletionStage<List<DeviceStatus>> samplesOverTime(int length, String timeUnit){
+        return Postgres.findDeviceStatusesOverTime(this.id, length, timeUnit);
     }
 
 }

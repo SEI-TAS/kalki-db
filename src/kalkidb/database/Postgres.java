@@ -287,15 +287,16 @@ public class Postgres {
         logger.info("Making tables.");
 
         executeCommand("CREATE TABLE IF NOT EXISTS device(" +
-                "id                 serial   PRIMARY KEY," +
-                "name               varchar(255) NOT NULL," +
-                "description        varchar(255)," +
-                "type_id            int NOT NULL," +
-                "group_id           int," +
-                "ip_address         varchar(255)," +
-                "status_history_size       int NOT NULL," +
-                "sampling_rate      int NOT NULL"  +
-                "current_state_id   int" +
+                "id                     serial PRIMARY KEY," +
+                "name                   varchar(255) NOT NULL," +
+                "description            varchar(255)," +
+                "type_id                int NOT NULL," +
+                "group_id               int," +
+                "ip_address             varchar(255)," +
+                "status_history_size    int NOT NULL," +
+                "sampling_rate          int NOT NULL,"  +
+                "current_state_id       int," +
+                "last_alert_id          int"+
                 ");"
         );
 
@@ -908,7 +909,7 @@ public class Postgres {
                     executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                     PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?, current_state = ?" +
+                            "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?, current_state_id = ?" +
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
@@ -917,7 +918,14 @@ public class Postgres {
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getStatusHistorySize());
                     update.setInt(7, device.getSamplingRate());
-                    update.setInt(8, device.getCurrentState().getId());
+
+                    if(device.getCurrentState() != null){
+                        update.setInt(8, device.getCurrentState().getId());
+                    } else {
+                        update.setInt(8, -1);
+                    }
+
+
                     update.setInt(9, device.getId());
                     update.executeUpdate();
 
@@ -1014,11 +1022,93 @@ public class Postgres {
     }
 
     /**
+     * Finds the last N DeviceStatuses for the given device
+     * @param deviceId the id of the device
+     * @param N the number of statuses to retrieve
+     * @return a list of N device statuses
+     */
+    public static CompletionStage<List<DeviceStatus>> findNDeviceStatuses(int deviceId, int N){
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try {
+                logger.info("Finding last "+N+"device statuses for device: "+deviceId);
+                st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT ?");
+                st.setInt(1, deviceId);
+                st.setInt(2, N);
+                rs = st.executeQuery();
+
+                List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
+                while (rs.next()) {
+                    deviceHistories.add(rsToDeviceStatus(rs));
+                }
+                return deviceHistories;
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) { }
+                try { if (st != null) { st.close(); } } catch (Exception e) { }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Finds the last N DeviceStatuses for the given device
+     * @param deviceId the id of the device
+     * @param N the number of statuses to retrieve
+     * @param timeUnit the unit of time to use (minute(s), hour(s), day(s))
+     * @return a list of N device statuses
+     */
+    public static CompletionStage<List<DeviceStatus>> findDeviceStatusesOverTime(int deviceId, int length, String timeUnit){
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try {
+//                st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between now() and (now() - '? ?'::interval) ORDER BY DESC");
+//                st.setInt(1, deviceId);
+//                st.setInt(2, length);
+//                st.setString(3, timeUnit);
+                st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+
+                List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
+                while (rs.next()) {
+                    deviceHistories.add(rsToDeviceStatus(rs));
+                }
+                return deviceHistories;
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) { }
+                try { if (st != null) { st.close(); } } catch (Exception e) { }
+            }
+            return null;
+        });
+    }
+
+    /**
      * Returns a list of device statuses for devices with the given type id. One device status per device
      * @param typeId The typeid for the requested devices
-     * @return
+     * @return A map pairing a device with its most recent DeviceStatus
      */
-    public static CompletionStage<List<DeviceStatus>> findDeviceHistoriesByType(int typeId){
+
+    public static CompletionStage<Map<Device, DeviceStatus>> findDeviceStatusesByType(int typeId){
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
@@ -1026,17 +1116,22 @@ public class Postgres {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
-            List<DeviceStatus> ds = new ArrayList<DeviceStatus>();
+            Map<Device, DeviceStatus> deviceStatusMap = new HashMap<Device, DeviceStatus>();
             try {
                 st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
                 st.setInt(1, typeId);
                 rs = st.executeQuery();
                 while (rs.next()) {
-                    Device d = rsToDevice(rs);
-                    PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? COUNT 1");
-                    statement.setInt(1, d.getId());
+                    Device device = rsToDevice(rs);
+                    PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1");
+                    statement.setInt(1, device.getId());
                     ResultSet resultSet = statement.executeQuery();
-                    ds.add(rsToDeviceStatus(resultSet));
+
+                    DeviceStatus deviceStatus = null;
+                    while(resultSet.next()){
+                        deviceStatus = rsToDeviceStatus(resultSet);
+                    }
+                    deviceStatusMap.put(device, deviceStatus);
                 }
             } catch (SQLException e) {
                 logger.severe("Sql exception getting devices for type: "+ typeId+" "+ e.getClass().getName() + ": " + e.getMessage());
@@ -1047,7 +1142,7 @@ public class Postgres {
                 try { if (rs != null) { rs.close(); } } catch (Exception e) {}
                 try { if (st != null) { st.close(); } } catch (Exception e) {}
             }
-            return ds;
+            return deviceStatusMap;
         });
     }
 
@@ -1055,7 +1150,7 @@ public class Postgres {
      * Finds all DeviceHistories in the database.
      * @return a list of all DeviceHistories in the database.
      */
-    public static CompletionStage<List<DeviceStatus>> findAllDeviceHistories() {
+    public static CompletionStage<List<DeviceStatus>> findAllDeviceStatuses() {
         return CompletableFuture.supplyAsync(() -> {
             ResultSet rs = getAllFromTable("device_status");
             List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
@@ -1079,6 +1174,7 @@ public class Postgres {
     private static DeviceStatus rsToDeviceStatus(ResultSet rs){
         DeviceStatus deviceStatus = null;
         try{
+            logger.severe("Column count: "+rs.getMetaData().getColumnCount());
             int deviceId = rs.getInt("device_id");
             Map<String, String> attributes = HStoreConverter.fromString(rs.getString("attributes"));
             Timestamp timestamp = rs.getTimestamp("timestamp");
