@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Map;
+
 
 public class Device {
 
@@ -164,4 +166,5 @@ public class Device {
         return Postgres.findDeviceStatusesOverTime(this.id, length, timeUnit);
     }
 
+    public CompletionStage<Map<Device, DeviceStatus>> statusesOfSameType() { return Postgres.findDeviceStatusesByType(this.typeId); }
 }

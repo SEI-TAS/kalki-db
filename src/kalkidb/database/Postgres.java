@@ -1084,12 +1084,8 @@ public class Postgres {
                 return null;
             }
             try {
-//                st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between now() and (now() - '? ?'::interval) ORDER BY DESC");
-//                st.setInt(1, deviceId);
-//                st.setInt(2, length);
-//                st.setString(3, timeUnit);
-                st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC");
-                st.setInt(1, deviceId);
+                String query = String.format("SELECT * FROM device_status WHERE (device_id = %d) AND (timestamp between (now() - interval '%s %s') and now())", deviceId, Integer.toString(length), timeUnit);
+                st = dbConn.prepareStatement(query);
                 rs = st.executeQuery();
 
                 List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();

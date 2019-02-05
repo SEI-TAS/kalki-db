@@ -45,9 +45,11 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
+|name            |String   |
 |timestamp       |Timestamp|
+|source          |String   |
 |alerterId       |String   |
-|info            |String   |  
+|device_status_id|int      |  
 ###### Actions:  
 |Function Definition                             |Return Type|
 |:-----------------------------------------------|:--------|
@@ -71,11 +73,11 @@ Device device = Postgres.findDevice(deviceId);
 |samplingRate          |int          |
 |tagIds                |List<Integer>|  
 |currentState          |SecurityState|
+|lastAlert             |AlertHistory |
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
 |`findDevice(int id)`                  |`CompletionStage<Device>`       |
-|`findDeviceByType(int typeId)`        |`CompletionStage<List<Device>>` |
 |`findAllDevices()`                    |`CompletionStage<List<Device>>` |  
 |`insertDevice(Device device)`         |`CompletionStage<Integer>`      |
 |`insertOrUpdateDevice(Device device)` |`CompletionStage<Integer>`      | 
@@ -93,13 +95,16 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---|  
-|`findDeviceStatus(int id)`                                  |`CompletionStage<DeviceStatus>`      |
-|`findDeviceStatuses(int deviceId)`                          |`CompletionStage<List<DeviceStatus>>`|
-|`findAllDeviceStatuses()`                                   |`CompletionStage<List<DeviceStatus>>`|
-|`insertDeviceStatus(DeviceStatus deviceStatus)`             |`CompletionStage<Integer>`            |
-|`insertOrUpdateDeviceStatus(DeviceStatus deviceStatus)`     |`CompletionStage<Integer>`            |
-|`updateDeviceStatus(DeviceStatus deviceStatus)`             |`CompletionStage<Integer>`            |
-|`deleteDeviceStatus(int id)`                                |`CompletionStage<Boolean>`            |
+|`findDeviceStatus(int id)`                                             |`CompletionStage<DeviceStatus>`      |
+|`findDeviceStatuses(int deviceId)`                                     |`CompletionStage<List<DeviceStatus>>`|
+|`findAllDeviceStatuses()`                                              |`CompletionStage<List<DeviceStatus>>`|
+|`findNDeviceStatuses(int deviceId, int N)`                             |`CompletionStage<List<DeviceStatus>>`|
+|`findDeviceStatusesOverTime(int deviceId, int length, String timeUnit)`|`CompletionStage<List<DeviceStatus>>`|
+|`findDeviceStatusesByType(int typeId)`                                 |`CompletionStage<Map<Device, DeviceStatus>>`|
+|`insertDeviceStatus(DeviceStatus deviceStatus)`                        |`CompletionStage<Integer>`           |
+|`insertOrUpdateDeviceStatus(DeviceStatus deviceStatus)`                |`CompletionStage<Integer>`           |
+|`updateDeviceStatus(DeviceStatus deviceStatus)`                        |`CompletionStage<Integer>`           |
+|`deleteDeviceStatus(int id)`                                           |`CompletionStage<Boolean>`           |
 
 ### Group
 ###### Schema:
@@ -130,7 +135,7 @@ Device device = Postgres.findDevice(deviceId);
 |:---|:---| 
 |`findSecurityState(int id)`                        |`SecurityState`|
 |`findSecurityStateByDevice(int deviceId)`          |`SecurityState`|
-|`findSecurityStateHistory(int deviceId)`           |`CompletionStage<List<SecurityState>>`|
+|`findSecurityStates(int deviceId)`                 |`CompletionStage<List<SecurityState>>`|
 |`insertSecurityState(SecurityState securityState)` |`CompletionStage<Integer>`           |
 |`updateSecurityState(SecurityState securityState)` |`CompletionStage<Integer>`           |
 |`deleteSecurityState(int id)`                      |`CompletionStage<Boolean>`           |
@@ -145,6 +150,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition | Return Type |  
 |:---|:---|
 |`findAllTags()`           |`CompletionStage<List<Tag>>`|
+|`findTagIds(int deviceId)`|`List<Integer>`             |
 |`insertTag(Tag tag)`      |`CompletionStage<Integer>`  |
 |`updateTag(Tag tag)`      |`CompletionStage<Integer>`  |
 |`deleteTag(int id)`       |`CompletionStage<Boolean>`  |
