@@ -20,7 +20,7 @@ public class Device {
     private int samplingRate;
     private List<Integer> tagIds;
     private SecurityState currentState;
-    private AlertHistory lastAlert;
+    private Alert lastAlert;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -130,11 +130,16 @@ public class Device {
         this.currentState = state;
     }
 
-    public AlertHistory getLastAlert() {
+    public void setCurrentState(String state) {
+        this.currentState = new SecurityState(this.id, state);
+        this.insertOrUpdate();
+    }
+
+    public Alert getLastAlert() {
         return lastAlert;
     }
 
-    public void setLastAlert(AlertHistory lastAlert) {
+    public void setLastAlert(Alert lastAlert) {
         this.lastAlert = lastAlert;
     }
 

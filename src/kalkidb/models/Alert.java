@@ -3,22 +3,20 @@ package kalkidb.models;
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 
-public class AlertHistory {
+public class Alert {
 
     private int id;
     private String name;
     private Timestamp timestamp;
-    private String source;
     private String alerterId;
     private int deviceStatusId;
 
-    public AlertHistory() {
+    public Alert() {
 
     }
 
-    public AlertHistory(String name, String source, String alerterId, int deviceStatusId) {
+    public Alert(String name, String alerterId, int deviceStatusId) {
         this.name = name;
-        this.source = source;
         this.alerterId = alerterId;
         this.deviceStatusId = deviceStatusId;
 
@@ -26,20 +24,18 @@ public class AlertHistory {
         this.timestamp = new Timestamp(millis);
     }
 
-    public AlertHistory(String name, Timestamp timestamp, String source, String alerterId, int deviceStatusId) {
+    public Alert(String name, Timestamp timestamp, String alerterId, int deviceStatusId) {
         this.name = name;
         this.timestamp = timestamp;
-        this.source = source;
         this.alerterId = alerterId;
         this.deviceStatusId = deviceStatusId;
     }
 
 
-    public AlertHistory(int id, String name, Timestamp timestamp, String source, String alerterId, int deviceStatusId) {
+    public Alert(int id, String name, Timestamp timestamp, String alerterId, int deviceStatusId) {
         this.id = id;
         this.name = name;
         this.timestamp = timestamp;
-        this.source = source;
         this.alerterId = alerterId;
         this.deviceStatusId = deviceStatusId;
     }
@@ -68,14 +64,6 @@ public class AlertHistory {
         this.timestamp = timestamp;
     }
 
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
     public String getAlerterId() {
         return alerterId;
     }
@@ -93,13 +81,13 @@ public class AlertHistory {
     }
 
     public void insert() {
-        Postgres.insertAlertHistory(this).thenApplyAsync(id -> {
+        Postgres.insertAlert(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });
     }
 
     public String toString() {
-        return "AlertHistory Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", name: "+name;
+        return "Alert Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", name: "+name;
     }
 }

@@ -264,7 +264,7 @@ public class Postgres {
         tableNames.add("tag");
         tableNames.add("type");
         tableNames.add("device_group");
-        tableNames.add("alert_history");
+        tableNames.add("alert");
         tableNames.add("umbox_instance");
         tableNames.add("umbox_image");
         for(String tableName: tableNames){
@@ -342,11 +342,10 @@ public class Postgres {
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS alert_history(" +
+        executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
                 "id                 serial PRIMARY KEY," +
                 "name               varchar(255) NOT NULL,"+
                 "timestamp          timestamp NOT NULL DEFAULT now()," +
-                "source               varchar(255)," +
                 "alerter_id         varchar(255)," +
                 "device_status_id   int"+
                 ");"
@@ -435,7 +434,7 @@ public class Postgres {
                 "END;\n" +
                 "$$ LANGUAGE plpgsql;");
         executeCommand("CREATE TRIGGER \"alertHistoryNotify\"\n" +
-                "AFTER INSERT ON alert_history\n" +
+                "AFTER INSERT ON alert\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"alertHistoryNotify\"()");
     }
 
@@ -607,19 +606,19 @@ public class Postgres {
     }
 
     /*
-     *      AlertHistory specific actions.
+     *      Alert specific actions.
      */
     /**
-     * Finds an AlertHistory from the databse with the given id
-     * @param id The id of the desired AlertHistory
-     * @return An AlertHistory with desired id
+     * Finds an Alert from the databse with the given id
+     * @param id The id of the desired Alert
+     * @return An Alert with desired id
      */
-    public static CompletionStage<AlertHistory> findAlertHistory(int id) {
-        return findById(id, "alert_history").thenApplyAsync(rs -> {
+    public static CompletionStage<Alert> findAlert(int id) {
+        return findById(id, "alert").thenApplyAsync(rs -> {
             if(rs == null) {
                 return null;
             } else {
-                return rsToAlertHistory(rs);
+                return rsToAlert(rs);
             }
         });
     }
@@ -630,7 +629,7 @@ public class Postgres {
      * @return a list of all AlertHistories in the database where the the alert was created by a UmboxInstance with
      *         alerterId in alerterIds.
      */
-    public static CompletionStage<List<AlertHistory>> findAlertHistories(List<String> alerterIds) {
+    public static CompletionStage<List<Alert>> findAlerts(List<String> alerterIds) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
@@ -638,14 +637,14 @@ public class Postgres {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
-            List<AlertHistory> alertHistories = new ArrayList<AlertHistory>();
+            List<Alert> alertHistories = new ArrayList<Alert>();
             for(String alerterId : alerterIds) {
                 try {
-                    st = dbConn.prepareStatement("SELECT * FROM alert_history WHERE alerter_id = ?");
+                    st = dbConn.prepareStatement("SELECT * FROM alert WHERE alerter_id = ?");
                     st.setString(1, alerterId);
                     rs = st.executeQuery();
                     while (rs.next()) {
-                        alertHistories.add(rsToAlertHistory(rs));
+                        alertHistories.add(rsToAlert(rs));
                     }
                 } catch (SQLException e) {
                     logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
@@ -663,84 +662,81 @@ public class Postgres {
     }
 
     /**
-     * Extract an AlertHistory from the result set of a database query.
-     * @param rs ResultSet from a AlertHistory query.
-     * @return The AlertHistory that was found.
+     * Extract an Alert from the result set of a database query.
+     * @param rs ResultSet from a Alert query.
+     * @return The Alert that was found.
      */
-    private static AlertHistory rsToAlertHistory(ResultSet rs){
-        AlertHistory alertHistory = null;
+    private static Alert rsToAlert(ResultSet rs){
+        Alert alert = null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
             Timestamp timestamp = rs.getTimestamp("timestamp");
-            String source = rs.getString("source");
             String alerterId = rs.getString("alerter_id");
             int deviceStatusId = rs.getInt("device_status_id");
-            alertHistory = new AlertHistory(id, name, timestamp, source, alerterId, deviceStatusId);
+            alert = new Alert(id, name, timestamp, alerterId, deviceStatusId);
         }
         catch(Exception e) {
             e.printStackTrace();
-            logger.severe("Error converting rs to AlertHistory: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to Alert: " + e.getClass().getName()+": "+e.getMessage());
         }
-        return alertHistory;
+        return alert;
     }
 
     /**
-     * Insert a row into the alert_history table
-     * @param alertHistory The AlertHistory to be added
+     * Insert a row into the alert table
+     * @param alert The Alert to be added
      * @return id of new AlertHistory on success. -1 on error
      */
-    public static CompletionStage<Integer> insertAlertHistory(AlertHistory alertHistory) {
+    public static CompletionStage<Integer> insertAlert(Alert alert) {
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting alert_history: " + alertHistory.toString());
+            logger.info("Inserting alert: " + alert.toString());
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try {
-                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert_history(name, timestamp, source, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
-                insertAlert.setString(1, alertHistory.getName());
-                insertAlert.setTimestamp(2, alertHistory.getTimestamp());
-                insertAlert.setString(3, alertHistory.getSource());
-                insertAlert.setString(4, alertHistory.getAlerterId());
-                insertAlert.setInt(5, alertHistory.getDeviceStatusId());
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alerter_id, device_status_id) VALUES (?,?,?,?);");
+                insertAlert.setString(1, alert.getName());
+                insertAlert.setTimestamp(2, alert.getTimestamp());
+                insertAlert.setString(3, alert.getAlerterId());
+                insertAlert.setInt(4, alert.getDeviceStatusId());
                 insertAlert.executeUpdate();
-                return getLatestId("alert_history");
+                return getLatestId("alert");
             } catch (SQLException e) {
                 e.printStackTrace();
-                logger.severe("Error inserting AlertHistory: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Error inserting Alert: " + e.getClass().getName() + ": " + e.getMessage());
             }
             return -1;
         });
     }
 
     /**
-     * Updates AlertHistory with given id to have the parameters of the given AlertHistory.
-     * @param alertHistory AlertHistory holding new parameters to be saved in the database.
-     * @return the id of the updated AlertHistory on success. -1 on failure
+     * Updates Alert with given id to have the parameters of the given Alert.
+     * @param alert Alert holding new parameters to be saved in the database.
+     * @return the id of the updated Alert on success. -1 on failure
      */
-    public static CompletionStage<Integer> updateAlertHistory(AlertHistory alertHistory) {
+    public static CompletionStage<Integer> updateAlert(Alert alert) {
         return CompletableFuture.supplyAsync(() -> {
-            logger.info(String.format("Updating AlertHistory with id = %d with values: %s", alertHistory.getId(), alertHistory));
+            logger.info(String.format("Updating Alert with id = %d with values: %s", alert.getId(), alert));
             if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             } else {
                 try {
-                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert_history " +
-                            "SET name = ?, timestamp = ?, source = ?, alerter_id = ?, device_status_id = ?" +
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
+                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?" +
                             "WHERE id = ?");
-                    update.setString(1, alertHistory.getName());
-                    update.setTimestamp(2, alertHistory.getTimestamp());
-                    update.setString(3, alertHistory.getSource());
-                    update.setString(4, alertHistory.getAlerterId());
-                    update.setInt(5, alertHistory.getDeviceStatusId());
-                    update.setInt(6, alertHistory.getId());
+                    update.setString(1, alert.getName());
+                    update.setTimestamp(2, alert.getTimestamp());
+                    update.setString(3, alert.getAlerterId());
+                    update.setInt(4, alert.getDeviceStatusId());
+                    update.setInt(5, alert.getId());
                     update.executeUpdate();
 
-                    return alertHistory.getId();
+                    return alert.getId();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    logger.severe("Error updating AlertHistory: " + e.getClass().toString() + ": " + e.getMessage());
+                    logger.severe("Error updating Alert: " + e.getClass().toString() + ": " + e.getMessage());
                 }
             }
             return -1;
@@ -748,12 +744,12 @@ public class Postgres {
     }
 
     /**
-     * Deletes an AlertHistory by its id.
-     * @param id id of the AlertHistory to delete.
+     * Deletes an Alert by its id.
+     * @param id id of the Alert to delete.
      * @return true if the deletion succeeded, false otherwise.
      */
-    public static CompletionStage<Boolean> deleteAlertHistory(int id) {
-        return deleteById("alert_history", id);
+    public static CompletionStage<Boolean> deleteAlert(int id) {
+        return deleteById("alert", id);
     }
 
     /*
