@@ -811,6 +811,40 @@ public class Postgres {
     }
 
     /**
+     * Find devices in a given group
+     * @parameter groupId the id of the group
+     * @return a list of Devices with the given groupId
+     */
+    public static List<Device> findDevicesByGroup(int groupId){
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM device WHERE group_id = ?");
+            st.setInt(1, groupId);
+            rs = st.executeQuery();
+
+            List<Device> devices = new ArrayList<Device>();
+            while (rs.next()) {
+                devices.add(rsToDevice(rs));
+            }
+            return devices;
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all devices for group: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+        } finally {
+            try { if (rs != null) { rs.close(); } } catch (Exception e) { }
+            try { if (st != null) { st.close(); } } catch (Exception e) { }
+        }
+        return null;
+    }
+
+    /**
      * Extract a Device from the result set of a database query.
      * @param rs ResultSet from a Device query.
      * @return The Device that was found.
@@ -854,8 +888,8 @@ public class Postgres {
                                 "status_history_size, sampling_rate) values(?,?,?,?,?,?,?)");
                 update.setString(1, device.getDescription());
                 update.setString(2, device.getName());
-                update.setInt(3, device.getTypeId());
-                update.setInt(4, device.getGroupId());
+                update.setInt(3, device.getType().getId());
+                update.setInt(4, device.getGroup().getId());
                 update.setString(5, device.getIp());
                 update.setInt(6, device.getStatusHistorySize());
                 update.setInt(7, device.getSamplingRate());
@@ -917,8 +951,8 @@ public class Postgres {
                             "WHERE id = ?");
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
-                    update.setInt(3, device.getTypeId());
-                    update.setInt(4, device.getGroupId());
+                    update.setInt(3, device.getType().getId());
+                    update.setInt(4, device.getGroup().getId());
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getStatusHistorySize());
                     update.setInt(7, device.getSamplingRate());
@@ -1108,8 +1142,8 @@ public class Postgres {
      * @return A map pairing a device with its most recent DeviceStatus
      */
 
-    public static CompletionStage<Map<Device, DeviceStatus>> findDeviceStatusesByType(int typeId){
-        return CompletableFuture.supplyAsync(() -> {
+    public static Map<Device, DeviceStatus> findDeviceStatusesByType(int typeId){
+//        return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
             if(dbConn == null){
@@ -1143,8 +1177,74 @@ public class Postgres {
                 try { if (st != null) { st.close(); } } catch (Exception e) {}
             }
             return deviceStatusMap;
-        });
+//        });
     }
+
+    /**
+     * Returns a list of device statuses for devices with the given group id. One device status per device
+     * @param typeId The typeid for the requested devices
+     * @return A map pairing a device with its most recent DeviceStatus
+     */
+
+    public static Map<Device, DeviceStatus> findDeviceStatusesByGroup(int groupId){
+//        return CompletableFuture.supplyAsync(() -> {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        Map<Device, DeviceStatus> deviceStatusMap = new HashMap<Device, DeviceStatus>();
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM device WHERE group_id = ?");
+            st.setInt(1, groupId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                Device device = rsToDevice(rs);
+                PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1");
+                statement.setInt(1, device.getId());
+                ResultSet resultSet = statement.executeQuery();
+
+                DeviceStatus deviceStatus = null;
+                while(resultSet.next()){
+                    deviceStatus = rsToDeviceStatus(resultSet);
+                }
+                deviceStatusMap.put(device, deviceStatus);
+            }
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting devices for group: "+ groupId+" "+ e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting devices for group: "+ groupId+" " + e.getClass().getName() + ": " + e.getMessage());
+        }  finally {
+            try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+            try { if (st != null) { st.close(); } } catch (Exception e) {}
+        }
+        return deviceStatusMap;
+//        });
+    }
+
+//
+//    public static DeviceStatus findLastDeviceStatusAttributeChange(int deviceId, String attribute) {
+//        PreparedStatement st = null;
+//        ResultSet rs = null;
+//        if(dbConn == null) {
+//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+//            return null;
+//        }
+//
+//        try {
+////            st = dbConn.prepareStatement
+//        } catch (SQLException e) {
+//            logger.severe("Sql exception getting device statuses for device: "+ deviceId+" "+ e.getClass().getName() + ": " + e.getMessage());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.severe("Error getting devices statuses for device: "+ deviceId+" " + e.getClass().getName() + ": " + e.getMessage());
+//        }  finally {
+//            try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+//            try { if (st != null) { st.close(); } } catch (Exception e) {}
+//        }
+//    }
 
     /**
      * Finds all DeviceHistories in the database.

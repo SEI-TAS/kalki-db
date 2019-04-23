@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 
 public class Device {
@@ -13,8 +14,10 @@ public class Device {
     private int id;
     private String name;
     private String description;
-    private int typeId;
-    private int groupId;
+//    private int typeId;
+    private Type type;
+//    private int groupId;
+    private Group group;
     private String ip;
     private int statusHistorySize;
     private int samplingRate;
@@ -28,11 +31,28 @@ public class Device {
 
     }
 
+    public Device(String name, String description, Type type, Group group, String ip, int statusHistorySize, int samplingRate, SecurityState currentState, Alert lastAlert){
+        this.name = name;
+        this.description = description;
+        this.type = type;
+        this.group = group;
+        this.ip = ip;
+        this.statusHistorySize = statusHistorySize;
+        this.samplingRate = samplingRate;
+        this.currentState = currentState;
+        this.lastAlert = lastAlert;
+    }
+
     public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate){
         this.name = name;
         this.description = description;
-        this.typeId = typeId;
-        this.groupId = groupId;
+        try {
+            this.type = Postgres.findType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
+            this.group = Postgres.findGroup(groupId).thenApplyAsync(group -> {return group;}).toCompletableFuture().get();
+        } catch (Exception e) {
+            System.out.println("ERROR initializing Device: "+name);
+            e.printStackTrace();
+        }
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
@@ -43,8 +63,13 @@ public class Device {
         this.id = id;
         this.description = description;
         this.name = name;
-        this.typeId = typeId;
-        this.groupId = groupId;
+        try {
+            this.type = Postgres.findType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
+            this.group = Postgres.findGroup(groupId).thenApplyAsync(group -> {return group;}).toCompletableFuture().get();
+        } catch (Exception e) {
+            System.out.println("ERROR initializing Device: "+name);
+            e.printStackTrace();
+        }
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
         this.ip = ip;
@@ -74,12 +99,12 @@ public class Device {
         this.description = description;
     }
 
-    public int getTypeId() {
-        return typeId;
+    public Type getType() {
+        return type;
     }
 
-    public void setTypeId(int typeId) {
-        this.typeId = typeId;
+    public void setType(Type type) {
+        this.type = type;
     }
 
     public String getIp() {
@@ -106,12 +131,12 @@ public class Device {
         this.samplingRate = samplingRate;
     }
 
-    public int getGroupId() {
-        return groupId;
+    public Group getGroup() {
+        return group;
     }
 
-    public void setGroupId(int groupId) {
-        this.groupId = groupId;
+    public void setGroupId(Group group) {
+        this.group = group;
     }
 
     public List<Integer> getTagIds() {
@@ -171,5 +196,7 @@ public class Device {
         return Postgres.findDeviceStatusesOverTime(this.id, length, timeUnit);
     }
 
-    public CompletionStage<Map<Device, DeviceStatus>> statusesOfSameType() { return Postgres.findDeviceStatusesByType(this.typeId); }
+    public Map<Device, DeviceStatus> statusesOfSameType() { return Postgres.findDeviceStatusesByType(this.type.getId()); }
+
+    public Map<Device, DeviceStatus> statusesOfSameGroup() { return Postgres.findDeviceStatusesByGroup(this.group.getId()); }
 }
