@@ -2,29 +2,29 @@ package kalkidb.models;
 import kalkidb.database.Postgres;
 import java.util.concurrent.CompletionStage;
 
-public class Type {
+public class DeviceType {
 
     private int id;
     private String name;
     private byte[] policyFile;
     private String policyFileName;
 
-    public Type() {
+    public DeviceType() {
 
     }
 
-    public Type(int id, String name) {
+    public DeviceType(int id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public Type(String name, byte[] policyFile, String policyFileName) {
+    public DeviceType(String name, byte[] policyFile, String policyFileName) {
         this.name = name;
         this.policyFile = policyFile;
         this.policyFileName = policyFileName;
     }
 
-    public Type(int id, String name, byte[] policyFile, String policyFileName) {
+    public DeviceType(int id, String name, byte[] policyFile, String policyFileName) {
         this.id = id;
         this.name = name;
         this.policyFile = policyFile;
@@ -64,7 +64,7 @@ public class Type {
     }
 
     public CompletionStage<Integer> insert(){
-        return Postgres.insertType(this).thenApplyAsync(id -> {
+        return Postgres.insertDeviceType(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });

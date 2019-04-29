@@ -230,7 +230,7 @@ public class Postgres {
         logger.info("Setting up database.");
         createHstoreExtension();
         makeTables();
-        insertDefaultTypes();
+        insertDefaultDeviceTypes();
         createTriggers();
     }
 
@@ -328,7 +328,7 @@ public class Postgres {
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS type(" +
+        executeCommand("CREATE TABLE IF NOT EXISTS device_type(" +
                 "id    serial PRIMARY KEY, " +
                 "name  varchar(255)," +
                 "policy_file    bytea," +
@@ -372,7 +372,7 @@ public class Postgres {
     /**
      * Insert the default types into the database.
      */
-    public static void insertDefaultTypes() {
+    public static void insertDefaultDeviceTypes() {
         logger.info("Inserting default types.");
         List<String> typeNames = new ArrayList<String>();
         typeNames.add("Hue Light");
@@ -380,7 +380,7 @@ public class Postgres {
         typeNames.add("WeMo Insight");
         typeNames.add("Udoo Neo");
         for(String typeName: typeNames){
-            executeCommand("INSERT INTO type (name) VALUES ('" + typeName + "')");
+            executeCommand("INSERT INTO device_type (name) VALUES ('" + typeName + "')");
         }
     }
 
@@ -1872,39 +1872,39 @@ public class Postgres {
     }
 
     /*
-     *      Type specific actions
+     *      DeviceType specific actions
      */
     /**
-     * Finds a Type from the database by its id.
-     * @param id id of the Type to find.
-     * @return the Type if it exists in the database, else null.
+     * Finds a DeviceType from the database by its id.
+     * @param id id of the DeviceType to find.
+     * @return the DeviceType if it exists in the database, else null.
      */
-    public static CompletionStage<Type> findType(int id) {
-        return findById(id, "type").thenApplyAsync(rs -> {
+    public static CompletionStage<DeviceType> findDeviceType(int id) {
+        return findById(id, "device_type").thenApplyAsync(rs -> {
             if(rs == null) {
                 return null;
             } else {
-                Type type = rsToType(rs);
+                DeviceType type = rsToDeviceType(rs);
                 return type;
             }
         });
     }
     /**
-     * Finds all Types in the database.
-     * @return a list of all Types in the database.
+     * Finds all DeviceTypes in the database.
+     * @return a list of all DeviceTypes in the database.
      */
-    public static CompletionStage<List<Type>> findAllTypes() {
+    public static CompletionStage<List<DeviceType>> findAllDeviceTypes() {
         return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = getAllFromTable("type");
-            List<Type> types = new ArrayList<Type>();
+            ResultSet rs = getAllFromTable("device_type");
+            List<DeviceType> types = new ArrayList<DeviceType>();
             try {
                 while (rs.next()) {
-                    types.add(rsToType(rs));
+                    types.add(rsToDeviceType(rs));
                 }
             }
             catch (SQLException e) {
                 e.printStackTrace();
-                logger.severe("SQLException getting all Types: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("SQLException getting all DeviceTypes: " + e.getClass().getName()+": "+e.getMessage());
             }
             finally {
                 try { if(rs != null) rs.close(); } catch (Exception e) {}
@@ -1914,70 +1914,70 @@ public class Postgres {
     }
 
     /**
-     * Extract a Type from the result set of a database query.
-     * @param rs ResultSet from a Type query.
-     * @return The first Type in rs.
+     * Extract a DeviceType from the result set of a database query.
+     * @param rs ResultSet from a DeviceType query.
+     * @return The first DeviceType in rs.
      */
-    private static Type rsToType(ResultSet rs){
-        Type type = null;
+    private static DeviceType rsToDeviceType(ResultSet rs){
+        DeviceType type = null;
         try{
             int id = rs.getInt("id");
             String name = rs.getString("name");
             byte[] policyFile = rs.getBytes("policy_file");
             String policyFileName = rs.getString("policy_file_name");
-            type = new Type(id, name, policyFile, policyFileName);
+            type = new DeviceType(id, name, policyFile, policyFileName);
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to Type: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to DeviceType: " + e.getClass().getName()+": "+e.getMessage());
         }
         return type;
     }
 
     /**
-     * Saves given Type to the database.
-     * @param type Type to be inserted.
+     * Saves given DeviceType to the database.
+     * @param type DeviceType to be inserted.
      * @return auto incremented id
      */
-    public static CompletionStage<Integer> insertType(Type type){
+    public static CompletionStage<Integer> insertDeviceType(DeviceType type){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting Type: " + type.getId());
+            logger.info("Inserting DeviceType: " + type.getId());
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try{
                 PreparedStatement update = dbConn.prepareStatement
-                        ("INSERT INTO type(name, policy_file, policy_file_name)" +
+                        ("INSERT INTO device_type(name, policy_file, policy_file_name)" +
                                 "values(?,?,?)");
                 update.setString(1, type.getName());
                 update.setBytes(2, type.getPolicyFile());
                 update.setString(3, type.getPolicyFileName());
                 update.executeUpdate();
-                return getLatestId("type");
+                return getLatestId("device_type");
             }
             catch(Exception e){
                 e.printStackTrace();
-                logger.severe("Error inserting Type: " + e.getClass().getName()+": "+e.getMessage());
+                logger.severe("Error inserting DeviceType: " + e.getClass().getName()+": "+e.getMessage());
             }
             return -1;
         });
     }
 
     /**
-     * Updates Type with given id to have the parameters of the given Type.
-     * @param type Type holding new parameters to be saved in the database.
+     * Updates DeviceType with given id to have the parameters of the given DeviceType.
+     * @param type DeviceType holding new parameters to be saved in the database.
      */
-    public static CompletionStage<Integer> updateType(Type type){
+    public static CompletionStage<Integer> updateDeviceType(DeviceType type){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Updating Type with id=" + type.getId());
+            logger.info("Updating DeviceType with id=" + type.getId());
             if (dbConn == null) {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try {
                 PreparedStatement update = dbConn.prepareStatement
-                        ("UPDATE type SET name = ?, policy_file = ?, policy_file_name = ?" +
+                        ("UPDATE device_type SET name = ?, policy_file = ?, policy_file_name = ?" +
                                 "WHERE id=?");
                 update.setString(1, type.getName());
                 update.setBytes(2, type.getPolicyFile());
@@ -1987,19 +1987,19 @@ public class Postgres {
                 return type.getId();
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error updating Type: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Error updating DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
                 return -1;
             }
         });
     }
 
     /**
-     * Deletes a Type by its id.
-     * @param id id of the Type to delete.
+     * Deletes a DeviceType by its id.
+     * @param id id of the DeviceType to delete.
      * @return true if the deletion succeeded, false otherwise.
      */
-    public static CompletionStage<Boolean> deleteType(int id) {
-        return deleteById("type", id);
+    public static CompletionStage<Boolean> deleteDeviceType(int id) {
+        return deleteById("device_type", id);
     }
 
     /*

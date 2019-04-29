@@ -160,7 +160,7 @@ Device device = Postgres.findDevice(deviceId);
 |`updateTag(Tag tag)`      |`CompletionStage<Integer>`  |
 |`deleteTag(int id)`       |`CompletionStage<Boolean>`  |
 
-#### Type
+#### DeviceType
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
@@ -171,11 +171,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findType(int id)`     |`CompletionStage<Type>`      |
-|`findAllTypes()`       |`CompletionStage<List<Type>>`|
-|`insertType(Type type)`|`CompletionStage<Integer>`   |
-|`updateType(Type type)`|`CompletionStage<Integer>`   |
-|`deleteType(int id)`   |`CompletionStage<Boolean>`   |
+|`findDeviceType(int id)`     |`CompletionStage<Type>`      |
+|`findAllDeviceTypes()`       |`CompletionStage<List<Type>>`|
+|`insertDeviceType(Type type)`|`CompletionStage<Integer>`   |
+|`updateDeviceType(Type type)`|`CompletionStage<Integer>`   |
+|`deleteDeviceType(int id)`   |`CompletionStage<Boolean>`   |
 
 #### UmboxImage
 ###### Schema:

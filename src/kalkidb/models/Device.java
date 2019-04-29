@@ -15,7 +15,7 @@ public class Device {
     private String name;
     private String description;
 //    private int typeId;
-    private Type type;
+    private DeviceType type;
 //    private int groupId;
     private Group group;
     private String ip;
@@ -31,7 +31,7 @@ public class Device {
 
     }
 
-    public Device(String name, String description, Type type, Group group, String ip, int statusHistorySize, int samplingRate, SecurityState currentState, Alert lastAlert){
+    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, SecurityState currentState, Alert lastAlert){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -47,7 +47,7 @@ public class Device {
         this.name = name;
         this.description = description;
         try {
-            this.type = Postgres.findType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
+            this.type = Postgres.findDeviceType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
             this.group = Postgres.findGroup(groupId).thenApplyAsync(group -> {return group;}).toCompletableFuture().get();
         } catch (Exception e) {
             System.out.println("ERROR initializing Device: "+name);
@@ -64,7 +64,7 @@ public class Device {
         this.description = description;
         this.name = name;
         try {
-            this.type = Postgres.findType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
+            this.type = Postgres.findDeviceType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
             this.group = Postgres.findGroup(groupId).thenApplyAsync(group -> {return group;}).toCompletableFuture().get();
         } catch (Exception e) {
             System.out.println("ERROR initializing Device: "+name);
@@ -99,11 +99,11 @@ public class Device {
         this.description = description;
     }
 
-    public Type getType() {
+    public DeviceType getType() {
         return type;
     }
 
-    public void setType(Type type) {
+    public void setType(DeviceType type) {
         this.type = type;
     }
 
