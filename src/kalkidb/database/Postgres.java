@@ -346,10 +346,30 @@ public class Postgres {
                 "id                 serial PRIMARY KEY," +
                 "name               varchar(255) NOT NULL,"+
                 "timestamp          timestamp NOT NULL DEFAULT now()," +
+                "alert_type_id      int" +
                 "alerter_id         varchar(255)," +
                 "device_status_id   int"+
                 ");"
         );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_type(" +
+                "id                 serial PRIMARY KEY," +
+                "name               varchar(255) NOT NULL," +
+                "description        varchar(255)," +
+                "source             varchar(255)" +
+                ");");
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_type_lookup(" +
+                "alert_type_id      int," +
+                "device_type_id     int" +
+                ");");
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_condition(" +
+                "id                 serial PRIMARY KEY," +
+                "variables          hstore," +
+                "device_id          int," +
+                "alert_type_id      int" +
+                ");");
 
         executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
                 "id                 serial PRIMARY KEY, " +
@@ -471,7 +491,7 @@ public class Postgres {
      */
     private static CompletionStage<ResultSet> findById(int id, String tableName){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info(String.format("Finiding by id = %d in %s", id, tableName));
+            logger.info(String.format("Finding by id = %d in %s", id, tableName));
             PreparedStatement st = null;
             ResultSet rs = null;
             if(dbConn == null){
@@ -624,9 +644,9 @@ public class Postgres {
     }
 
     /**
-     * Finds all AlertHistories from the database for the given list of UmboxInstance alerterIds.
+     * Finds all Alerts from the database for the given list of UmboxInstance alerterIds.
      * @param alerterIds a list of alerterIds of UmboxInstances.
-     * @return a list of all AlertHistories in the database where the the alert was created by a UmboxInstance with
+     * @return a list of all Alerts in the database where the the alert was created by a UmboxInstance with
      *         alerterId in alerterIds.
      */
     public static CompletionStage<List<Alert>> findAlerts(List<String> alerterIds) {
@@ -637,14 +657,14 @@ public class Postgres {
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
-            List<Alert> alertHistories = new ArrayList<Alert>();
+            List<Alert> alertHistory = new ArrayList<Alert>();
             for(String alerterId : alerterIds) {
                 try {
                     st = dbConn.prepareStatement("SELECT * FROM alert WHERE alerter_id = ?");
                     st.setString(1, alerterId);
                     rs = st.executeQuery();
                     while (rs.next()) {
-                        alertHistories.add(rsToAlert(rs));
+                        alertHistory.add(rsToAlert(rs));
                     }
                 } catch (SQLException e) {
                     logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
@@ -656,7 +676,7 @@ public class Postgres {
                     try { if (st != null) { st.close(); } } catch (Exception e) {}
                 }
             }
-            return alertHistories;
+            return alertHistory;
         });
 
     }
@@ -674,7 +694,8 @@ public class Postgres {
             Timestamp timestamp = rs.getTimestamp("timestamp");
             String alerterId = rs.getString("alerter_id");
             int deviceStatusId = rs.getInt("device_status_id");
-            alert = new Alert(id, name, timestamp, alerterId, deviceStatusId);
+            int alertTypeId = rs.getInt("alert_type_id");
+            alert = new Alert(id, name, timestamp, alerterId, deviceStatusId, alertTypeId);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -686,7 +707,7 @@ public class Postgres {
     /**
      * Insert a row into the alert table
      * @param alert The Alert to be added
-     * @return id of new AlertHistory on success. -1 on error
+     * @return id of new Alert on success. -1 on error
      */
     public static CompletionStage<Integer> insertAlert(Alert alert) {
         return CompletableFuture.supplyAsync(() -> {
@@ -696,11 +717,12 @@ public class Postgres {
                 return -1;
             }
             try {
-                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alerter_id, device_status_id) VALUES (?,?,?,?);");
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alerter_id, device_status_id, alert_type_id) VALUES (?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
                 insertAlert.setString(3, alert.getAlerterId());
                 insertAlert.setInt(4, alert.getDeviceStatusId());
+                insertAlert.setInt(5, alert.getAlertTypeId());
                 insertAlert.executeUpdate();
                 return getLatestId("alert");
             } catch (SQLException e) {
@@ -724,13 +746,14 @@ public class Postgres {
             } else {
                 try {
                     PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
-                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?" +
+                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, alert_type_id = ?" +
                             "WHERE id = ?");
                     update.setString(1, alert.getName());
                     update.setTimestamp(2, alert.getTimestamp());
                     update.setString(3, alert.getAlerterId());
                     update.setInt(4, alert.getDeviceStatusId());
-                    update.setInt(5, alert.getId());
+                    update.setInt(5, alert.getAlertTypeId());
+                    update.setInt(6, alert.getId());
                     update.executeUpdate();
 
                     return alert.getId();
@@ -751,6 +774,313 @@ public class Postgres {
     public static CompletionStage<Boolean> deleteAlert(int id) {
         return deleteById("alert", id);
     }
+
+
+    /*
+     *      AlertCondition specific actions
+     */
+
+    /**
+     * Finds an AlertCondition from the databse with the given id
+     * @param id The id of the desired AlertCondition
+     * @return An AlertCondition with desired id
+     */
+    public static CompletionStage<AlertCondition> findAlertCondition(int id){
+        return findById(id, "alert_condition").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                return rsToAlertCondition(rs);
+            }
+        });
+    }
+
+    /**
+     * Finds all AlertConditions from the database for the given device_id
+     * @param device_id an id of a device
+     * @return a list of all AlertConditions in the database related to the given device
+     */
+    public static CompletionStage<List<AlertCondition>> findAlertConditionsByDevice(int deviceId) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            List<AlertCondition> conditionList = new ArrayList<AlertCondition>();
+            try {
+                st = dbConn.prepareStatement("SELECT * FROM alert_condition WHERE device_id = ?");
+                st.setInt(1, deviceId);
+                rs = st.executeQuery();
+                while (rs.next()) {
+                    conditionList.add(rsToAlertCondition(rs));
+                }
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all alert conditions: " + e.getClass().getName() + ": " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting alert conditions: " + e.getClass().getName() + ": " + e.getMessage());
+            }  finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+                try { if (st != null) { st.close(); } } catch (Exception e) {}
+            }
+            return conditionList;
+        });
+
+    }
+
+    /**
+     * Extract an AlertCondition from the result set of a database query.
+     * @param rs ResultSet from a AlertCondition query.
+     * @return The AlertCondition that was found.
+     */
+    private static AlertCondition rsToAlertCondition(ResultSet rs){
+        AlertCondition cond = null;
+        try {
+            int id = rs.getInt("id");
+            Map<String, String> variables = HStoreConverter.fromString(rs.getString("variables"));
+            int deviceId = rs.getInt("device_id");
+            int alertTypeId = rs.getInt("alert_type_id");
+            cond = new AlertCondition(id, variables, deviceId, alertTypeId);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            logger.severe("Error converting rs to Alert: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return cond;
+    }
+
+    /**
+     * Insert a row into the AlertCondition table
+     * @param alert The AlertCondition to be added
+     * @return id of new AlertCondition on success. -1 on error
+     */
+    public static CompletionStage<Integer> insertAlert(AlertCondition cond) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting alert condition for device: " + cond.getDeviceId());
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try {
+                PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_id) VALUES (?,?,?);");
+                insertAlertCondition.setObject(1, cond.getVariables());
+                insertAlertCondition.setInt(2, cond.getDeviceId());
+                insertAlertCondition.setInt(3, cond.getAlertTypeId());
+                insertAlertCondition.executeUpdate();
+                return getLatestId("alert_condition");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * Updates provided AlertCondition
+     * @param condition AlertCondition holding new values to be saved in the database.
+     * @return the id of the updated Alert on success. -1 on failure
+     */
+    public static CompletionStage<Integer> updateAlertCondition(AlertCondition condition) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Updating AlertCondition with id = %d with values: %s", condition.getId(), condition));
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            } else {
+                try {
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert_condition " +
+                            "SET variables = ?, device_id = ?, alert_type_id = ?" +
+                            "WHERE id = ?");
+                    update.setObject(1, condition.getVariables());
+                    update.setInt(2, condition.getDeviceId());
+                    update.setInt(3, condition.getAlertTypeId());
+                    update.setInt(4, condition.getId());
+                    update.executeUpdate();
+
+                    return condition.getId();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.severe("Error updating AlertCondition: " + e.getClass().toString() + ": " + e.getMessage());
+                }
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * Deletes an AlertCondition by its id.
+     * @param id id of the AlertCondition to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static CompletionStage<Boolean> deleteAlertCondition(int id) {
+        return deleteById("alert_condition", id);
+    }
+
+    /*
+     *      AlertType specific actions
+     */
+
+    /**
+     * Finds an AlertType from the databse with the given id
+     * @param id The id of the desired AlertType
+     * @return An AlertType with desired id
+     */
+    public static CompletionStage<AlertType> findAlertType(int id){
+        return findById(id, "alert_type").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                return rsToAlertType(rs);
+            }
+        });
+    }
+
+    /**
+     * Finds all AlertTypes from the database for the given type_id
+     * @param typeId an id of a DeviceType
+     * @return a list of all AlertTypes in the database for the given DeviceType
+     */
+    public static CompletionStage<List<AlertType>> findAlertTypesByDeviceType(int deviceTypeId) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            List<AlertType> alertTypeList = new ArrayList<AlertType>();
+            try {
+                st = dbConn.prepareStatement("SELECT * FROM alert_type WHERE device_id = (SELECT alert_type_id FROM alert_type_lookup WHERE device_type_id = ?)");
+                st.setInt(1, deviceTypeId);
+                rs = st.executeQuery();
+                while (rs.next()) {
+                    alertTypeList.add(rsToAlertType(rs));
+                }
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all alert types: " + e.getClass().getName() + ": " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting alert types: " + e.getClass().getName() + ": " + e.getMessage());
+            }  finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) {}
+                try { if (st != null) { st.close(); } } catch (Exception e) {}
+            }
+            return alertTypeList;
+        });
+
+    }
+
+    /**
+     * Extract an AlertType from the result set of a database query.
+     * @param rs ResultSet from a AlertType query.
+     * @return The AlertType that was found.
+     */
+    private static AlertType rsToAlertType(ResultSet rs){
+        AlertType type = null;
+        try {
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            String description = rs.getString("description");
+            String source = rs.getString("source");
+            type = new AlertType(id, name, description, source);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            logger.severe("Error converting rs to AlertType: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return type;
+    }
+
+    /**
+     * Insert a row into the AlertType table
+     * @param type The AlertType to be added
+     * @return id of new AlertType on success. -1 on error
+     */
+    public static CompletionStage<Integer> insertAlert(AlertType type) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting alert type: " + type.getName());
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try {
+                PreparedStatement insertAlertType = dbConn.prepareStatement("INSERT INTO alert_type(name, description, source) VALUES (?,?,?);");
+                insertAlertType.setString(1, type.getName());
+                insertAlertType.setString(2, type.getDescription());
+                insertAlertType.setString(3, type.getSource());
+                insertAlertType.executeUpdate();
+                return getLatestId("alert_type");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Error inserting AlertType: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * Updates provided AlertType
+     * @param condition AlertType holding new values to be saved in the database.
+     * @return the id of the updated Alert on success. -1 on failure
+     */
+    public static CompletionStage<Integer> updateAlertType(AlertType type) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Updating AlertType with id = %d with values: %s", type.getId(), type));
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            } else {
+                try {
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert_type " +
+                            "SET name = ?, description = ?, source = ?" +
+                            "WHERE id = ?");
+                    update.setString(1, type.getName());
+                    update.setString(2, type.getDescription());
+                    update.setString(3, type.getSource());
+                    update.setInt(4, type.getId());
+                    update.executeUpdate();
+
+                    return type.getId();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
+                }
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * Deletes an AlertType by its id.
+     * @param id id of the AlertType to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static CompletionStage<Boolean> deleteAlertType(int id) {
+        return CompletableFuture.supplyAsync(()->{
+            logger.info(String.format("Deleting AlertType with id = %d", id));
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            } else {
+                try {
+                    PreparedStatement deleteAlertTypeLookup = dbConn.prepareStatement("DELETE FROM alert_type_lookup WHERE alert_type_id = ?");
+                    deleteAlertTypeLookup.setInt(1, id);
+                    deleteAlertTypeLookup.executeUpdate();
+
+                    PreparedStatement deleteAlertType = dbConn.prepareStatement("DELETE FROM alert_type WHERE id = ?");
+                    deleteAlertType.setInt(1, id);
+                    deleteAlertType.executeUpdate();
+                    return true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
+                }
+            }
+            return false;
+        });
+
+    }
+
 
     /*
      *       Device specific actions
@@ -1247,22 +1577,22 @@ public class Postgres {
 //    }
 
     /**
-     * Finds all DeviceHistories in the database.
-     * @return a list of all DeviceHistories in the database.
+     * Finds all DeviceStatuses in the database.
+     * @return a list of all DeviceStatuses in the database.
      */
     public static CompletionStage<List<DeviceStatus>> findAllDeviceStatuses() {
         return CompletableFuture.supplyAsync(() -> {
             ResultSet rs = getAllFromTable("device_status");
-            List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
+            List<DeviceStatus> deviceStatuses = new ArrayList<DeviceStatus>();
             try {
                 while (rs.next()) {
-                    deviceHistories.add(rsToDeviceStatus(rs));
+                    deviceStatuses.add(rsToDeviceStatus(rs));
                 }
                 rs.close();
             } catch (SQLException e) {
-                logger.severe("Sql exception getting all device histories.");
+                logger.severe("Sql exception getting all device statuses.");
             }
-            return deviceHistories;
+            return deviceStatuses;
         });
     }
 

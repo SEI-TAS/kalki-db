@@ -65,6 +65,40 @@ Device device = Postgres.findDevice(deviceId);
 |`updateAlert(Alert alert)`                       |`CompletionStage<Integer>`           |
 |`deleteAlert(int id)`                            |`CompletionStage<Boolean>`           |
 
+#### AlertCondition
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|variables       |hstore   |
+|device_id       |int      |
+|alert_type_id   |int      |  
+###### Actions:  
+|Function Definition                                 |Return Type|
+|:---------------------------------------------------|:--------|
+|`findAlertCondition(int id) `                       |`CompletionStage<AlertCondition>`      |
+|`findAlertConditionsByDevice(int deviceId)`         |`CompletionStage<List<AlertCondition>>`|
+|`insertAlertCondition(AlertCondition condition`     |`CompletionStage<Integer>`           |
+|`updateAlertCondition(AlertCondition condition)`    |`CompletionStage<Integer>`           |
+|`deleteAlertCondition(int id)`                      |`CompletionStage<Boolean>`           |
+
+#### AlertType
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|name            |String   |
+|description     |String   |
+|source          |String   |
+###### Actions:  
+|Function Definition                                 |Return Type|
+|:---------------------------------------------------|:--------|
+|`findAlertType(int id) `                       |`CompletionStage<AlertType>`      |
+|`findAlertTypesByDeviceType(int deviceTypeId)` |`CompletionStage<List<AlertType>>`|
+|`insertAlertType(AlertType type)`              |`CompletionStage<Integer>`|
+|`updateAlertType(AlertType type)`              |`CompletionStage<Integer>`|
+|`deleteAlertType(int id)`                      |`CompletionStage<Boolean>`|
+
 #### Device
 ###### Schema:
 |Property              |Type         |

@@ -10,6 +10,7 @@ public class Alert {
     private Timestamp timestamp;
     private String alerterId;
     private int deviceStatusId;
+    private int alertTypeId;
 
     public Alert() {
 
@@ -24,20 +25,22 @@ public class Alert {
         this.timestamp = new Timestamp(millis);
     }
 
-    public Alert(String name, Timestamp timestamp, String alerterId, int deviceStatusId) {
+    public Alert(String name, Timestamp timestamp, String alerterId, int deviceStatusId, int alertTypeId) {
         this.name = name;
         this.timestamp = timestamp;
         this.alerterId = alerterId;
         this.deviceStatusId = deviceStatusId;
+        this.alertTypeId = alertTypeId;
     }
 
 
-    public Alert(int id, String name, Timestamp timestamp, String alerterId, int deviceStatusId) {
+    public Alert(int id, String name, Timestamp timestamp, String alerterId, int deviceStatusId, int alertTypeId) {
         this.id = id;
         this.name = name;
         this.timestamp = timestamp;
         this.alerterId = alerterId;
         this.deviceStatusId = deviceStatusId;
+        this.alertTypeId = alertTypeId;
     }
 
     public int getId() {
@@ -79,6 +82,10 @@ public class Alert {
     public void setDeviceStatusId(int deviceStatusId) {
         this.deviceStatusId = deviceStatusId;
     }
+
+    public int getAlertTypeId() { return alertTypeId; }
+
+    public void setAlertTypeId(int alertTypeId ) { this.alertTypeId = alertTypeId; }
 
     public void insert() {
         Postgres.insertAlert(this).thenApplyAsync(id -> {
