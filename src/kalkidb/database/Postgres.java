@@ -342,6 +342,12 @@ public class Postgres {
                 ");"
         );
 
+        executeCommand("CREATE TABLE IF NOT EXISTS command_lookup(" +
+                "device_type_id     int NOT NULL," +
+                "state_id           int NOT NULL," +
+                "name               varchar(255)" +
+                ");");
+
         executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
                 "id                 serial PRIMARY KEY," +
                 "name               varchar(255) NOT NULL,"+
@@ -1089,6 +1095,63 @@ public class Postgres {
 
     }
 
+    /*
+     *      CommandLookup specific actions
+     */
+
+    /**
+     * Finds the commands for the device in its current state
+     * @param device The device in question
+     * @return commands A list of command names
+     */
+    public static CompletionStage<String> findCommandsByDevice(Device device) {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return null;
+            }
+            try {
+                st = dbConn.prepareStatement("SELECT * FROM command_lookup WHERE device_type_id = ? AND state_id = ?");
+                st.setInt(1, device.getType().getId());
+                st.setInt(2, device.getCurrentState().getId());
+                rs = st.executeQuery();
+
+                List<String> commands = new ArrayList<Commands>();
+                while (rs.next()) {
+                    commands.add(rsToCommandLookup(rs));
+                }
+                return commands;
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all commands for device: " + e.getClass().getName() + ": " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error getting device commands: " + e.getClass().getName() + ": " + e.getMessage());
+            } finally {
+                try { if (rs != null) { rs.close(); } } catch (Exception e) { }
+                try { if (st != null) { st.close(); } } catch (Exception e) { }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Extract a Command name from the result set of a database query.
+     * @param rs ResultSet from a CommandLookup query.
+     * @return The name that was found.
+     */
+    private static Device rsToCommandLookup(ResultSet rs){
+        String name = "";
+        try{
+            name = rs.getString("name");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return name;
+    }
 
     /*
      *       Device specific actions

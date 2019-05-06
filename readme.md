@@ -99,6 +99,18 @@ Device device = Postgres.findDevice(deviceId);
 |`updateAlertType(AlertType type)`              |`CompletionStage<Integer>`|
 |`deleteAlertType(int id)`                      |`CompletionStage<Boolean>`|
 
+#### CommandLookup
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|device_type_id  |int NOT NULL|  
+|state_id        |int NOT NULL|
+|name            |String   |
+###### Actions:  
+|Function Definition                   |Return Type|
+|:-------------------------------------|:--------|
+|`findCommandsByDevice(Device device)` |`CompletionStage<List<String>>`|
+
 #### Device
 ###### Schema:
 |Property              |Type         |
