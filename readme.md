@@ -222,6 +222,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxImage(int id)`         |`CompletionStage<UmboxImage>`      |
+|`findUmboxImagesByDevice(Device device)`|`CompletionStage<List<UmboxImage>>`|
 |`findAllUmboxImages()`           |`CompletionStage<List<UmboxImage>>`|
 |`insertUmboxImage(UmboxImage u)` |`CompletionStage<Integer>`            |
 |`updateUmboxImage(UmboxImage u)` |`CompletionStage<Integer>`            |
@@ -231,7 +232,7 @@ Device device = Postgres.findDevice(deviceId);
 ###### Schema:
 |Property        |Type      |
 |---------------:|:---------|
-|id              |String    |  
+|id              |int       |  
 |alerter_id      |String NOT NULL|
 |umbox_image_id  |int NOT NULL |
 |containerId     |String NOT NULL | 
@@ -245,6 +246,15 @@ Device device = Postgres.findDevice(deviceId);
 |`insertUmboxInstance(UmboxInstance u)` |`CompletionStage<Integer>`|
 |`updateUmboxInstance(UmboxInstance u)` |`CompletionStage<Integere>`|
 |`deleteUmboxInstance(int id)`          |`CompletionStage<Boolean>`|
+
+#### UmboxLookup
+###### Schema:
+|Property        |Type      |
+|---------------:|:---------|
+|state_id        |int NOT NULL|  
+|umbox_image_id  |int NOT NULL|
+|device_type_id  |int NOT NULL |
+|order           |int NOT NULL|
 
 ### Java Objects
 #### AlertHistory

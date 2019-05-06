@@ -387,6 +387,14 @@ public class Postgres {
                 "path         varchar(255) NOT NULL" +
                 ");"
         );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS umbox_lookup(" +
+                "state_id           int NOT NULL," +
+                "umbox_image_id     int NOT NULL," +
+                "device_type_id     int NOT NULL," +
+                "order              int NOT NULL" +
+                ");");
+
     }
 
     /**
@@ -2351,6 +2359,36 @@ public class Postgres {
         });
     }
 
+    /**
+     * Find a list of UmboxImages for a device for its type and security state
+     * @param device The device to lookup related images
+     * @return imageList The list of umbox images for device in its current security state
+     */
+    public static CompletionStage<List<UmboxImage>> findUmboxImagesByDevice(Device device) {
+        return CompletableFuture.supplyAsync(() -> {
+           ResultSet rs = null;
+           PreparedStatement st = null;
+           List<UmboxImage> imageList = new ArrayList<UmboxImage>();
+
+            try {
+               st = dbConn.prepareStatement("SELECT * FROM umbox_image WHERE id = " +
+                       "(SELECT umbox_image_id FROM umbox_lookup WHERE device_type_id = ? AND state_id = ?)");
+               st.setInt(1, device.getType().getId());
+               st.setInt(2, device.getCurrentState().getId());
+               rs = st.executeQuery();
+
+               while (rs.next()){
+                   imageList.add(rsToUmboxImage(rs));
+               }
+               rs.close();
+
+           } catch (SQLException e){
+               e.printStackTrace();
+           }
+
+            return imageList;
+        });
+    }
     /**
      * Finds all UmboxImages in the database.
      * @return a list of all UmboxImages in the database.
