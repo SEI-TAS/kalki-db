@@ -308,11 +308,10 @@ public class Postgres {
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS device_state(" +
-                "id           serial PRIMARY KEY," +
+        executeCommand("CREATE TABLE IF NOT EXISTS device_security_state(" +
                 "device_id    int NOT NULL," +
                 "timestamp    TIMESTAMP," +
-                "state        varchar(255) NOT NULL" +
+                "state_id     varchar(255) NOT NULL" +
                 ");"
         );
 
@@ -386,7 +385,6 @@ public class Postgres {
                 "id                 serial PRIMARY KEY, " +
                 "alerter_id         varchar(255) NOT NULL, " +
                 "umbox_image_id     int NOT NULL," +
-                "container_id       varchar(255) NOT NULL," +
                 "device_id          int NOT NULL, " +
                 "started_at         timestamp NOT NULL DEFAULT now()" +
                 ");"
@@ -1120,7 +1118,7 @@ public class Postgres {
             try {
                 st = dbConn.prepareStatement("SELECT * FROM command_lookup WHERE device_type_id = ? AND state_id = ?");
                 st.setInt(1, device.getType().getId());
-                st.setInt(2, device.getCurrentState().getId());
+                st.setInt(2, device.getCurrentState().getStateId());
                 rs = st.executeQuery();
 
                 List<String> commands = new ArrayList<String>();
@@ -1176,7 +1174,7 @@ public class Postgres {
                 List<Integer> tagIds = findTagIds(device.getId());
                 device.setTagIds(tagIds);
 
-                DeviceState ss = findDeviceStateByDevice(device.getId());
+                DeviceSecurityState ss = findDeviceSecurityStateByDevice(device.getId());
                 device.setCurrentState(ss);
 
                 return device;
@@ -1201,7 +1199,7 @@ public class Postgres {
                     Device d = rsToDevice(rs);
                     List<Integer> tagIds = findTagIds(d.getId());
                     d.setTagIds(tagIds);
-                    DeviceState ss = findDeviceStateByDevice(d.getId());
+                    DeviceSecurityState ss = findDeviceSecurityStateByDevice(d.getId());
                     d.setCurrentState(ss);
 
                     devices.add(d);
@@ -1364,7 +1362,7 @@ public class Postgres {
                     update.setInt(7, device.getSamplingRate());
 
                     if(device.getCurrentState() != null){
-                        update.setInt(8, device.getCurrentState().getId());
+                        update.setInt(8, device.getCurrentState().getStateId());
                     } else {
                         update.setInt(8, -1);
                     }
@@ -1909,59 +1907,19 @@ public class Postgres {
     }
 
     /*
-     *      DeviceState specific actions
+     *      DeviceSecurityState specific actions
      */
 
     /**
-     * Finds the most recent DeviceState from the database for the given device
+     * Finds the most recent DeviceSecurityState from the database for the given device
      * @param deviceId the id of the device
-     * @return the most recent DeviceState entered for a device
+     * @return the most recent DeviceSecurityState entered for a device
      */
-    public static DeviceState findDeviceState(int id){
-//        return CompletableFuture.supplyAsync(() -> {
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        DeviceState ss = new DeviceState();
-
-        if(dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return ss;
-        }
-
-        try{
-            st = dbConn.prepareStatement("SELECT * FROM device_state WHERE id = ? ");
-            st.setInt(1, id);
-            rs = st.executeQuery();
-
-            while(rs.next()){
-                ss = rsToDeviceState(rs);
-            }
-        }
-        catch (SQLException e){
-            logger.severe("SQL exception getting the device state: "+e.getClass().getName()+": "+e.getMessage());
-        }
-        catch (Exception e){
-            e.printStackTrace();
-            logger.severe("Error getting device state: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        finally {
-            try { if(rs != null) { rs.close(); } } catch(Exception e) {}
-            try { if(st != null) { st.close(); } } catch(Exception e) {}
-        }
-        return ss;
-//        });
-    }
-
-    /**
-     * Finds the most recent DeviceState from the database for the given device
-     * @param deviceId the id of the device
-     * @return the most recent DeviceState entered for a device
-     */
-    public static DeviceState findDeviceStateByDevice(int deviceId){
+    public static DeviceSecurityState findDeviceSecurityStateByDevice(int deviceId){
 //        return CompletableFuture.supplyAsync(() -> {
            PreparedStatement st = null;
            ResultSet rs = null;
-           DeviceState ss = new DeviceState();
+           DeviceSecurityState ss = new DeviceSecurityState();
 
            if(dbConn == null) {
                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
@@ -1969,12 +1927,16 @@ public class Postgres {
            }
 
            try{
-               st = dbConn.prepareStatement("SELECT * FROM device_state WHERE id = (SELECT MAX(id) FROM device_state WHERE device_id=?) ");
+               st = dbConn.prepareStatement("SELECT dsd.device_id, dsd.timestamp, ss.name, ss.id AS state_id " +
+                                            "FROM device_security_state dsd, security_state ss " +
+                                            "WHERE dsd.device_id=? AND dsd.state_id = ss.id " +
+                                            "ORDER BY timestamp DESC " +
+                                            "LIMIT 1");
                st.setInt(1, deviceId);
                rs = st.executeQuery();
 
                while(rs.next()){
-                   ss = rsToDeviceState(rs);
+                   ss = rsToDeviceSecurityState(rs);
                }
            }
            catch (SQLException e){
@@ -1993,27 +1955,30 @@ public class Postgres {
     }
 
     /**
-     * Finds all DeviceState from the database for the given device.
+     * Finds all DeviceSecurityState from the database for the given device.
      * @param deviceId the id of the device.
-     * @return a list of all DeviceState in the database where the device_id field is equal to deviceId.
+     * @return a list of all DeviceSecurityState in the database where the device_id field is equal to deviceId.
      */
-    public static CompletionStage<List<DeviceState>> findDeviceStates(int deviceId) {
+    public static CompletionStage<List<DeviceSecurityState>> findDeviceSecurityStates(int deviceId) {
         return CompletableFuture.supplyAsync(() -> {
             PreparedStatement st = null;
             ResultSet rs = null;
-            List<DeviceState> deviceStateList = new ArrayList<DeviceState>();
+            List<DeviceSecurityState> deviceStateList = new ArrayList<DeviceSecurityState>();
 
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return null;
             }
             try{
-                st = dbConn.prepareStatement("SELECT * FROM device_state WHERE device_id = ?");
+                st = dbConn.prepareStatement("SELECT dsd.device_id, dsd.timestamp, ss.name, ss.id AS state_id " +
+                                             "FROM device_security_state dsd, security_state ss " +
+                                             "WHERE dsd.device_id=? AND dsd.state_id = ss.id " +
+                                             "ORDER BY timestamp DESC");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
 
                 while (rs.next()) {
-                    deviceStateList.add(rsToDeviceState(rs));
+                    deviceStateList.add(rsToDeviceSecurityState(rs));
                 }
             }
             catch(SQLException e) {
@@ -2032,34 +1997,34 @@ public class Postgres {
     }
 
     /**
-     * Extract a DeviceState from the result set of a database query.
+     * Extract a DeviceSecurityState from the result set of a database query.
      * @param rs ResultSet from a DeviceState query.
-     * @return The DeviceState that was found.
+     * @return The DeviceSecurityState that was found.
      */
-    private static DeviceState rsToDeviceState(ResultSet rs){
-        DeviceState deviceState = null;
+    private static DeviceSecurityState rsToDeviceSecurityState(ResultSet rs){
+        DeviceSecurityState deviceState = null;
         try{
-            int id = rs.getInt("id");
             int deviceId = rs.getInt("device_id");
+            int stateId = rs.getInt("state_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
-            String state = rs.getString("state");
-            deviceState = new DeviceState(id, deviceId, timestamp, state);
+            String name = rs.getString("name");
+            deviceState = new DeviceSecurityState(deviceId, stateId, timestamp, name);
         }
         catch(Exception e){
             e.printStackTrace();
-            logger.severe("Error converting rs to DeviceState: " + e.getClass().getName()+": "+e.getMessage());
+            logger.severe("Error converting rs to DeviceSecurityState: " + e.getClass().getName()+": "+e.getMessage());
         }
         return deviceState;
     }
 
     /**
-     * Saves given DeviceState to the database.
-     * @param deviceState DeviceState to be inserted.
+     * Saves given DeviceSecurityState to the database.
+     * @param deviceState DeviceSecurityState to be inserted.
      * @return auto incremented id
      */
-    public static CompletionStage<Integer> insertDeviceState(DeviceState deviceState){
+    public static CompletionStage<Integer> insertDeviceSecurityState(DeviceSecurityState deviceState){
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Inserting DeviceState: " + deviceState.getId());
+            logger.info("Inserting DeviceSecurityState");
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
@@ -2070,7 +2035,7 @@ public class Postgres {
                                 "values(?,?,?)");
                 update.setInt(1, deviceState.getDeviceId());
                 update.setTimestamp(2, deviceState.getTimestamp());
-                update.setString(3, deviceState.getState());
+                update.setInt(3, deviceState.getStateId());
                 update.executeUpdate();
                 return getLatestId("device_state");
             }
@@ -2082,41 +2047,43 @@ public class Postgres {
         });
     }
 
-    /**
-     * Updates DeviceState with given id to have the parameters of the given DeviceState.
-     * @param deviceState DeviceState holding new parameters to be saved in the database.
-     */
-    public static CompletionStage<Integer> updateDeviceState(DeviceState deviceState){
-        return CompletableFuture.supplyAsync(() -> {
-            logger.info("Updating DeviceState with id=" + deviceState.getId());
-            if (dbConn == null) {
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return -1;
-            }
-            try {
-                PreparedStatement update = dbConn.prepareStatement
-                        ("UPDATE device_state SET device_id = ?, timestamp = ?, state = ?" +
-                                "WHERE id=?");
-                update.setInt(1, deviceState.getDeviceId());
-                update.setTimestamp(2, deviceState.getTimestamp());
-                update.setString(3, deviceState.getState());
-                update.setInt(4, deviceState.getId());
-                update.executeUpdate();
-                return deviceState.getId();
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating DeviceState: " + e.getClass().toString() + ": " + e.getMessage());
-            }
-            return -1;
-        });
-    }
+// THE FOLLOWING FUNCTION SHOULDNT BE NEEDED
+// DEVICE_SECURITY_STATES SHOULD ONLY BE INSERTED/QUERIED
+//    /**
+//     * Updates DeviceSecurityState with given id to have the parameters of the given DeviceState.
+//     * @param deviceState DeviceSecurityState holding new parameters to be saved in the database.
+//     */
+//    public static CompletionStage<Integer> updateDeviceSecurityState(DeviceSecurityState deviceState){
+//        return CompletableFuture.supplyAsync(() -> {
+//            logger.info("Updating DeviceState with id=" + deviceState.getId());
+//            if (dbConn == null) {
+//                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+//                return -1;
+//            }
+//            try {
+//                PreparedStatement update = dbConn.prepareStatement
+//                        ("UPDATE device_state SET device_id = ?, timestamp = ?, state = ?" +
+//                                "WHERE id=?");
+//                update.setInt(1, deviceState.getDeviceId());
+//                update.setTimestamp(2, deviceState.getTimestamp());
+//                update.setString(3, deviceState.getName());
+//                update.setInt(4, deviceState.getId());
+//                update.executeUpdate();
+//                return deviceState.getId();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                logger.severe("Error updating DeviceState: " + e.getClass().toString() + ": " + e.getMessage());
+//            }
+//            return -1;
+//        });
+//    }
 
     /**
-     * Deletes a DeviceState by its id.
-     * @param id id of the DeviceState to delete.
+     * Deletes a DeviceSecurityState by its id.
+     * @param id id of the DeviceSecurityState to delete.
      * @return true if the deletion succeeded, false otherwise.
      */
-    public static CompletionStage<Boolean> deleteDeviceState(int id) {
+    public static CompletionStage<Boolean> deleteDeviceSecurityState(int id) {
         return deleteById("device_id", id);
     }
 
@@ -2518,7 +2485,7 @@ public class Postgres {
                st = dbConn.prepareStatement("SELECT * FROM umbox_image WHERE id = " +
                        "(SELECT umbox_image_id FROM umbox_lookup WHERE device_type_id = ? AND state_id = ?)");
                st.setInt(1, device.getType().getId());
-               st.setInt(2, device.getCurrentState().getId());
+               st.setInt(2, device.getCurrentState().getStateId());
                rs = st.executeQuery();
 
                while (rs.next()){
@@ -2730,10 +2697,9 @@ public class Postgres {
             int id = rs.getInt("id");
             String alerterId = rs.getString("alerter_id");
             int imageId = rs.getInt("umbox_image_id");
-            String containerId = rs.getString("container_id");
             int deviceId = rs.getInt("device_id");
             Timestamp startedAt = rs.getTimestamp("started_at");
-            umboxInstance = new UmboxInstance(id, alerterId, imageId, containerId, deviceId, startedAt);
+            umboxInstance = new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -2752,12 +2718,11 @@ public class Postgres {
            logger.info("Adding umbox instance: "+ u);
            PreparedStatement st = null;
            try{
-               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerter_id, umbox_image_id, container_id, device_id, started_at) VALUES (?,?,?,?,?)");
+               st = dbConn.prepareStatement("INSERT INTO umbox_instance (alerter_id, umbox_image_id, device_id, started_at) VALUES (?,?,?,?)");
                st.setString(1, u.getAlerterId());
                st.setInt(2, u.getUmboxImageId());
-               st.setString(3, u.getContainerId());
-               st.setInt(4, u.getDeviceId());
-               st.setTimestamp(5, u.getStartedAt());
+               st.setInt(3, u.getDeviceId());
+               st.setTimestamp(4, u.getStartedAt());
                st.executeUpdate();
                return getLatestId("umbox_instance");
            }
@@ -2780,14 +2745,13 @@ public class Postgres {
             PreparedStatement st = null;
             try {
                 st = dbConn.prepareStatement("UPDATE umbox_instance " +
-                        "SET alerter_id = ?, umbox_image_id = ?, container_id = ?, device_id = ?, started_at = ?" +
+                        "SET alerter_id = ?, umbox_image_id = ?, device_id = ?, started_at = ?" +
                         "WHERE id = ?");
                 st.setString(1, u.getAlerterId());
                 st.setInt(2, u.getUmboxImageId());
-                st.setString(3, u.getContainerId());
-                st.setInt(4, u.getDeviceId());
-                st.setTimestamp(5, u.getStartedAt());
-                st.setInt(6, u.getId());
+                st.setInt(3, u.getDeviceId());
+                st.setTimestamp(4, u.getStartedAt());
+                st.setInt(5, u.getId());
                 st.executeUpdate();
                 return u.getId();
             }

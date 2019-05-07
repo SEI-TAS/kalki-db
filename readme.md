@@ -135,7 +135,7 @@ Device device = Postgres.findDevice(deviceId);
 |`updateDevice(Device device)`         |`CompletionStage<Integer>`      |
 |`deleteDevice(int id)`                |`CompletionStage<Boolean>`      |
 
-#### DeviceState
+#### DeviceSecurityState
 ###### Schema:
 |Property  |Type      |
 |---------:|:---------|
@@ -146,12 +146,12 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findDeviceState(int id)`                        |`DeviceState`|
-|`findDeviceStateByDevice(int deviceId)`          |`DeviceState`|
-|`findDeviceStates(int deviceId)`                 |`CompletionStage<List<DeviceState>>`|
-|`insertDeviceState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
-|`updateDeviceState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
-|`deleteDeviceState(int id)`                      |`CompletionStage<Boolean>`           |
+|`findDeviceSecurityState(int id)`                        |`DeviceSecurityState`|
+|`findDeviceSecurityStateByDevice(int deviceId)`          |`DeviceSecurityState`|
+|`findDeviceSecurityStates(int deviceId)`                 |`CompletionStage<List<DeviceSecurityState>>`|
+|`insertDeviceSecurityState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
+|`updateDeviceSecurityState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
+|`deleteDeviceSecurityState(int id)`                      |`CompletionStage<Boolean>`           |
 
 #### DeviceStatus
 ###### Schema:
@@ -260,7 +260,6 @@ Device device = Postgres.findDevice(deviceId);
 |id              |int       |  
 |alerter_id      |String NOT NULL|
 |umbox_image_id  |int NOT NULL |
-|containerId     |String NOT NULL | 
 |device_id       |int NOT NULL |
 |started_at      |Timestamp NOT NULL|
 ###### Actions:
@@ -341,6 +340,28 @@ This class supports:
 - `statusesOfSameType()`
     - returns `CompletionStage<Map<Device, DeviceStatus>>`
     
+#### DeviceSecurityState
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |  
+|deviceId  |int       |
+|timestamp |Timestamp | 
+|name      |String    |
+###### Constructors:
+|Definition |  
+|:---|
+|`SecurityState()`|
+|`SecurityState(int deviceId, String state)`|
+|`SecurityState(int id, int deviceId, Timestamp timestamp, String state)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`    
+    
 #### DeviceStatus
 ###### Schema:
 |Property        |Type              |
@@ -392,23 +413,19 @@ This class supports:
 ###### Schema:
 |Property  |Type      |
 |---------:|:---------|
-|id        |int       |  
-|deviceId  |int       |
-|timestamp |Timestamp | 
-|state     |String    |
+|id        |int       |
+|name     |String    |
 ###### Constructors:
 |Definition |  
 |:---|
-|`SecurityState()`|
-|`SecurityState(int deviceId, String state)`|
-|`SecurityState(int id, int deviceId, Timestamp timestamp, String state)`|
+|`SecurityState(String name)`|
+|`SecurityState(int deviceId, String name)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
  - ex: getName()
 - `set<field>(<field type> value)`
  - ex: setName("Name")
-- `insert()`
 
 #### Tag
 ###### Schema:

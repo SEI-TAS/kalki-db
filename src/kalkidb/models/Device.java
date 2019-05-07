@@ -22,7 +22,7 @@ public class Device {
     private int statusHistorySize;
     private int samplingRate;
     private List<Integer> tagIds;
-    private DeviceState currentState;
+    private DeviceSecurityState currentState;
     private Alert lastAlert;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
@@ -31,7 +31,7 @@ public class Device {
 
     }
 
-    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceState currentState, Alert lastAlert){
+    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -147,17 +147,12 @@ public class Device {
         this.tagIds = tagIds;
     }
 
-    public DeviceState getCurrentState() {
+    public DeviceSecurityState getCurrentState() {
         return currentState;
     }
 
-    public void setCurrentState(DeviceState state){
+    public void setCurrentState(DeviceSecurityState state){
         this.currentState = state;
-    }
-
-    public void setCurrentState(String state) {
-        this.currentState = new DeviceState(this.id, state);
-        this.insertOrUpdate();
     }
 
     public Alert getLastAlert() {

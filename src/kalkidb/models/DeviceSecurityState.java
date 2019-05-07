@@ -3,37 +3,28 @@ package kalkidb.models;
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 
-public class DeviceState {
-
-    private int id;
+public class DeviceSecurityState {
     private int deviceId;
+    private int stateId;
     private Timestamp timestamp;
-    private String state;
+    private String name;
 
-    public DeviceState() {
+    public DeviceSecurityState() {
 
     }
 
-    public DeviceState(int deviceId, String state) {
+    public DeviceSecurityState(int deviceId, int stateId, String name) {
         this.deviceId = deviceId;
-        this.state = state;
+        this.name = name;
         long millis = System.currentTimeMillis() % 1000;
         this.timestamp = new Timestamp(millis);
     }
 
-    public DeviceState(int id, int deviceId, Timestamp timestamp, String state) {
-        this.id = id;
+    public DeviceSecurityState(int deviceId, int stateId, Timestamp timestamp, String name) {
         this.deviceId = deviceId;
+        this.stateId = stateId;
         this.timestamp = timestamp;
-        this.state = state;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+        this.name = name;
     }
 
     public int getDeviceId() {
@@ -44,6 +35,14 @@ public class DeviceState {
         this.deviceId = deviceId;
     }
 
+    public int getStateId() {
+        return stateId;
+    }
+
+    public void setStateId(int stateId) {
+        this.stateId = stateId;
+    }
+
     public Timestamp getTimestamp() {
         return timestamp;
     }
@@ -52,18 +51,12 @@ public class DeviceState {
         this.timestamp = timestamp;
     }
 
-    public String getState() {
-        return state;
+    public String getName() {
+        return name;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void insert(){
-        Postgres.insertDeviceState(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
-    }
 }
