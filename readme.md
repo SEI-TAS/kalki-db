@@ -222,6 +222,20 @@ Device device = Postgres.findDevice(deviceId);
 |`updateDeviceType(Type type)`|`CompletionStage<Integer>`   |
 |`deleteDeviceType(int id)`   |`CompletionStage<Boolean>`   |
 
+#### SecurityState
+###### Schema:
+|Property  |Type     |
+|---------:|:------|
+|id        |int |  
+|name      |String NOT NULL|
+###### Actions:
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findSecurityState(int id)`                |`CompletionStage<SecurityState>`      |
+|`insertSecurityState(SecurityState state)` |`CompletionStage<Integer>`            |
+|`updateSecurityState(SecurityState state)` |`CompletionStage<Integer>`            |
+|`deleteSecurityState(int id)`              |`CompletionStage<Boolean>`            |
+
 #### UmboxImage
 ###### Schema:
 |Property  |Type     |

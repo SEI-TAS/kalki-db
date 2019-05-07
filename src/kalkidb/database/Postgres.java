@@ -336,6 +336,11 @@ public class Postgres {
                 ");"
         );
 
+        executeCommand("CREATE TABLE IF NOT EXISTS security_state(" +
+                "id     serial PRIMARY KEY," +
+                "name   varchar(255) NOT NULL" +
+                ");");
+
         executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
                 "id    serial PRIMARY KEY, " +
                 "name  varchar(255)" +
@@ -2113,6 +2118,82 @@ public class Postgres {
      */
     public static CompletionStage<Boolean> deleteDeviceState(int id) {
         return deleteById("device_id", id);
+    }
+
+    /*
+     *      SecurityState specific actions
+     */
+
+    /**
+     * Search the security_state table for a row with the given id
+     * @param id The id of the security state
+     * @return the row from the table
+     */
+    public static CompletionStage<SecurityState> findSecurityState(int id){
+        return findById(id, "security_state").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                SecurityState state = rsToSecurityState(rs);
+                return state;
+            }
+        });
+    }
+
+    /**
+     * Take a ResultSet from a DB query and convert to the java object
+     * @param rs
+     * @return
+     */
+    private static SecurityState rsToSecurityState(ResultSet rs) {
+        SecurityState state = null;
+        try{
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            state = new SecurityState(id, name);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to SecurityState: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return state;
+    }
+
+    /**
+     * Update row in security_state corresponding to the parameter
+     * @param state The security state to update
+     * @return The id of the updated row
+     */
+    public static CompletionStage<Integer> updateSecurityState(SecurityState state) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Updating SecurityState with id=" + state.getId());
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try {
+                PreparedStatement update = dbConn.prepareStatement
+                        ("UPDATE security_state SET name = ?" +
+                                "WHERE id=?");
+                update.setString(1, state.getName());
+                update.setInt(2, state.getId());
+                update.executeUpdate();
+                return state.getId();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.severe("Error updating Security: " + e.getClass().getName() + ": " + e.getMessage());
+                return -1;
+            }
+        });
+    }
+
+    /**
+     * Delete row from security_state with the given id
+     * @param id The id of the row to delete
+     * @return True if successful
+     */
+    public static CompletionStage<Boolean> deleteSecurityState(int id) {
+        return deleteById("security_state", id);
     }
 
     /*
