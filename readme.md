@@ -135,6 +135,24 @@ Device device = Postgres.findDevice(deviceId);
 |`updateDevice(Device device)`         |`CompletionStage<Integer>`      |
 |`deleteDevice(int id)`                |`CompletionStage<Boolean>`      |
 
+#### DeviceState
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |  
+|deviceId  |int NOT NULL|
+|timestamp |Timestamp | 
+|state     |String NOT NULL |
+###### Actions:
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findDeviceState(int id)`                        |`DeviceState`|
+|`findDeviceStateByDevice(int deviceId)`          |`DeviceState`|
+|`findDeviceStates(int deviceId)`                 |`CompletionStage<List<DeviceState>>`|
+|`insertDeviceState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
+|`updateDeviceState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
+|`deleteDeviceState(int id)`                      |`CompletionStage<Boolean>`           |
+
 #### DeviceStatus
 ###### Schema:
 |Property        |Type              |
@@ -171,25 +189,6 @@ Device device = Postgres.findDevice(deviceId);
 |`insertGroup(Group group)` |`CompletionStage<Integer>`    |
 |`updateGroup(Group group)` |`CompletionStage<Integer>`    |
 |`deleteGroup(int id)`      |`CompletionStage<Boolean>`    |
- 
-
-#### SecurityState
-###### Schema:
-|Property  |Type      |
-|---------:|:---------|
-|id        |int       |  
-|deviceId  |int NOT NULL|
-|timestamp |Timestamp | 
-|state     |String NOT NULL |
-###### Actions:
-|Function Definition | Return Type |  
-|:---|:---| 
-|`findSecurityState(int id)`                        |`SecurityState`|
-|`findSecurityStateByDevice(int deviceId)`          |`SecurityState`|
-|`findSecurityStates(int deviceId)`                 |`CompletionStage<List<SecurityState>>`|
-|`insertSecurityState(SecurityState securityState)` |`CompletionStage<Integer>`           |
-|`updateSecurityState(SecurityState securityState)` |`CompletionStage<Integer>`           |
-|`deleteSecurityState(int id)`                      |`CompletionStage<Boolean>`           |
 
 #### Tag
 ###### Schema:

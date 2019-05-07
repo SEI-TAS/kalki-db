@@ -3,25 +3,25 @@ package kalkidb.models;
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 
-public class SecurityState {
+public class DeviceState {
 
     private int id;
     private int deviceId;
     private Timestamp timestamp;
     private String state;
 
-    public SecurityState() {
+    public DeviceState() {
 
     }
 
-    public SecurityState(int deviceId, String state) {
+    public DeviceState(int deviceId, String state) {
         this.deviceId = deviceId;
         this.state = state;
         long millis = System.currentTimeMillis() % 1000;
         this.timestamp = new Timestamp(millis);
     }
 
-    public SecurityState(int id, int deviceId, Timestamp timestamp, String state) {
+    public DeviceState(int id, int deviceId, Timestamp timestamp, String state) {
         this.id = id;
         this.deviceId = deviceId;
         this.timestamp = timestamp;
@@ -61,7 +61,7 @@ public class SecurityState {
     }
 
     public void insert(){
-        Postgres.insertSecurityState(this).thenApplyAsync(id -> {
+        Postgres.insertDeviceState(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });
