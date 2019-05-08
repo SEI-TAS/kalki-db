@@ -356,7 +356,7 @@ public class Postgres {
                 "id                 serial PRIMARY KEY," +
                 "name               varchar(255) NOT NULL,"+
                 "timestamp          timestamp NOT NULL DEFAULT now()," +
-                "alert_type_id      int" +
+                "alert_type_id      int," +
                 "alerter_id         varchar(255)," +
                 "device_status_id   int"+
                 ");"
@@ -401,7 +401,7 @@ public class Postgres {
                 "state_id           int NOT NULL," +
                 "umbox_image_id     int NOT NULL," +
                 "device_type_id     int NOT NULL," +
-                "order              int NOT NULL" +
+                "\"order\"              int NOT NULL" +
                 ");");
 
     }
