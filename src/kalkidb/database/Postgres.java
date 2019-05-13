@@ -309,9 +309,10 @@ public class Postgres {
         );
 
         executeCommand("CREATE TABLE IF NOT EXISTS device_security_state(" +
+                "id           serial PRIMARY KEY," +
                 "device_id    int NOT NULL," +
                 "timestamp    TIMESTAMP," +
-                "state_id     varchar(255) NOT NULL" +
+                "state_id     int NOT NULL" +
                 ");"
         );
 
@@ -814,7 +815,7 @@ public class Postgres {
 
     /**
      * Finds all AlertConditions from the database for the given device_id
-     * @param device_id an id of a device
+     * @param deviceId an id of a device
      * @return a list of all AlertConditions in the database related to the given device
      */
     public static CompletionStage<List<AlertCondition>> findAlertConditionsByDevice(int deviceId) {
@@ -870,7 +871,7 @@ public class Postgres {
 
     /**
      * Insert a row into the AlertCondition table
-     * @param alert The AlertCondition to be added
+     * @param cond The AlertCondition to be added
      * @return id of new AlertCondition on success. -1 on error
      */
     public static CompletionStage<Integer> insertAlert(AlertCondition cond) {
@@ -956,7 +957,7 @@ public class Postgres {
 
     /**
      * Finds all AlertTypes from the database for the given type_id
-     * @param typeId an id of a DeviceType
+     * @param deviceTypeId an id of a DeviceType
      * @return a list of all AlertTypes in the database for the given DeviceType
      */
     public static CompletionStage<List<AlertType>> findAlertTypesByDeviceType(int deviceTypeId) {
@@ -1039,7 +1040,7 @@ public class Postgres {
 
     /**
      * Updates provided AlertType
-     * @param condition AlertType holding new values to be saved in the database.
+     * @param type AlertType holding new values to be saved in the database.
      * @return the id of the updated Alert on success. -1 on failure
      */
     public static CompletionStage<Integer> updateAlertType(AlertType type) {
@@ -1505,7 +1506,7 @@ public class Postgres {
     /**
      * Finds the last N DeviceStatuses for the given device
      * @param deviceId the id of the device
-     * @param N the number of statuses to retrieve
+     * @param length the number of statuses to retrieve
      * @param timeUnit the unit of time to use (minute(s), hour(s), day(s))
      * @return a list of N device statuses
      */
@@ -1586,7 +1587,7 @@ public class Postgres {
 
     /**
      * Returns a list of device statuses for devices with the given group id. One device status per device
-     * @param typeId The typeid for the requested devices
+     * @param groupId The typeid for the requested devices
      * @return A map pairing a device with its most recent DeviceStatus
      */
 
@@ -1843,7 +1844,7 @@ public class Postgres {
 
     /**
      * Saves given Device Group to the database.
-     * @param device Device Group to be inserted.
+     * @param group Device Group to be inserted.
      * @return auto incremented id
      */
     public static CompletionStage<Integer> insertGroup(Group group){
@@ -2615,7 +2616,7 @@ public class Postgres {
      */
     /**
      * Find a umbox instance by its alerter id
-     * @param id The ID of desired UmboxInstance
+     * @param alerterId The ID of desired UmboxInstance
      * @return The desired UmboxInstance on success or null on failure
      */
     public static CompletionStage<UmboxInstance> findUmboxInstance(String alerterId){
