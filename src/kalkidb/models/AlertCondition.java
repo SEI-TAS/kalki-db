@@ -1,4 +1,5 @@
 package kalkidb.models;
+import kalkidb.database.Postgres;
 
 import java.util.Map;
 
@@ -51,5 +52,12 @@ public class AlertCondition {
 
     public void setAlertTypeId(int alertTypeId) {
         this.alertTypeId = alertTypeId;
+    }
+
+    public void insert() {
+        Postgres.insertAlertCondition(this).thenApplyAsync(id->{
+            this.id = id;
+            return id;
+        });
     }
 }

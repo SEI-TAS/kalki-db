@@ -3,14 +3,14 @@ package kalkidb.models;
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 import java.util.concurrent.CompletionStage;
-
+import java.util.Optional;
 
 public class UmboxInstance {
 
     private int id;
     private String alerterId;
     private int umboxImageId;
-    private int deviceId;
+    private Optional<Integer> deviceId;
     private Timestamp startedAt;
 
     public UmboxInstance() {
@@ -20,15 +20,15 @@ public class UmboxInstance {
     public UmboxInstance(String alerterId, int umboxImageId, int deviceId){
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
-        this.deviceId = deviceId;
-        long millis = System.currentTimeMillis() % 1000;
+        this.deviceId = Optional.of(deviceId);
+        long millis = System.currentTimeMillis();
         this.startedAt = new Timestamp(millis);
     }
 
     public UmboxInstance(String alerterId, int umboxImageId, int deviceId, Timestamp timestamp){
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
-        this.deviceId = deviceId;
+        this.deviceId = Optional.of(deviceId);
         this.startedAt = timestamp;
     }
 
@@ -36,7 +36,7 @@ public class UmboxInstance {
         this.id = id;
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
-        this.deviceId = deviceId;
+        this.deviceId = Optional.of(deviceId);
         this.startedAt = startedAt;
     }
 
@@ -61,11 +61,11 @@ public class UmboxInstance {
     public void setUmboxImageId(int umboxImageId) { this.umboxImageId = umboxImageId; }
 
     public int getDeviceId() {
-        return deviceId;
+        return deviceId.get();
     }
 
     public void setDeviceId(int deviceId) {
-        this.deviceId = deviceId;
+        this.deviceId = Optional.of(deviceId);
     }
 
     public Timestamp getStartedAt() {

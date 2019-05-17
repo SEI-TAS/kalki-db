@@ -13,10 +13,15 @@ public class DeviceSecurityState {
 
     }
 
+    public DeviceSecurityState(int deviceId, int stateId) {
+        this.deviceId = deviceId;
+        this.stateId = stateId;
+    }
+
     public DeviceSecurityState(int deviceId, int stateId, String name) {
         this.deviceId = deviceId;
         this.name = name;
-        long millis = System.currentTimeMillis() % 1000;
+        long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
 
@@ -57,6 +62,12 @@ public class DeviceSecurityState {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void insert(){
+        Postgres.insertDeviceSecurityState(this).thenApplyAsync(bool -> {
+            return bool;
+        });
     }
 
 }

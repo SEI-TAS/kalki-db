@@ -2,6 +2,8 @@ package kalkidb.models;
 
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
+import java.util.Optional;
+import java.lang.NullPointerException;
 
 public class Alert {
 
@@ -9,23 +11,42 @@ public class Alert {
     private String name;
     private Timestamp timestamp;
     private String alerterId;
-    private int deviceStatusId;
+    private Integer deviceStatusId;
     private int alertTypeId;
 
     public Alert() {
 
     }
 
-    public Alert(String name, String alerterId, int deviceStatusId) {
+    public Alert(String name, String alerterId, int alertTypeId){
         this.name = name;
         this.alerterId = alerterId;
-        this.deviceStatusId = deviceStatusId;
-
-        long millis = System.currentTimeMillis() % 1000;
+        this.alertTypeId = alertTypeId;
+        this.deviceStatusId = null;
+        long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
 
-    public Alert(String name, Timestamp timestamp, String alerterId, int deviceStatusId, int alertTypeId) {
+    public Alert(String name, Integer deviceStatusId, int alertTypeId) {
+        this.name = name;
+        this.deviceStatusId = deviceStatusId;
+        this.alertTypeId = alertTypeId;
+        this.alerterId = null;
+        long millis = System.currentTimeMillis();
+        this.timestamp = new Timestamp(millis);
+    }
+
+    public Alert(String name, String alerterId, Integer deviceStatusId, int alertTypeId) {
+        this.name = name;
+        this.alerterId = alerterId;
+        this.deviceStatusId = deviceStatusId;
+        this.alertTypeId = alertTypeId;
+
+        long millis = System.currentTimeMillis();
+        this.timestamp = new Timestamp(millis);
+    }
+
+    public Alert(String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId) {
         this.name = name;
         this.timestamp = timestamp;
         this.alerterId = alerterId;
@@ -34,7 +55,7 @@ public class Alert {
     }
 
 
-    public Alert(int id, String name, Timestamp timestamp, String alerterId, int deviceStatusId, int alertTypeId) {
+    public Alert(int id, String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId) {
         this.id = id;
         this.name = name;
         this.timestamp = timestamp;
@@ -75,11 +96,11 @@ public class Alert {
         this.alerterId = alerterId;
     }
 
-    public int getDeviceStatusId() {
+    public Integer getDeviceStatusId() {
         return deviceStatusId;
     }
 
-    public void setDeviceStatusId(int deviceStatusId) {
+    public void setDeviceStatusId(Integer deviceStatusId) {
         this.deviceStatusId = deviceStatusId;
     }
 
@@ -95,6 +116,6 @@ public class Alert {
     }
 
     public String toString() {
-        return "Alert Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", name: "+name;
+        return "Alert Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", name: "+ name +" deviceStatusId: "+deviceStatusId;
     }
 }

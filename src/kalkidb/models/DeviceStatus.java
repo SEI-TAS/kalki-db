@@ -7,16 +7,21 @@ import java.util.Map;
 import java.util.UUID;
 import kalkidb.database.Postgres;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class DeviceStatus {
 
     private int id;
     private Timestamp timestamp;
     private Map<String, String> attributes;
     private int deviceId;
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceStatus(int deviceId){
         this.attributes = new HashMap<String, String>();
-        long millis = System.currentTimeMillis() % 1000;
+        long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
         this.deviceId = deviceId;
     }
@@ -24,7 +29,7 @@ public class DeviceStatus {
     public DeviceStatus(int deviceId, Map<String, String> attributes) {
         this(deviceId);
         this.attributes = attributes;
-        long millis = System.currentTimeMillis() % 1000;
+        long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
 
@@ -74,10 +79,16 @@ public class DeviceStatus {
     }
 
     public String toString() {
-        String result = "DeviceStatus Info: deviceId: " + Integer.toString(deviceId) + ",";
-        for(String key : attributes.keySet()){
-            result += key + ": " + attributes.get(key) + ", ";
+//        String result = "DeviceStatus Info: deviceId: " + Integer.toString(deviceId) + ",";
+//        for(String key : attributes.keySet()){
+//            result += key + ": " + attributes.get(key) + ", ";
+//        }
+//        return result;
+        try {
+            return ow.writeValueAsString(this);
         }
-        return result;
+        catch (JsonProcessingException e) {
+            return "Bad device";
+        }
     }
 }

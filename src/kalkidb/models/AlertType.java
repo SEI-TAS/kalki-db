@@ -1,4 +1,5 @@
 package kalkidb.models;
+import kalkidb.database.Postgres;
 
 public class AlertType {
     private int id;
@@ -49,5 +50,12 @@ public class AlertType {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public void insert(){
+        Postgres.insertAlertType(this).thenApplyAsync(id->{
+            this.id = id;
+            return id;
+        });
     }
 }

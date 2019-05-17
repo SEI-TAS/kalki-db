@@ -1,4 +1,5 @@
 package kalkidb.models;
+import kalkidb.database.Postgres;
 
 public class SecurityState{
     private int id;
@@ -27,5 +28,9 @@ public class SecurityState{
 
     public int getId() {
         return id;
+    }
+
+    public void insert(){
+        this.id = Postgres.insertSecurityState(this);
     }
 }

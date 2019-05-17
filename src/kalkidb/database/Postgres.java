@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.io.File;
 
 public class Postgres {
     private static final String DEFAULT_IP = "localhost";
@@ -257,16 +258,23 @@ public class Postgres {
     public static void dropTables(){
         logger.info("Dropping tables.");
         List<String> tableNames = new ArrayList<String>();
-        tableNames.add("device");
-        tableNames.add("device_status");
-        tableNames.add("device_state");
-        tableNames.add("device_tag");
-        tableNames.add("tag");
-        tableNames.add("type");
-        tableNames.add("device_group");
+        tableNames.add("alert_type_lookup");
+        tableNames.add("alert_condition");
         tableNames.add("alert");
+        tableNames.add("umbox_lookup");
         tableNames.add("umbox_instance");
+        tableNames.add("command_lookup");
+        tableNames.add("device_tag");
+        tableNames.add("device_security_state");
+        tableNames.add("device_status");
+        tableNames.add("device");
         tableNames.add("umbox_image");
+        tableNames.add("tag");
+        tableNames.add("security_state");
+        tableNames.add("device_group");
+        tableNames.add("device_type");
+        tableNames.add("alert_type");
+
         for(String tableName: tableNames){
             dropTable(tableName);
         }
@@ -286,47 +294,12 @@ public class Postgres {
     public static void makeTables(){
         logger.info("Making tables.");
 
-        executeCommand("CREATE TABLE IF NOT EXISTS device(" +
-                "id                     serial PRIMARY KEY," +
-                "name                   varchar(255) NOT NULL," +
-                "description            varchar(255)," +
-                "type_id                int NOT NULL," +
-                "group_id               int," +
-                "ip_address             varchar(255)," +
-                "status_history_size    int NOT NULL," +
-                "sampling_rate          int NOT NULL,"  +
-                "current_state_id       int," +
-                "last_alert_id          int"+
-                ");"
-        );
-
-        executeCommand("CREATE TABLE IF NOT EXISTS device_status(" +
-                "device_id     int NOT NULL," +
-                "attributes    hstore," +
-                "timestamp     TIMESTAMP," +
-                "id            serial    PRIMARY KEY" +
-                ");"
-        );
-
-        executeCommand("CREATE TABLE IF NOT EXISTS device_security_state(" +
-                "id           serial PRIMARY KEY," +
-                "device_id    int NOT NULL," +
-                "timestamp    TIMESTAMP," +
-                "state_id     int NOT NULL" +
-                ");"
-        );
-
-        executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
-                "device_id    int NOT NULL, " +
-                "tag_id       int NOT NULL" +
-                ");"
-        );
-
-        executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
-                "id           serial PRIMARY KEY, " +
-                "name         varchar(255) NOT NULL" +
-                ");"
-        );
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_type(" +
+                "id                 serial PRIMARY KEY," +
+                "name               varchar(255) NOT NULL," +
+                "description        varchar(255)," +
+                "source             varchar(255)" +
+                ");");
 
         executeCommand("CREATE TABLE IF NOT EXISTS device_type(" +
                 "id    serial PRIMARY KEY, " +
@@ -336,58 +309,20 @@ public class Postgres {
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS security_state(" +
-                "id     serial PRIMARY KEY," +
-                "name   varchar(255) NOT NULL" +
-                ");");
-
         executeCommand("CREATE TABLE IF NOT EXISTS device_group(" +
                 "id    serial PRIMARY KEY, " +
                 "name  varchar(255)" +
                 ");"
         );
 
-        executeCommand("CREATE TABLE IF NOT EXISTS command_lookup(" +
-                "device_type_id     int NOT NULL," +
-                "state_id           int NOT NULL," +
-                "name               varchar(255)" +
+        executeCommand("CREATE TABLE IF NOT EXISTS security_state(" +
+                "id     serial PRIMARY KEY," +
+                "name   varchar(255) NOT NULL" +
                 ");");
 
-        executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
-                "id                 serial PRIMARY KEY," +
-                "name               varchar(255) NOT NULL,"+
-                "timestamp          timestamp NOT NULL DEFAULT now()," +
-                "alert_type_id      int," +
-                "alerter_id         varchar(255)," +
-                "device_status_id   int"+
-                ");"
-        );
-
-        executeCommand("CREATE TABLE IF NOT EXISTS alert_type(" +
-                "id                 serial PRIMARY KEY," +
-                "name               varchar(255) NOT NULL," +
-                "description        varchar(255)," +
-                "source             varchar(255)" +
-                ");");
-
-        executeCommand("CREATE TABLE IF NOT EXISTS alert_type_lookup(" +
-                "alert_type_id      int," +
-                "device_type_id     int" +
-                ");");
-
-        executeCommand("CREATE TABLE IF NOT EXISTS alert_condition(" +
-                "id                 serial PRIMARY KEY," +
-                "variables          hstore," +
-                "device_id          int," +
-                "alert_type_id      int" +
-                ");");
-
-        executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
-                "id                 serial PRIMARY KEY, " +
-                "alerter_id         varchar(255) NOT NULL, " +
-                "umbox_image_id     int NOT NULL," +
-                "device_id          int NOT NULL, " +
-                "started_at         timestamp NOT NULL DEFAULT now()" +
+        executeCommand("CREATE TABLE IF NOT EXISTS tag(" +
+                "id           serial PRIMARY KEY, " +
+                "name         varchar(255) NOT NULL" +
                 ");"
         );
 
@@ -398,12 +333,91 @@ public class Postgres {
                 ");"
         );
 
+        executeCommand("CREATE TABLE IF NOT EXISTS device(" +
+                "id                     serial PRIMARY KEY," +
+                "name                   varchar(255) NOT NULL," +
+                "description            varchar(255)," +
+                "type_id                int NOT NULL REFERENCES device_type(id)," +
+                "group_id               int," +
+                "ip_address             varchar(255)," +
+                "status_history_size    int NOT NULL," +
+                "sampling_rate          int NOT NULL,"  +
+                "current_state_id       int," +
+                "last_alert_id          int"+
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device_status(" +
+                "device_id     int NOT NULL REFERENCES device(id)," +
+                "attributes    hstore," +
+                "timestamp     TIMESTAMP," +
+                "id            serial    PRIMARY KEY" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device_security_state(" +
+                "id           serial PRIMARY KEY," +
+                "device_id    int NOT NULL REFERENCES device(id)," +
+                "timestamp    TIMESTAMP," +
+                "state_id     int NOT NULL" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS device_tag(" +
+                "device_id    int NOT NULL REFERENCES device(id), " +
+                "tag_id       int NOT NULL REFERENCES tag(id)," +
+                "PRIMARY KEY (device_id, tag_id)" +
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS command_lookup(" +
+                "device_type_id     int NOT NULL REFERENCES device_type(id)," +
+                "state_id           int NOT NULL REFERENCES security_state(id)," +
+                "name               varchar(255)," +
+                "PRIMARY KEY (device_type_id, state_id, name)" +
+                ");");
+
+        executeCommand("CREATE TABLE IF NOT EXISTS umbox_instance(" +
+                "id                 serial PRIMARY KEY, " +
+                "alerter_id         varchar(255) UNIQUE, " +
+                "umbox_image_id     int NOT NULL REFERENCES umbox_image(id)," +
+                "device_id          int NOT NULL REFERENCES device(id), " +
+                "started_at         timestamp NOT NULL DEFAULT now()" +
+                ");"
+        );
+
         executeCommand("CREATE TABLE IF NOT EXISTS umbox_lookup(" +
                 "state_id           int NOT NULL," +
-                "umbox_image_id     int NOT NULL," +
-                "device_type_id     int NOT NULL," +
-                "\"order\"              int NOT NULL" +
+                "umbox_image_id     int NOT NULL REFERENCES umbox_image(id)," +
+                "device_type_id     int NOT NULL REFERENCES device_type(id)," +
+                "dag_order          int NOT NULL," +
+                "PRIMARY KEY(state_id, umbox_image_id, device_type_id)" +
                 ");");
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert(" +
+                "id                 serial PRIMARY KEY," +
+                "name               varchar(255) NOT NULL,"+
+                "timestamp          timestamp NOT NULL DEFAULT now()," +
+                "alert_type_id      int REFERENCES alert_type(id)," +
+                "alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id)," +
+                "device_status_id   int REFERENCES device_status(id)"+
+                ");"
+        );
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_condition(" +
+                "id                 serial PRIMARY KEY," +
+                "variables          hstore," +
+                "device_id          int REFERENCES device(id)," +
+                "alert_type_id      int REFERENCES alert_type(id)" +
+                ");");
+
+        executeCommand("CREATE TABLE IF NOT EXISTS alert_type_lookup(" +
+                "alert_type_id      int REFERENCES alert_type(id)," +
+                "device_type_id     int REFERENCES device_type(id)," +
+                "PRIMARY KEY(alert_type_id, device_type_id)" +
+                ");");
+
+
 
     }
 
@@ -439,6 +453,7 @@ public class Postgres {
                 "  RETURN NEW;\n" +
                 "END;\n" +
                 "$$ LANGUAGE plpgsql;");
+        executeCommand("DROP TRIGGER IF EXISTS deviceNotify ON device");
         executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
                 "AFTER INSERT ON device\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
@@ -455,6 +470,7 @@ public class Postgres {
                 "  RETURN NEW;\n" +
                 "END;\n" +
                 "$$ LANGUAGE plpgsql;");
+        executeCommand("DROP TRIGGER IF EXISTS deviceStatusNotify ON device_status");
         executeCommand("CREATE TRIGGER \"deviceStatusNotify\"\n" +
                 "AFTER INSERT ON device_status\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"deviceStatusNotify\"()");
@@ -471,6 +487,7 @@ public class Postgres {
                 "  RETURN NEW;\n" +
                 "END;\n" +
                 "$$ LANGUAGE plpgsql;");
+        executeCommand("DROP TRIGGER IF EXISTS alertHistoryNotify ON alert");
         executeCommand("CREATE TRIGGER \"alertHistoryNotify\"\n" +
                 "AFTER INSERT ON alert\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"alertHistoryNotify\"()");
@@ -735,17 +752,17 @@ public class Postgres {
                 return -1;
             }
             try {
-                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alerter_id, device_status_id, alert_type_id) VALUES (?,?,?,?,?);");
+                PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
-                insertAlert.setString(3, alert.getAlerterId());
-                insertAlert.setInt(4, alert.getDeviceStatusId());
-                insertAlert.setInt(5, alert.getAlertTypeId());
+                insertAlert.setInt(3, alert.getAlertTypeId());
+                insertAlert.setString(4, alert.getAlerterId());
+                insertAlert.setInt(5, alert.getDeviceStatusId());
                 insertAlert.executeUpdate();
                 return getLatestId("alert");
             } catch (SQLException e) {
                 e.printStackTrace();
-                logger.severe("Error inserting Alert: " + e.getClass().getName() + ": " + e.getMessage());
+                logger.severe("Error inserting Alert: "+ alert.toString() + " " + e.getClass().getName() + ": " + e.getMessage());
             }
             return -1;
         });
@@ -874,7 +891,7 @@ public class Postgres {
      * @param cond The AlertCondition to be added
      * @return id of new AlertCondition on success. -1 on error
      */
-    public static CompletionStage<Integer> insertAlert(AlertCondition cond) {
+    public static CompletionStage<Integer> insertAlertCondition(AlertCondition cond) {
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Inserting alert condition for device: " + cond.getDeviceId());
             if(dbConn == null){
@@ -970,7 +987,7 @@ public class Postgres {
             }
             List<AlertType> alertTypeList = new ArrayList<AlertType>();
             try {
-                st = dbConn.prepareStatement("SELECT * FROM alert_type WHERE device_id = (SELECT alert_type_id FROM alert_type_lookup WHERE device_type_id = ?)");
+                st = dbConn.prepareStatement("SELECT * FROM alert_type WHERE id = (SELECT alert_type_id FROM alert_type_lookup WHERE device_type_id = ?)");
                 st.setInt(1, deviceTypeId);
                 rs = st.executeQuery();
                 while (rs.next()) {
@@ -1016,7 +1033,7 @@ public class Postgres {
      * @param type The AlertType to be added
      * @return id of new AlertType on success. -1 on error
      */
-    public static CompletionStage<Integer> insertAlert(AlertType type) {
+    public static CompletionStage<Integer> insertAlertType(AlertType type) {
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Inserting alert type: " + type.getName());
             if(dbConn == null){
@@ -1157,6 +1174,28 @@ public class Postgres {
         return name;
     }
 
+    /**
+     * insert a command into the db
+     */
+    public static int insertCommand(int deviceTypeId, int stateId, String name){
+        logger.info("Inserting command: " + name);
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+        try {
+            PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command_lookup(device_type_id, state_id, name) VALUES (?,?,?);");
+            insertCommand.setInt(1, deviceTypeId);
+            insertCommand.setInt(2, stateId);
+            insertCommand.setString(3, name);
+            insertCommand.executeUpdate();
+            return 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return -1;
+    }
     /*
      *       Device specific actions
      */
@@ -2021,7 +2060,7 @@ public class Postgres {
     /**
      * Saves given DeviceSecurityState to the database.
      * @param deviceState DeviceSecurityState to be inserted.
-     * @return auto incremented id
+     * @return 1 if success, -1 otherwise
      */
     public static CompletionStage<Integer> insertDeviceSecurityState(DeviceSecurityState deviceState){
         return CompletableFuture.supplyAsync(() -> {
@@ -2032,13 +2071,13 @@ public class Postgres {
             }
             try{
                 PreparedStatement update = dbConn.prepareStatement
-                        ("INSERT INTO device_state(device_id, timestamp, state)" +
+                        ("INSERT INTO device_security_state(device_id, timestamp, state_id)" +
                                 "values(?,?,?)");
                 update.setInt(1, deviceState.getDeviceId());
                 update.setTimestamp(2, deviceState.getTimestamp());
                 update.setInt(3, deviceState.getStateId());
                 update.executeUpdate();
-                return getLatestId("device_state");
+                return 1;
             }
             catch(Exception e){
                 e.printStackTrace();
@@ -2125,6 +2164,32 @@ public class Postgres {
             logger.severe("Error converting rs to SecurityState: " + e.getClass().getName()+": "+e.getMessage());
         }
         return state;
+    }
+
+    /**
+     * Inserts the given SecurityState into the db
+     * @param the security state to enter
+     * @return the id of the newly inserted SecurityState
+     */
+    public static Integer insertSecurityState(SecurityState state){
+        logger.info("Inserting SecurityState");
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+        try{
+            PreparedStatement update = dbConn.prepareStatement
+                    ("INSERT INTO security_state(name)" +
+                            "values(?)");
+            update.setString(1, state.getName());
+            update.executeUpdate();
+            return getLatestId("security_state");
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error inserting SecurityState: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return -1;
     }
 
     /**
@@ -2775,6 +2840,29 @@ public class Postgres {
      */
     public static CompletionStage<Boolean> deleteUmboxInstance(int id) {
         return deleteById("umbox_instance", id);
+    }
+
+    /*
+     * UmboxLookup functions
+     */
+
+    public static int insertUmboxLookup(int umboxImageId, int deviceTypeId, int secStateId, int dagOrder){
+        logger.info("Adding umbox lookup: ");
+        PreparedStatement st = null;
+        try{
+            st = dbConn.prepareStatement("INSERT INTO umbox_lookup (state_id, umbox_image_id, device_type_id, dag_order) VALUES (?,?,?,?)");
+            st.setInt(1, secStateId);
+            st.setInt(2, umboxImageId);
+            st.setInt(3, deviceTypeId);
+            st.setInt(4, dagOrder);
+            st.executeUpdate();
+            return 1;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            logger.severe("SQL exception adding umbox instance: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return -1;
     }
 
 }
