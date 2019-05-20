@@ -4,6 +4,9 @@ import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 import java.util.concurrent.CompletionStage;
 import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class UmboxInstance {
 
@@ -12,6 +15,8 @@ public class UmboxInstance {
     private int umboxImageId;
     private Optional<Integer> deviceId;
     private Timestamp startedAt;
+
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public UmboxInstance() {
 
@@ -81,5 +86,14 @@ public class UmboxInstance {
             this.id = id;
             return id;
         });
+    }
+
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad UmboxInstance";
+        }
     }
 }

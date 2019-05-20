@@ -4,6 +4,9 @@ import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 import java.util.Optional;
 import java.lang.NullPointerException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class Alert {
 
@@ -13,6 +16,9 @@ public class Alert {
     private String alerterId;
     private Integer deviceStatusId;
     private int alertTypeId;
+
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+
 
     public Alert() {
 
@@ -116,6 +122,11 @@ public class Alert {
     }
 
     public String toString() {
-        return "Alert Info: id: "+Integer.toString(id)+", alerterId: "+ alerterId +", name: "+ name +" deviceStatusId: "+deviceStatusId;
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad Alert";
+        }
     }
 }

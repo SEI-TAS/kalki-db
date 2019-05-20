@@ -1,10 +1,15 @@
 package kalkidb.models;
 import kalkidb.database.Postgres;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class Tag {
 
     private int id;
     private String name;
+
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public Tag() {
 
@@ -40,5 +45,14 @@ public class Tag {
             this.id = id;
             return id;
         });
+    }
+
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad Tag";
+        }
     }
 }

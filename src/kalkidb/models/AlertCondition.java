@@ -2,12 +2,17 @@ package kalkidb.models;
 import kalkidb.database.Postgres;
 
 import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class AlertCondition {
     private int id;
     private Map<String,String> variables;
     private int deviceId;
     private int alertTypeId;
+
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public AlertCondition(Map<String, String> variables, int deviceId, int alertTypeId) {
         this.variables = variables;
@@ -59,5 +64,14 @@ public class AlertCondition {
             this.id = id;
             return id;
         });
+    }
+
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad AlertCondition";
+        }
     }
 }

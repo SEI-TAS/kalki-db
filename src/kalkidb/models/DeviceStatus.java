@@ -79,11 +79,6 @@ public class DeviceStatus {
     }
 
     public String toString() {
-//        String result = "DeviceStatus Info: deviceId: " + Integer.toString(deviceId) + ",";
-//        for(String key : attributes.keySet()){
-//            result += key + ": " + attributes.get(key) + ", ";
-//        }
-//        return result;
         try {
             return ow.writeValueAsString(this);
         }

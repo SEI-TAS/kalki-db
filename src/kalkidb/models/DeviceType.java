@@ -1,13 +1,17 @@
 package kalkidb.models;
 import kalkidb.database.Postgres;
 import java.util.concurrent.CompletionStage;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 public class DeviceType {
 
     private int id;
     private String name;
     private byte[] policyFile;
     private String policyFileName;
+
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceType() {
 
@@ -68,5 +72,14 @@ public class DeviceType {
             this.id = id;
             return id;
         });
+    }
+
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad DeviceType";
+        }
     }
 }

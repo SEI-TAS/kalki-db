@@ -31,6 +31,15 @@ public class Device {
 
     }
 
+    public Device(String name, String description, DeviceType type, String ip, int statusHistorySize, int samplingRate) {
+        this.name = name;
+        this.description = description;
+        this.type = type;
+        this.ip = ip;
+        this.statusHistorySize = statusHistorySize;
+        this.samplingRate = samplingRate;
+    }
+
     public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert){
         this.name = name;
         this.description = description;
