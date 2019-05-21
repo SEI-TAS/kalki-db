@@ -14,9 +14,7 @@ public class Device {
     private int id;
     private String name;
     private String description;
-//    private int typeId;
     private DeviceType type;
-//    private int groupId;
     private Group group;
     private String ip;
     private int statusHistorySize;

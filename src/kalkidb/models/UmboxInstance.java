@@ -3,7 +3,6 @@ package kalkidb.models;
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 import java.util.concurrent.CompletionStage;
-import java.util.Optional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +12,7 @@ public class UmboxInstance {
     private int id;
     private String alerterId;
     private int umboxImageId;
-    private Optional<Integer> deviceId;
+    private int deviceId;
     private Timestamp startedAt;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
@@ -25,7 +24,7 @@ public class UmboxInstance {
     public UmboxInstance(String alerterId, int umboxImageId, int deviceId){
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
-        this.deviceId = Optional.of(deviceId);
+        this.deviceId = deviceId;
         long millis = System.currentTimeMillis();
         this.startedAt = new Timestamp(millis);
     }
@@ -33,7 +32,7 @@ public class UmboxInstance {
     public UmboxInstance(String alerterId, int umboxImageId, int deviceId, Timestamp timestamp){
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
-        this.deviceId = Optional.of(deviceId);
+        this.deviceId = deviceId;
         this.startedAt = timestamp;
     }
 
@@ -41,7 +40,7 @@ public class UmboxInstance {
         this.id = id;
         this.alerterId = alerterId;
         this.umboxImageId = umboxImageId;
-        this.deviceId = Optional.of(deviceId);
+        this.deviceId = deviceId;
         this.startedAt = startedAt;
     }
 
@@ -66,11 +65,11 @@ public class UmboxInstance {
     public void setUmboxImageId(int umboxImageId) { this.umboxImageId = umboxImageId; }
 
     public int getDeviceId() {
-        return deviceId.get();
+        return this.deviceId;
     }
 
     public void setDeviceId(int deviceId) {
-        this.deviceId = Optional.of(deviceId);
+        this.deviceId = deviceId;
     }
 
     public Timestamp getStartedAt() {

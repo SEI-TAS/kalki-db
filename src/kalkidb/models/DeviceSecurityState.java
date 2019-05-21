@@ -3,12 +3,18 @@ package kalkidb.models;
 import java.sql.Timestamp;
 import kalkidb.database.Postgres;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class DeviceSecurityState {
     private int id;
     private int deviceId;
     private int stateId;
     private Timestamp timestamp;
     private String name;
+
+    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceSecurityState() {
 
@@ -82,9 +88,18 @@ public class DeviceSecurityState {
     }
 
     public void insert(){
-        Postgres.insertDeviceSecurityState(this).thenApplyAsync(bool -> {
-            return bool;
+        Postgres.insertDeviceSecurityState(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
         });
     }
 
+    public String toString() {
+        try {
+            return ow.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            return "Bad DeviceSecurityState";
+        }
+    }
 }
