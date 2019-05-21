@@ -491,6 +491,23 @@ public class Postgres {
         executeCommand("CREATE TRIGGER \"alertHistoryNotify\"\n" +
                 "AFTER INSERT ON alert\n" +
                 "FOR EACH ROW EXECUTE PROCEDURE \"alertHistoryNotify\"()");
+
+        // deviceSecurityStateNotify
+        // when a DeviceSecurityState is inserted
+        executeCommand("CREATE OR REPLACE FUNCTION \"deviceSecurityStateNotify\"()\n" +
+                "  RETURNS TRIGGER AS $$\n" +
+                "DECLARE\n" +
+                "  payload TEXT;\n" +
+                "BEGIN\n" +
+                "  payload := NEW.id;\n" +
+                "  PERFORM pg_notify('devicesecuritystateinsert', payload);\n" +
+                "  RETURN NEW;\n" +
+                "END;\n" +
+                "$$ LANGUAGE plpgsql;");
+        executeCommand("DROP TRIGGER IF EXISTS deviceSecurityStateNotify ON device_security_state");
+        executeCommand("CREATE TRIGGER \"deviceSecurityStateNotify\"\n" +
+                "AFTER INSERT ON device_security_state\n" +
+                "FOR EACH ROW EXECUTE PROCEDURE \"deviceSecurityStateNotify\"()");
     }
 
     /**
