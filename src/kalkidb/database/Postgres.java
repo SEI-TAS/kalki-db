@@ -1951,6 +1951,48 @@ public class Postgres {
      */
 
     /**
+     * Finds the DeviceSecurityState with the supplied id
+     * @param the id for the DeviceSecurityState
+     * @return the DeviceSecurityState, if it exists
+     */
+    public static DeviceSecurityState findDeviceSecurityState(int id){
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        DeviceSecurityState dss = null;
+
+        if(dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+
+        try{
+            st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
+                    "FROM device_security_state dss, security_state ss " +
+                    "WHERE dss.id=? AND dss.state_id = ss.id " +
+                    "ORDER BY timestamp DESC " +
+                    "LIMIT 1");
+            st.setInt(1, id);
+            rs = st.executeQuery();
+
+            if(rs.next()){
+                dss = rsToDeviceSecurityState(rs);
+            }
+        }
+        catch (SQLException e){
+            logger.severe("SQL exception getting the device state: "+e.getClass().getName()+": "+e.getMessage());
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            logger.severe("Error getting device state: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        finally {
+            try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+            try { if(st != null) { st.close(); } } catch(Exception e) {}
+        }
+        return dss;
+    }
+
+    /**
      * Finds the most recent DeviceSecurityState from the database for the given device
      * @param deviceId the id of the device
      * @return the most recent DeviceSecurityState entered for a device
@@ -1967,9 +2009,9 @@ public class Postgres {
            }
 
            try{
-               st = dbConn.prepareStatement("SELECT dsd.device_id, dsd.timestamp, ss.name, ss.id AS state_id " +
-                                            "FROM device_security_state dsd, security_state ss " +
-                                            "WHERE dsd.device_id=? AND dsd.state_id = ss.id " +
+               st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
+                                            "FROM device_security_state dss, security_state ss " +
+                                            "WHERE dss.device_id=? AND dss.state_id = ss.id " +
                                             "ORDER BY timestamp DESC " +
                                             "LIMIT 1");
                st.setInt(1, deviceId);
@@ -2010,9 +2052,9 @@ public class Postgres {
                 return null;
             }
             try{
-                st = dbConn.prepareStatement("SELECT dsd.device_id, dsd.timestamp, ss.name, ss.id AS state_id " +
-                                             "FROM device_security_state dsd, security_state ss " +
-                                             "WHERE dsd.device_id=? AND dsd.state_id = ss.id " +
+                st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
+                                             "FROM device_security_state dss, security_state ss " +
+                                             "WHERE dss.device_id=? AND dss.state_id = ss.id " +
                                              "ORDER BY timestamp DESC");
                 st.setInt(1, deviceId);
                 rs = st.executeQuery();
@@ -2044,11 +2086,12 @@ public class Postgres {
     private static DeviceSecurityState rsToDeviceSecurityState(ResultSet rs){
         DeviceSecurityState deviceState = null;
         try{
+            int id = rs.getInt("id");
             int deviceId = rs.getInt("device_id");
             int stateId = rs.getInt("state_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
             String name = rs.getString("name");
-            deviceState = new DeviceSecurityState(deviceId, stateId, timestamp, name);
+            deviceState = new DeviceSecurityState(id, deviceId, stateId, timestamp, name);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -2060,24 +2103,30 @@ public class Postgres {
     /**
      * Saves given DeviceSecurityState to the database.
      * @param deviceState DeviceSecurityState to be inserted.
-     * @return 1 if success, -1 otherwise
+     * @return The id of the new DeviceSecurityState if successful
      */
     public static CompletionStage<Integer> insertDeviceSecurityState(DeviceSecurityState deviceState){
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Inserting DeviceSecurityState");
+            PreparedStatement insert = null;
+            ResultSet rs = null;
+
             if(dbConn == null){
                 logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
                 return -1;
             }
             try{
-                PreparedStatement update = dbConn.prepareStatement
-                        ("INSERT INTO device_security_state(device_id, timestamp, state_id)" +
-                                "values(?,?,?)");
-                update.setInt(1, deviceState.getDeviceId());
-                update.setTimestamp(2, deviceState.getTimestamp());
-                update.setInt(3, deviceState.getStateId());
-                update.executeUpdate();
-                return 1;
+                insert = dbConn.prepareStatement
+                        ("INSERT INTO device_security_state(device_id, timestamp, state_id) " +
+                                "values(?,?,?) " +
+                                "RETURNING id");
+                insert.setInt(1, deviceState.getDeviceId());
+                insert.setTimestamp(2, deviceState.getTimestamp());
+                insert.setInt(3, deviceState.getStateId());
+                rs = insert.executeQuery();
+                if(rs.next()){
+                    return rs.getInt("id");
+                }
             }
             catch(Exception e){
                 e.printStackTrace();
@@ -2531,41 +2580,52 @@ public class Postgres {
             if( rs == null) {
                 return null;
             } else {
-                return rsToUmboxImage(rs);
+                return rsToUmboxImageNoDagOrder(rs);
             }
         });
     }
 
     /**
-     * Find a list of UmboxImages for a device for its type and security state
-     * @param device The device to lookup related images
-     * @return imageList The list of umbox images for device in its current security state
+     * Finds the UmboxImages relating to the device type and the security state
+     * @param the id of the device type
+     * @param the id of the security state
+     * @return A list of UmboxImages for the given device type id and state id
      */
-    public static CompletionStage<List<UmboxImage>> findUmboxImagesByDevice(Device device) {
-        return CompletableFuture.supplyAsync(() -> {
-           ResultSet rs = null;
-           PreparedStatement st = null;
-           List<UmboxImage> imageList = new ArrayList<UmboxImage>();
-
-            try {
-               st = dbConn.prepareStatement("SELECT * FROM umbox_image WHERE id = " +
-                       "(SELECT umbox_image_id FROM umbox_lookup WHERE device_type_id = ? AND state_id = ?)");
-               st.setInt(1, device.getType().getId());
-               st.setInt(2, device.getCurrentState().getStateId());
-               rs = st.executeQuery();
-
-               while (rs.next()){
-                   imageList.add(rsToUmboxImage(rs));
-               }
-               rs.close();
-
-           } catch (SQLException e){
-               e.printStackTrace();
-           }
-
-            return imageList;
-        });
+    public static List<UmboxImage> findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId){
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try{
+            st = dbConn.prepareStatement("SELECT ui.id, ui.name, ui.path, ul.dag_order " +
+                                         "FROM umbox_image ui, umbox_lookup ul " +
+                                         "WHERE ul.device_type_id = ? AND ul.state_id = ? AND ul.umbox_image_id = ui.id");
+            st.setInt(1, devTypeId);
+            st.setInt(2, secStateId);
+            rs = st.executeQuery();
+            List<UmboxImage> umboxImageList = new ArrayList<UmboxImage>();
+            while (rs.next()) {
+                umboxImageList.add(rsToUmboxImage(rs));
+            }
+            return umboxImageList;
+        }
+        catch(SQLException e) {
+            logger.severe("Sql exception getting all UmboxImages: " + e.getClass().getName()+": "+e.getMessage());
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting UmboxImages: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        finally {
+            try { if(rs != null) { rs.close(); } } catch(Exception e) {}
+            try { if(st != null) { st.close(); } } catch(Exception e) {}
+        }
+        return null;
     }
+
     /**
      * Finds all UmboxImages in the database.
      * @return a list of all UmboxImages in the database.
@@ -2590,7 +2650,27 @@ public class Postgres {
     }
 
     /**
-     * Extract a UmboxImage from the result set of a database query.
+     * Extract a UmboxImage from the result set of a database query that DOES NOT include umbox_lookup.
+     * @param rs ResultSet from a UmboxImage query.
+     * @return The first UmboxImage in rs.
+     */
+    private static UmboxImage rsToUmboxImageNoDagOrder(ResultSet rs){
+        UmboxImage umboxImage = null;
+        try{
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            String path = rs.getString("path");
+            umboxImage = new UmboxImage(id, name, path);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return umboxImage;
+    }
+
+    /**
+     * Extract a UmboxImage from the result set of a database query that includes umbox_lookup.
      * @param rs ResultSet from a UmboxImage query.
      * @return The first UmboxImage in rs.
      */
@@ -2600,7 +2680,8 @@ public class Postgres {
             int id = rs.getInt("id");
             String name = rs.getString("name");
             String path = rs.getString("path");
-            umboxImage = new UmboxImage(id, name, path);
+            int dagOrder = rs.getInt("dag_order");
+            umboxImage = new UmboxImage(id, name, path, dagOrder);
         }
         catch(Exception e){
             e.printStackTrace();
