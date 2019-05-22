@@ -233,6 +233,7 @@ public class Postgres {
         createHstoreExtension();
         makeTables();
         insertDefaultDeviceTypes();
+        insertDefaultSecurityStates();
         createTriggers();
     }
 
@@ -434,6 +435,20 @@ public class Postgres {
         typeNames.add("Udoo Neo");
         for(String typeName: typeNames){
             executeCommand("INSERT INTO device_type (name) VALUES ('" + typeName + "')");
+        }
+    }
+
+    /**
+     * Insert the default security states into the database.
+     */
+    public static void insertDefaultSecurityStates() {
+        logger.info("Inserting default security states.");
+        List<String> stateNames = new ArrayList<>();
+        stateNames.add("normal");
+        stateNames.add("suspicious");
+        stateNames.add("under_attack");
+        for(String stateName: stateNames){
+            executeCommand("INSERT INTO security_state (name) VALUES ('" + stateName + "')");
         }
     }
 
