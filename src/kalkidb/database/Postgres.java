@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.io.File;
 
 public class Postgres {
     private static final String DEFAULT_IP = "localhost";
@@ -17,6 +16,8 @@ public class Postgres {
     private static final String ROOT_USER = "postgres";
     private static final String BASE_DB = "postgres";
     private static final String DEFAULT_DB_URL = "jdbc:postgresql://" + DEFAULT_IP + ":" + DEFAULT_PORT;
+
+    public static final String TRIGGER_NEW_DEV_SEC_STATE = "deviceSecurityStateNotify";
 
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
