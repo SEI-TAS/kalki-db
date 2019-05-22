@@ -17,7 +17,7 @@ public class Postgres {
     private static final String BASE_DB = "postgres";
     private static final String DEFAULT_DB_URL = "jdbc:postgresql://" + DEFAULT_IP + ":" + DEFAULT_PORT;
 
-    public static final String TRIGGER_NEW_DEV_SEC_STATE = "deviceSecurityStateNotify";
+    public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
 
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
