@@ -1978,6 +1978,7 @@ public class Postgres {
         ResultSet rs = null;
         DeviceSecurityState dss = null;
 
+        logger.info("Finding device security state with id: " + id);
         if(dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
