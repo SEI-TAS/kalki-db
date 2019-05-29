@@ -239,10 +239,10 @@ public class Postgres {
         logger.info("Setting up database.");
         createHstoreExtension();
         initDB("db-tables.sql");
-//        makeTables();
+        initDB("db-triggers.sql");
         insertDefaultDeviceTypes();
         insertDefaultSecurityStates();
-        createTriggers();
+//        createTriggers();
     }
 
     /**
@@ -304,6 +304,7 @@ public class Postgres {
      * @param fileName the file containing SQL commands to execute
      */
     public static void initDB(String fileName){
+//        logger.info("\n\n"+fileName+"\n\n");
         try {
             InputStream is = Postgres.class.getResourceAsStream("/"+fileName);
             Scanner s = new Scanner(is);
@@ -311,14 +312,15 @@ public class Postgres {
             String line, statement = "";
             while(s.hasNextLine()){
                 line = s.nextLine();
-                if(!line.equals("") || !line.equals(" ")){ // skip blank lines
+                if(line.equals("") || line.equals(" ")){ // statements are white space delimited
+                    executeCommand(statement);
+                    statement = "";
+                } else {
                     statement += line;
-                    if(line.equals(");")){ // end of SQL statement
-                        executeCommand(statement);
-                        statement = "";
-                    }
                 }
             }
+            if(!statement.equals(""))
+                executeCommand(statement);
         } catch (Exception e) {
             logger.severe("Error initializing db:");
             e.printStackTrace();
@@ -353,80 +355,6 @@ public class Postgres {
         for(String stateName: stateNames){
             executeCommand("INSERT INTO security_state (name) VALUES ('" + stateName + "')");
         }
-    }
-
-    /**
-     * Creates all necessary triggers in the database, and necessary helper functions.
-     * Namely, creates a trigger and function to send notifications on device insert.
-     */
-    public static void createTriggers(){
-        // deviceNotify
-        // when a device is inserted
-        executeCommand("CREATE OR REPLACE FUNCTION \"deviceNotify\"()\n" +
-                "  RETURNS TRIGGER AS $$\n" +
-                "DECLARE\n" +
-                "  payload TEXT;\n" +
-                "BEGIN\n" +
-                "  payload := NEW.id;\n" +
-                "  PERFORM pg_notify('deviceinsert', payload);\n" +
-                "  RETURN NEW;\n" +
-                "END;\n" +
-                "$$ LANGUAGE plpgsql;");
-        executeCommand("DROP TRIGGER IF EXISTS deviceNotify ON device");
-        executeCommand("CREATE TRIGGER \"deviceNotify\"\n" +
-                "AFTER INSERT ON device\n" +
-                "FOR EACH ROW EXECUTE PROCEDURE \"deviceNotify\"()");
-
-        // deviceStatusNotify
-        // when a DeviceStatus is inserted
-        executeCommand("CREATE OR REPLACE FUNCTION \"deviceStatusNotify\"()\n" +
-                "  RETURNS TRIGGER AS $$\n" +
-                "DECLARE\n" +
-                "  payload TEXT;\n" +
-                "BEGIN\n" +
-                "  payload := NEW.id;\n" +
-                "  PERFORM pg_notify('devicestatusinsert', payload);\n" +
-                "  RETURN NEW;\n" +
-                "END;\n" +
-                "$$ LANGUAGE plpgsql;");
-        executeCommand("DROP TRIGGER IF EXISTS deviceStatusNotify ON device_status");
-        executeCommand("CREATE TRIGGER \"deviceStatusNotify\"\n" +
-                "AFTER INSERT ON device_status\n" +
-                "FOR EACH ROW EXECUTE PROCEDURE \"deviceStatusNotify\"()");
-
-        // alertHistoryNotify
-        // when an AlertHistory is inserted
-        executeCommand("CREATE OR REPLACE FUNCTION \"alertHistoryNotify\"()\n" +
-                "  RETURNS TRIGGER AS $$\n" +
-                "DECLARE\n" +
-                "  payload TEXT;\n" +
-                "BEGIN\n" +
-                "  payload := NEW.id;\n" +
-                "  PERFORM pg_notify('alerthistoryinsert', payload);\n" +
-                "  RETURN NEW;\n" +
-                "END;\n" +
-                "$$ LANGUAGE plpgsql;");
-        executeCommand("DROP TRIGGER IF EXISTS alertHistoryNotify ON alert");
-        executeCommand("CREATE TRIGGER \"alertHistoryNotify\"\n" +
-                "AFTER INSERT ON alert\n" +
-                "FOR EACH ROW EXECUTE PROCEDURE \"alertHistoryNotify\"()");
-
-        // deviceSecurityStateNotify
-        // when a DeviceSecurityState is inserted
-        executeCommand("CREATE OR REPLACE FUNCTION \"deviceSecurityStateNotify\"()\n" +
-                "  RETURNS TRIGGER AS $$\n" +
-                "DECLARE\n" +
-                "  payload TEXT;\n" +
-                "BEGIN\n" +
-                "  payload := NEW.id;\n" +
-                "  PERFORM pg_notify('devicesecuritystateinsert', payload);\n" +
-                "  RETURN NEW;\n" +
-                "END;\n" +
-                "$$ LANGUAGE plpgsql;");
-        executeCommand("DROP TRIGGER IF EXISTS deviceSecurityStateNotify ON device_security_state");
-        executeCommand("CREATE TRIGGER \"deviceSecurityStateNotify\"\n" +
-                "AFTER INSERT ON device_security_state\n" +
-                "FOR EACH ROW EXECUTE PROCEDURE \"deviceSecurityStateNotify\"()");
     }
 
     /**
