@@ -1,11 +1,11 @@
-package kalkidb.models;
+package edu.cmu.sei.ttg.kalki.models;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import kalkidb.database.Postgres;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;

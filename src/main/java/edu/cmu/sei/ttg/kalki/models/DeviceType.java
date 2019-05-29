@@ -1,5 +1,5 @@
-package kalkidb.models;
-import kalkidb.database.Postgres;
+package edu.cmu.sei.ttg.kalki.models;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;

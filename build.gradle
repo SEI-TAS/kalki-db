@@ -14,7 +14,7 @@ apply plugin: 'maven-publish'
 sourceCompatibility = 1.8
 
 sourceSets {
-    main.java.srcDirs = ['src']
+    main.java.srcDirs = ['src/main/java/edu/cmu/sei/ttg/kalki/database', 'src/main/java/edu/cmu/sei/ttg/kalki/listeners', 'src/main/java/edu/cmu/sei/ttg/kalki/models']
 }
 
 repositories {

@@ -1,35 +1,29 @@
-package kalkidb.models;
-import kalkidb.database.Postgres;
+package edu.cmu.sei.ttg.kalki.models;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class Tag {
-
-    private int id;
+public class DeviceCommand {
+    private int deviceId;
+    private int stateId;
     private String name;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public Tag() {
-
-    }
-
-    public Tag(String name){
+    public DeviceCommand(int deviceId, int stateId, String name){
+        this.deviceId = deviceId;
+        this.stateId = stateId;
         this.name = name;
     }
 
-    public Tag(int id, String name) {
-        this.id = id;
-        this.name = name;
+    public void setStateId(int stateId) {
+        this.stateId = stateId;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    public int getStateId() {
+        return stateId;
     }
 
     public String getName() {
@@ -40,11 +34,12 @@ public class Tag {
         this.name = name;
     }
 
-    public void insert(){
-        Postgres.insertTag(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public void setDeviceId(int deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public int getDeviceId() {
+        return deviceId;
     }
 
     public String toString() {
@@ -52,7 +47,7 @@ public class Tag {
             return ow.writeValueAsString(this);
         }
         catch (JsonProcessingException e) {
-            return "Bad Tag";
+            return "Bad DeviceCommand";
         }
     }
 }

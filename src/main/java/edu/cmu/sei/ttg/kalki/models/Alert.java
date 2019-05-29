@@ -1,7 +1,7 @@
-package kalkidb.models;
+package edu.cmu.sei.ttg.kalki.models;
 
 import java.sql.Timestamp;
-import kalkidb.database.Postgres;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 import java.util.Optional;
 import java.lang.NullPointerException;
 import com.fasterxml.jackson.databind.ObjectMapper;

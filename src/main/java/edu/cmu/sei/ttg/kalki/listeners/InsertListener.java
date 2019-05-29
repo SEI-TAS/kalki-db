@@ -1,6 +1,6 @@
-package kalkidb.listeners;
+package edu.cmu.sei.ttg.kalki.listeners;
 
-import kalkidb.database.Postgres;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 

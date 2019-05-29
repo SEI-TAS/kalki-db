@@ -1,5 +1,5 @@
-package kalkidb.models;
-import kalkidb.database.Postgres;
+package edu.cmu.sei.ttg.kalki.models;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,8 +1,8 @@
-package kalkidb.models;
+package edu.cmu.sei.ttg.kalki.models;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import kalkidb.database.Postgres;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 public class UmboxImage {
 

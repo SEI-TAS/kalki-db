@@ -1,26 +1,25 @@
-package kalkidb.models;
-
-import kalkidb.database.Postgres;
+package edu.cmu.sei.ttg.kalki.models;
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class Group {
+public class Tag {
 
     private int id;
     private String name;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public Group() {
+    public Tag() {
 
     }
 
-    public Group(String name) {
+    public Tag(String name){
         this.name = name;
     }
 
-    public Group(int id, String name) {
+    public Tag(int id, String name) {
         this.id = id;
         this.name = name;
     }
@@ -42,7 +41,7 @@ public class Group {
     }
 
     public void insert(){
-        Postgres.insertGroup(this).thenApplyAsync(id -> {
+        Postgres.insertTag(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });
@@ -53,7 +52,7 @@ public class Group {
             return ow.writeValueAsString(this);
         }
         catch (JsonProcessingException e) {
-            return "Bad Group";
+            return "Bad Tag";
         }
     }
 }

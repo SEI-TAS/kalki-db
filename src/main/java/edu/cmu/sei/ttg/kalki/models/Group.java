@@ -1,29 +1,36 @@
-package kalkidb.models;
-import kalkidb.database.Postgres;
+package edu.cmu.sei.ttg.kalki.models;
 
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class DeviceCommand {
-    private int deviceId;
-    private int stateId;
+public class Group {
+
+    private int id;
     private String name;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public DeviceCommand(int deviceId, int stateId, String name){
-        this.deviceId = deviceId;
-        this.stateId = stateId;
+    public Group() {
+
+    }
+
+    public Group(String name) {
         this.name = name;
     }
 
-    public void setStateId(int stateId) {
-        this.stateId = stateId;
+    public Group(int id, String name) {
+        this.id = id;
+        this.name = name;
     }
 
-    public int getStateId() {
-        return stateId;
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -34,12 +41,11 @@ public class DeviceCommand {
         this.name = name;
     }
 
-    public void setDeviceId(int deviceId) {
-        this.deviceId = deviceId;
-    }
-
-    public int getDeviceId() {
-        return deviceId;
+    public void insert(){
+        Postgres.insertGroup(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
     }
 
     public String toString() {
@@ -47,7 +53,7 @@ public class DeviceCommand {
             return ow.writeValueAsString(this);
         }
         catch (JsonProcessingException e) {
-            return "Bad DeviceCommand";
+            return "Bad Group";
         }
     }
 }
