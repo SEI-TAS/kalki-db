@@ -14,16 +14,16 @@ public class InsertListener extends TimerTask
     private static Logger logger = Logger.getLogger("myLogger");
 
     private PGConnection pgconn;
-    private IInsertHandler handler;
+    private InsertHandler handler;
 
-    public static void startUpListener(String triggerName, IInsertHandler handler)
+    public static void startUpListener(String triggerName, InsertHandler handler)
     {
         int pollInterval = 1000;
         Timer timer = new Timer();
         timer.schedule(new InsertListener(triggerName, handler), pollInterval, pollInterval);
     }
 
-    private InsertListener(String triggerName, IInsertHandler handler)
+    private InsertListener(String triggerName, InsertHandler handler)
     {
         this.handler = handler;
         this.pgconn = (PGConnection) Postgres.dbConn;
