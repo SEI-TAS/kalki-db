@@ -238,11 +238,16 @@ public class Postgres {
     public static void setupDatabase(){
         logger.info("Setting up database.");
         createHstoreExtension();
+        // DB Structure
         initDB("db-tables.sql");
         initDB("db-triggers.sql");
-        insertDefaultDeviceTypes();
-        insertDefaultSecurityStates();
-//        createTriggers();
+
+        // DB Initial Data
+        initDB("db-alert-types.sql");
+        initDB("db-device-types.sql");
+        initDB("db-security-states.sql");
+        initDB("db-command-lookups.sql");
+        initDB("db-umbox-images.sql");
     }
 
     /**
