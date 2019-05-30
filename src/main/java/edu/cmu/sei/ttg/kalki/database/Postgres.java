@@ -249,6 +249,9 @@ public class Postgres {
         initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
+
+        //TODO:
+        //initDB("db-umbox-images.sql");
     }
 
     /**
