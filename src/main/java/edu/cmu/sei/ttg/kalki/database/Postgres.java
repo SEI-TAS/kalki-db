@@ -248,6 +248,7 @@ public class Postgres {
         initDB("db-security-states.sql");
         initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
+        initDB("db-alert-type-lookups.sql");
     }
 
     /**
@@ -856,7 +857,9 @@ public class Postgres {
             }
             List<AlertType> alertTypeList = new ArrayList<AlertType>();
             try {
-                st = dbConn.prepareStatement("SELECT * FROM alert_type WHERE id = (SELECT alert_type_id FROM alert_type_lookup WHERE device_type_id = ?)");
+                st = dbConn.prepareStatement("SELECT alert_type.id, alert_type.name, alert_type.description, alert_type.source " +
+                                             "FROM alert_type, alert_type_lookup AS atl " +
+                                             "WHERE alert_type.id = atl.alert_type_id AND atl.device_type_id = ?;");
                 st.setInt(1, deviceTypeId);
                 rs = st.executeQuery();
                 while (rs.next()) {
