@@ -95,6 +95,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
 |`findAlertType(int id) `                       |`CompletionStage<AlertType>`      |
+|`findAllAlertTypes()  `                        |`List<AlerType>`                  |
 |`findAlertTypesByDeviceType(int deviceTypeId)` |`CompletionStage<List<AlertType>>`|
 |`insertAlertType(AlertType type)`              |`CompletionStage<Integer>`|
 |`updateAlertType(AlertType type)`              |`CompletionStage<Integer>`|

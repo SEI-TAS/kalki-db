@@ -883,6 +883,30 @@ public class Postgres {
     }
 
     /**
+     * Finds all AlertTypes in the database
+     * @return a list of AlertTypes
+     */
+    public static List<AlertType> findAllAlertTypes() {
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        List<AlertType> alertTypeList = new ArrayList<AlertType>();
+        try{
+            ResultSet rs = getAllFromTable("alert_type");
+            while (rs.next()) {
+                alertTypeList.add(rsToAlertType(rs));
+            }
+            rs.close();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting all AlertTypes: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return alertTypeList;
+    }
+
+    /**
      * Extract an AlertType from the result set of a database query.
      * @param rs ResultSet from a AlertType query.
      * @return The AlertType that was found.
