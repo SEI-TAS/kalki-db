@@ -986,6 +986,24 @@ public class Postgres {
     }
 
     /**
+     * First, attempts to find the AlertType in the database.
+     * If successful, updates the existing AlertType with the given AlertType's parameters Otherwise,
+     * inserts the given Device.
+     * @param device Device to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateAlertType(AlertType type){
+        return findAlertType(type.getId()).thenApplyAsync(a -> {
+            if(a == null) {
+                insertAlertType(type);
+                return 0;
+            } else {
+                updateAlertType(type);
+                return 1;
+            }
+        });
+    }
+
+    /**
      * Deletes an AlertType by its id.
      * @param id id of the AlertType to delete.
      * @return true if the deletion succeeded, false otherwise.

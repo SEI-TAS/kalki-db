@@ -99,6 +99,7 @@ Device device = Postgres.findDevice(deviceId);
 |`findAlertTypesByDeviceType(int deviceTypeId)` |`CompletionStage<List<AlertType>>`|
 |`insertAlertType(AlertType type)`              |`CompletionStage<Integer>`|
 |`updateAlertType(AlertType type)`              |`CompletionStage<Integer>`|
+|`insertOrUpdate(AlertType type)`               |`CompletionStage<Integer>`|
 |`deleteAlertType(int id)`                      |`CompletionStage<Boolean>`|
 
 #### CommandLookup
@@ -314,6 +315,29 @@ This class supports:
 - `set<field>(<field type> value)`
     - ex: setName("Name")
 - `insert()`
+- `toString()`
+#### AlertType
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|name            |String   |
+|description     |String   |
+|source          |String   |
+###### Constructors:  
+|Definition|
+|:-----------------------------------------------|
+|`AlertType()`|
+|`Alert(String name, String description, String source)`|
+|`Alert(int id, String name, String description, String source)`|
+###### Methods
+This class supports:
+- `get<field>()`
+    - ex: getName()
+- `set<field>(<field type> value)`
+    - ex: setName("Name")
+- `insert()`
+- `insertOrUpdate()`
 - `toString()`
 #### Device
 ###### Schema:

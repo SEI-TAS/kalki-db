@@ -1,5 +1,6 @@
 package edu.cmu.sei.ttg.kalki.models;
 import edu.cmu.sei.ttg.kalki.database.Postgres;
+import java.util.concurrent.CompletionStage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -12,6 +13,8 @@ public class AlertType {
     private String source;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+
+    public AlertType(){}
 
     public AlertType(String name, String description, String source) {
         this.name = name;
@@ -64,6 +67,8 @@ public class AlertType {
             return id;
         });
     }
+
+    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateAlertType(this);}
 
     public String toString() {
         try {
