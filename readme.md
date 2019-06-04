@@ -452,6 +452,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`
+- `insertOrUpdate()`
 - `toString()`
 
 #### Group

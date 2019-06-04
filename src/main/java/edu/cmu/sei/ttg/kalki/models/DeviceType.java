@@ -4,6 +4,7 @@ import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class DeviceType {
 
     private int id;
@@ -73,6 +74,8 @@ public class DeviceType {
             return id;
         });
     }
+
+    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateDeviceType(this); }
 
     public String toString() {
         try {

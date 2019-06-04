@@ -988,8 +988,8 @@ public class Postgres {
     /**
      * First, attempts to find the AlertType in the database.
      * If successful, updates the existing AlertType with the given AlertType's parameters Otherwise,
-     * inserts the given Device.
-     * @param device Device to be inserted or updated.
+     * inserts the given AlertType.
+     * @param type AlertType to be inserted or updated.
      */
     public static CompletionStage<Integer> insertOrUpdateAlertType(AlertType type){
         return findAlertType(type.getId()).thenApplyAsync(a -> {
@@ -2471,6 +2471,24 @@ public class Postgres {
                 e.printStackTrace();
                 logger.severe("Error updating DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
                 return -1;
+            }
+        });
+    }
+
+    /**
+     * First, attempts to find the DeviceType in the database.
+     * If successful, updates the existing DeviceType with the given DeviceType's parameters Otherwise,
+     * inserts the given DeviceType.
+     * @param type DeviceType to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateDeviceType(DeviceType type){
+        return findAlertType(type.getId()).thenApplyAsync(a -> {
+            if(a == null) {
+                insertDeviceType(type);
+                return 0;
+            } else {
+                updateDeviceType(type);
+                return 1;
             }
         });
     }
