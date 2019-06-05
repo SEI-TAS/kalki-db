@@ -12,6 +12,8 @@ public class SecurityState{
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
+    public SecurityState(){}
+
     public SecurityState(int id, String name) {
         this.id = id;
         this.name = name;

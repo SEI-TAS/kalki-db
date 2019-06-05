@@ -381,6 +381,7 @@ This class supports:
 ###### Constructors:  
 |Definition|
 |:-----------------------------------------------|
+|`Device()`|
 |`Device(String name, String description, DeviceType type, String ip, int statusHistorySize, int samplingRate)`|
 |`Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert)`|
 |`Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate)`|
@@ -510,6 +511,7 @@ This class supports:
 ###### Constructors:
 |Definition |  
 |:---|
+|`SecurityState()`|
 |`SecurityState(String name)`|
 |`SecurityState(int id, String name)`|
 ###### Methods:
