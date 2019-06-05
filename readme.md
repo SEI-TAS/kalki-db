@@ -222,6 +222,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findSecurityState(int id)`                |`CompletionStage<SecurityState>`      |
+|`findAllSecurityStates()`                  |`CompletionStage<List<SecurityState>` |
 |`insertSecurityState(SecurityState state)` |`Integer`            |
 |`updateSecurityState(SecurityState state)` |`CompletionStage<Integer>`            |
 |`deleteSecurityState(int id)`              |`CompletionStage<Boolean>`            |

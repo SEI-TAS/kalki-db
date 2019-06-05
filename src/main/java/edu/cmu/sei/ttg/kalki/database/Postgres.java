@@ -2202,6 +2202,30 @@ public class Postgres {
     }
 
     /**
+     * Finds all SecurityStates in the database.
+     * @return a list of all SecurityStates in the database.
+     */
+    public static CompletionStage<List<SecurityState>> findAllSecurityStates() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = getAllFromTable("security_state");
+            List<SecurityState> states = new ArrayList<SecurityState>();
+            try {
+                while (rs.next()) {
+                    states.add(rsToSecurityState(rs));
+                }
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQLException getting all SecurityStates: " + e.getClass().getName()+": "+e.getMessage());
+            }
+            finally {
+                try { if (rs != null) rs.close(); } catch(Exception e) {}
+            }
+            return states;
+        });
+    }
+
+    /**
      * Take a ResultSet from a DB query and convert to the java object
      * @param rs
      * @return
