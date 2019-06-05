@@ -4,6 +4,7 @@ import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.concurrent.CompletionStage;
 
 public class SecurityState{
     private int id;
@@ -39,6 +40,8 @@ public class SecurityState{
     public void insert(){
         this.id = Postgres.insertSecurityState(this);
     }
+
+    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateSecurityState(this); }
 
     public String toString() {
         try {

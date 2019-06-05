@@ -3,6 +3,7 @@ import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.concurrent.CompletionStage;
 
 public class Tag {
 
@@ -46,6 +47,8 @@ public class Tag {
             return id;
         });
     }
+
+    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateTag(this); }
 
     public String toString() {
         try {

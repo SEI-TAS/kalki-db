@@ -316,6 +316,29 @@ This class supports:
     - ex: setName("Name")
 - `insert()`
 - `toString()`
+#### AlertCondition
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|variables       |Map<String, String>|
+|deviceId        |int   |
+|alertTypeId     |int   |
+###### Constructors:  
+|Definition|
+|:-----------------------------------------------|
+|`AlertCondition()`|
+|`AlertCondition(Map<String, String> variables, int deviceId, int alertTypeId)`|
+|`AlertCondition(int id, Map<String, String> variables, int deviceId, int alertTypeId)`|
+###### Methods
+This class supports:
+- `get<field>()`
+    - ex: getName()
+- `set<field>(<field type> value)`
+    - ex: setName("Name")
+- `insert()`
+- `insertOrUpdate()`
+- `toString()`
 #### AlertType
 ###### Schema:
 |Property        |Type     |
@@ -328,8 +351,8 @@ This class supports:
 |Definition|
 |:-----------------------------------------------|
 |`AlertType()`|
-|`Alert(String name, String description, String source)`|
-|`Alert(int id, String name, String description, String source)`|
+|`AlertType(String name, String description, String source)`|
+|`AlertType(int id, String name, String description, String source)`|
 ###### Methods
 This class supports:
 - `get<field>()`
@@ -474,6 +497,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`
+- `insertOrUpdate()`
 - `toString()`
 
 #### SecurityState
@@ -494,6 +518,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`
+- `insertOrUpdate()`
 - `toString()`
 
 #### Tag
@@ -515,6 +540,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`
+- `insertOrUpdate()`
 - `toString()`
 
 #### UmboxImage
@@ -539,6 +565,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`
+- `insertOrUpdate()`
 - `toString()`
 
 #### UmboxInstance

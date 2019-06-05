@@ -818,6 +818,24 @@ public class Postgres {
     }
 
     /**
+     * First, attempts to find the AlertCondition in the database.
+     * If successful, updates the existing AlertCondition with the given AlertCondition's parameters. Otherwise,
+     * inserts the given AlertCondition.
+     * @param condition AlertCondition to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateAlertCondition(AlertCondition condition){
+        return findAlertCondition(condition.getId()).thenApplyAsync(c -> {
+            if(c == null) {
+                insertAlertCondition(condition);
+                return 0;
+            } else {
+                updateAlertCondition(condition);
+                return 1;
+            }
+        });
+    }
+
+    /**
      * Deletes an AlertCondition by its id.
      * @param id id of the AlertCondition to delete.
      * @return true if the deletion succeeded, false otherwise.
@@ -1826,6 +1844,8 @@ public class Postgres {
         });
     }
 
+
+
     /**
      * Updates Group with given id to have the parameters of the given Group.
      * @param group group holding new parameters to be saved in the database.
@@ -1850,6 +1870,24 @@ public class Postgres {
                 e.printStackTrace();
                 logger.severe("Error updating Group: " + e.getClass().getName() + ": " + e.getMessage());
                 return -1;
+            }
+        });
+    }
+
+    /**
+     * First, attempts to find the Group in the database.
+     * If successful, updates the existing Group with the given Groups's parameters. Otherwise,
+     * inserts the given Group.
+     * @param group Group to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateGroup(Group group){
+        return findGroup(group.getId()).thenApplyAsync(g -> {
+            if(g == null) {
+                insertGroup(group);
+                return 0;
+            } else {
+                updateGroup(group);
+                return 1;
             }
         });
     }
@@ -2188,6 +2226,24 @@ public class Postgres {
     }
 
     /**
+     * First, attempts to find the SecurityState in the database.
+     * If successful, updates the existing SecurityState with the given SecurityState's parameters Otherwise,
+     * inserts the given SecurityState.
+     * @param state SecurityState to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateSecurityState(SecurityState state){
+        return findSecurityState(state.getId()).thenApplyAsync(s -> {
+            if(s == null) {
+                insertSecurityState(state);
+                return 0;
+            } else {
+                updateSecurityState(state);
+                return 1;
+            }
+        });
+    }
+
+    /**
      * Delete row from security_state with the given id
      * @param id The id of the row to delete
      * @return True if successful
@@ -2199,6 +2255,22 @@ public class Postgres {
     /*
      *      Tag specific actions
      */
+
+    /**
+     * Search the tag table for a row with the given id
+     * @param id The id of the tag
+     * @return the row from the table
+     */
+    public static CompletionStage<Tag> findTag(int id){
+        return findById(id, "tag").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                Tag tag = rsToTag(rs);
+                return tag;
+            }
+        });
+    }
 
     /**
      * Find the respective tag ids for given device id
@@ -2324,6 +2396,25 @@ public class Postgres {
                 e.printStackTrace();
                 logger.severe("Error updating Tag: " + e.getClass().getName() + ": " + e.getMessage());
                 return -1;
+            }
+        });
+    }
+
+
+    /**
+     * First, attempts to find the Tag in the database.
+     * If successful, updates the existing Tag with the given Tag's parameters Otherwise,
+     * inserts the given Tag.
+     * @param tag Tag to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateTag(Tag tag){
+        return findTag(tag.getId()).thenApplyAsync(t -> {
+            if(t == null) {
+                insertTag(tag);
+                return 0;
+            } else {
+                updateTag(tag);
+                return 1;
             }
         });
     }
@@ -2681,6 +2772,24 @@ public class Postgres {
                 try { if(st != null) st.close(); } catch (Exception e) {}
             }
             return -1;
+        });
+    }
+
+    /**
+     * First, attempts to find the UmboxImage in the database.
+     * If successful, updates the existing UmboxImage with the given UmboxImage's parameters Otherwise,
+     * inserts the given UmboxImage.
+     * @param image UmboxImage to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateUmboxImage(UmboxImage image){
+        return findUmboxImage(image.getId()).thenApplyAsync(i -> {
+            if(i == null) {
+                insertUmboxImage(image);
+                return 0;
+            } else {
+                updateUmboxImage(image);
+                return 1;
+            }
         });
     }
 

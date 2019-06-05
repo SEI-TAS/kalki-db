@@ -2,6 +2,7 @@ package edu.cmu.sei.ttg.kalki.models;
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,6 +14,8 @@ public class AlertCondition {
     private int alertTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+
+    public AlertCondition() {}
 
     public AlertCondition(Map<String, String> variables, int deviceId, int alertTypeId) {
         this.variables = variables;
@@ -65,6 +68,8 @@ public class AlertCondition {
             return id;
         });
     }
+
+    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateAlertCondition(this); }
 
     public String toString() {
         try {
