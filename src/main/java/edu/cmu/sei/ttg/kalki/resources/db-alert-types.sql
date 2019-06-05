@@ -8,9 +8,9 @@ INSERT INTO alert_type(name, description, source) values('max-login-attempts', '
 
 INSERT INTO alert_type(name, description, source) values('state-reset', 'Admin issues state reset through dashboard', 'Dashboard');
 
-INSERT INTO alert_type(name, description, source) values('unts-acceleration', 'unts.acceleration > Z && unts.avgAcceleration > Y', 'Iot Monitor');
+INSERT INTO alert_type(name, description, source) values('unts-acceleration', 'unts.acceleration > Z && unts.avgAcceleration > Y', 'IoT Monitor');
 
-INSERT INTO alert_type(name, description, source) values('unts-gyro', 'unts.gyroscope != (X±d), (Y±d), (Z±d)', 'Iot Monitor');
+INSERT INTO alert_type(name, description, source) values('unts-gyro', 'unts.gyroscope != (X±d), (Y±d), (Z±d)', 'IoT Monitor');
 
 INSERT INTO alert_type(name, description, source) values('unts-gyro-secondary', 'unts.gyroscope > avg(last N) && sampleRate > originalRate', 'IoT Monitor');
 

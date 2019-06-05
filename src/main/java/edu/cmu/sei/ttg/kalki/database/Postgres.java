@@ -1224,6 +1224,50 @@ public class Postgres {
     }
 
     /**
+     * Finds the Device related to the given Alert id
+     * @param the Alert
+     * @return the Device associated with the alert
+     */
+    public static Device findDeviceByAlert(Alert alert){
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try{
+
+            if(alert.getDeviceStatusId() != null){
+                st = dbConn.prepareStatement("SELECT * FROM device WHERE id = (SELECT device_id FROM device_status WHERE id = ?)");
+                st.setInt(1, alert.getDeviceStatusId());
+                rs = st.executeQuery();
+                if(rs.next())
+                    return rsToDevice(rs);
+            }
+            else if(alert.getAlerterId() != null) {
+                st = dbConn.prepareStatement("SELECT * FROM device WHERE id = (SELECT device_id FROM umbox_instance WHERE alerter_id = ?)");
+                st.setString(1, alert.getAlerterId());
+                if(rs.next())
+                    return rsToDevice(rs);
+            }
+            else {
+                logger.severe("Error: alert has no associated DeviceStatus OR UmboxInstance!");
+                return null;
+            }
+
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
+        } finally {
+            try { if (rs != null) { rs.close(); } } catch (Exception e) { }
+            try { if (st != null) { st.close(); } } catch (Exception e) { }
+        }
+        return null;
+    }
+
+    /**
      * Extract a Device from the result set of a database query.
      * @param rs ResultSet from a Device query.
      * @return The Device that was found.
@@ -2462,6 +2506,7 @@ public class Postgres {
             }
         });
     }
+
     /**
      * Finds all DeviceTypes in the database.
      * @return a list of all DeviceTypes in the database.
