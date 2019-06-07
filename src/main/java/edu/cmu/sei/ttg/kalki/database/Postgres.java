@@ -2738,7 +2738,7 @@ public class Postgres {
             List<UmboxImage> umboxImages = new ArrayList<UmboxImage>();
             try {
                 while (rs.next()) {
-                    umboxImages.add(rsToUmboxImage(rs));
+                    umboxImages.add(rsToUmboxImageNoDagOrder(rs));
                 }
                 rs.close();
             }
