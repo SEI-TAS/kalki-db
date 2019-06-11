@@ -334,6 +334,7 @@ This class supports:
 |:-----------------------------------------------|
 |`AlertCondition()`|
 |`AlertCondition(Map<String, String> variables, int deviceId, int alertTypeId)`|
+|`AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId, Integer deviceTypeId)`|
 |`AlertCondition(int id, Map<String, String> variables, int deviceId, int alertTypeId)`|
 ###### Methods
 This class supports:
