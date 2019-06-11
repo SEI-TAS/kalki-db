@@ -1380,7 +1380,10 @@ public class Postgres {
                     update.setString(1, device.getName());
                     update.setString(2, device.getDescription());
                     update.setInt(3, device.getType().getId());
-                    update.setInt(4, device.getGroup().getId());
+                    if(device.getGroup() != null)
+                        update.setInt(4, device.getGroup().getId());
+                    else
+                        update.setObject(4, null);
                     update.setString(5, device.getIp());
                     update.setInt(6, device.getStatusHistorySize());
                     update.setInt(7, device.getSamplingRate());
