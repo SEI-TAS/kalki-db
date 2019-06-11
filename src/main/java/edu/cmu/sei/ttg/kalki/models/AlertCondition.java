@@ -10,20 +10,27 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public class AlertCondition {
     private int id;
     private Map<String,String> variables;
-    private int deviceId;
+    private Integer deviceId;
+    private Integer deviceTypeId;
     private int alertTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public AlertCondition() {}
 
-    public AlertCondition(Map<String, String> variables, int deviceId, int alertTypeId) {
+    public AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId) {
         this.variables = variables;
         this.deviceId = deviceId;
         this.alertTypeId = alertTypeId;
+        this.deviceTypeId = null;
     }
 
-    public AlertCondition(int id, Map<String, String> variables, int deviceId, int alertTypeId) {
+    public AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId, Integer deviceTypeId) {
+        this(variables, deviceId, alertTypeId);
+        this.deviceTypeId = deviceTypeId;
+    }
+
+    public AlertCondition(int id, Map<String, String> variables, Integer deviceId, int alertTypeId) {
         this.id = id;
         this.variables = variables;
         this.deviceId = deviceId;
@@ -46,12 +53,18 @@ public class AlertCondition {
         this.variables = variables;
     }
 
-    public int getDeviceId() {
+    public Integer getDeviceId() {
         return deviceId;
     }
 
-    public void setDeviceId(int deviceId) {
+    public void setDeviceId(Integer deviceId) {
         this.deviceId = deviceId;
+    }
+
+    public Integer getDeviceTypeId(){ return deviceTypeId; }
+
+    public void setDeviceTypeId(Integer deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
     }
 
     public int getAlertTypeId() {
@@ -63,13 +76,20 @@ public class AlertCondition {
     }
 
     public void insert() {
-        Postgres.insertAlertCondition(this).thenApplyAsync(id->{
-            this.id = id;
-            return id;
-        });
+        if(deviceId != null) {
+            Postgres.insertAlertCondition(this).thenApplyAsync(id->{
+                this.id = id;
+                return id;
+            });
+        } else {
+            Postgres.insertAlertConditionByDeviceType(this).thenApplyAsync(id -> { return id; });
+        }
+
     }
 
-    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateAlertCondition(this); }
+    public CompletionStage<Integer> insertOrUpdate() {
+            return Postgres.insertOrUpdateAlertCondition(this);
+    }
 
     public String toString() {
         try {

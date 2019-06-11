@@ -704,6 +704,30 @@ public class Postgres {
     }
 
     /**
+     * Finds all AlertConditions in the database
+     * @return a list of AlertCondition
+     */
+    public static List<AlertCondition> findAllAlertConditions() {
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        List<AlertCondition> alertConditionList = new ArrayList<AlertCondition>();
+        try{
+            ResultSet rs = getAllFromTable("alert_condition");
+            while (rs.next()) {
+                alertConditionList.add(rsToAlertCondition(rs));
+            }
+            rs.close();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting all AlertConditions: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return alertConditionList;
+    }
+
+    /**
      * Finds all AlertConditions from the database for the given device_id
      * @param deviceId an id of a device
      * @return a list of all AlertConditions in the database related to the given device
@@ -787,6 +811,41 @@ public class Postgres {
     }
 
     /**
+     * Insert row(s) into the AlertCondition table
+     * @param cond The AlertCondition to be added
+     * @return id of new AlertCondition on success. -1 on error
+     */
+    public static CompletionStage<Integer> insertAlertConditionByDeviceType(AlertCondition cond) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Inserting alert condition for device type: " + cond.getDeviceTypeId());
+            if(dbConn == null){
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+                return -1;
+            }
+            try {
+                if(cond.getDeviceTypeId() == null)
+                    return -1;
+
+                List<Device> deviceList = findDevicesByType(cond.getDeviceTypeId());
+
+                for(Device d: deviceList){
+                    PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_id) VALUES (?,?,?);");
+                    insertAlertCondition.setObject(1, cond.getVariables());
+                    insertAlertCondition.setInt(2, d.getId());
+                    insertAlertCondition.setInt(3, cond.getAlertTypeId());
+                    insertAlertCondition.executeUpdate();
+                }
+
+                return 1;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            return -1;
+        });
+    }
+
+    /**
      * Updates provided AlertCondition
      * @param condition AlertCondition holding new values to be saved in the database.
      * @return the id of the updated Alert on success. -1 on failure
@@ -826,7 +885,10 @@ public class Postgres {
     public static CompletionStage<Integer> insertOrUpdateAlertCondition(AlertCondition condition){
         return findAlertCondition(condition.getId()).thenApplyAsync(c -> {
             if(c == null) {
-                insertAlertCondition(condition);
+                if (condition.getDeviceTypeId() != null)
+                    insertAlertConditionByDeviceType(condition);
+                else
+                    insertAlertCondition(condition);
                 return 0;
             } else {
                 updateAlertCondition(condition);
@@ -1240,21 +1302,54 @@ public class Postgres {
             if(alert.getDeviceStatusId() != null){
                 st = dbConn.prepareStatement("SELECT * FROM device WHERE id = (SELECT device_id FROM device_status WHERE id = ?)");
                 st.setInt(1, alert.getDeviceStatusId());
-                rs = st.executeQuery();
-                if(rs.next())
-                    return rsToDevice(rs);
             }
             else if(alert.getAlerterId() != null) {
                 st = dbConn.prepareStatement("SELECT * FROM device WHERE id = (SELECT device_id FROM umbox_instance WHERE alerter_id = ?)");
                 st.setString(1, alert.getAlerterId());
-                if(rs.next())
-                    return rsToDevice(rs);
             }
             else {
                 logger.severe("Error: alert has no associated DeviceStatus OR UmboxInstance!");
                 return null;
             }
+            rs = st.executeQuery();
+            if(rs.next())
+                return rsToDevice(rs);
 
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
+        } finally {
+            try { if (rs != null) { rs.close(); } } catch (Exception e) { }
+            try { if (st != null) { st.close(); } } catch (Exception e) { }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the Device related to the given DeviceType id
+     * @param the Alert
+     * @return the Device associated with the alert
+     */
+    public static List<Device> findDevicesByType(int id){
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<Device> deviceList = new ArrayList<Device>();
+
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try{
+
+            st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
+            st.setInt(1, id);
+            rs = st.executeQuery();
+            while(rs.next())
+                deviceList.add(rsToDevice(rs));
+
+            return deviceList;
         } catch (SQLException e) {
             logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
         } catch (Exception e) {

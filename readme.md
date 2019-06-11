@@ -79,8 +79,11 @@ Device device = Postgres.findDevice(deviceId);
 |:---------------------------------------------------|:--------|
 |`findAlertCondition(int id) `                       |`CompletionStage<AlertCondition>`      |
 |`findAlertConditionsByDevice(int deviceId)`         |`CompletionStage<List<AlertCondition>>`|
+|`findAllAlertConditions()`                          |`List<AlertCondition>`|
 |`insertAlertCondition(AlertCondition condition`     |`CompletionStage<Integer>`           |
+|`insertAlertConditionByDeviceType(AlertCondition cond) `|`CompletionStage<Integer>`       |
 |`updateAlertCondition(AlertCondition condition)`    |`CompletionStage<Integer>`           |
+|`insertOrUpdateAlertCondition(AlertCondition condition)`| `CompletionStage<Integer>`      |
 |`deleteAlertCondition(int id)`                      |`CompletionStage<Boolean>`           |
 
 #### AlertType
@@ -135,6 +138,7 @@ Device device = Postgres.findDevice(deviceId);
 |`findDevice(int id)`                  |`CompletionStage<Device>`       |
 |`findAllDevices()`                    |`CompletionStage<List<Device>>` |  
 |`findDevicesByGroup(int groupId)`     |`List<Device>`                  |
+|`findDevicesByType(int typeId)`       |`List<Device>`                  |
 |`insertDevice(Device device)`         |`CompletionStage<Integer>`      |
 |`insertOrUpdateDevice(Device device)` |`CompletionStage<Integer>`      | 
 |`updateDevice(Device device)`         |`CompletionStage<Integer>`      |
