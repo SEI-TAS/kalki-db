@@ -5,9 +5,9 @@
     * [Postgres Tables](#postgres-tables)
     * [Java Objects](#java-objects)
 ## Usage
-First, clone this repo and install maven.
+First, clone this repo.
 
-To publish to the local maven repository, use `$ gradle publishToMavenLocal`.
+To publish to the local maven repository, use `$ ./gradlew publishToMavenLocal`.
 
 In whatever project you want to include this library in, make sure that your dependencies include this project
 and that mavenLocal is under the repositories in your build.gradle file.
