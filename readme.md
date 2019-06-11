@@ -22,8 +22,16 @@ dependencies {
 }
 ```
 
+### Docker
+Set up a docker network by running `$ docker network create -d bridge kalki_nw`. This initializes a container network. *This only ever needs to be done once*.
 
-  
+Start the database by running `$ ./run_postgres_container.sh` from the project root.
+This will create a docker volume named `kalki-database` so the data persists when the database is terminated.
+
+Stop the docker container via `$ docker kill kalki-postgres`  
+
+__NOTE:__ If your application is also running in docker you must include `--net=kalki_nw` in your `docker run` command   
+(ex: `$ docker run --net=kalki_nw --name=<container-name> <image>`)
 ## Code Integration
 
 First, initialize Postgres using 
