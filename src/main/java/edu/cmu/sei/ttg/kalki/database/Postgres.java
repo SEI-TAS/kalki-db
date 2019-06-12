@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.net.URL;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -66,6 +67,21 @@ public class Postgres {
         } else {
             logger.info("Database already initialized");
         }
+    }
+
+    /**
+     * Sets the logging level to reduce console clutter
+     * Possible values:
+     *      ALL
+     *      INFO
+     *      OFF
+     *      SEVERE
+     *      WARNING
+     */
+    public static void setLoggingLevel(Level lvl) {
+        try {
+            logger.setLevel(lvl);
+        } catch (Exception e ) { e.printStackTrace(); }
     }
 
     /**
