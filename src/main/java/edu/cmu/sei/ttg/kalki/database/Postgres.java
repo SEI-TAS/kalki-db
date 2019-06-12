@@ -787,9 +787,12 @@ public class Postgres {
         AlertCondition cond = null;
         try {
             int id = rs.getInt("id");
-            Map<String, String> variables = HStoreConverter.fromString(rs.getString("variables"));
             int deviceId = rs.getInt("device_id");
             int alertTypeId = rs.getInt("alert_type_id");
+            Map<String, String> variables = null;
+            if(rs.getString("variables")!=null){
+                variables = HStoreConverter.fromString(rs.getString("variables"));
+            }
             cond = new AlertCondition(id, variables, deviceId, alertTypeId);
         }
         catch(Exception e) {
