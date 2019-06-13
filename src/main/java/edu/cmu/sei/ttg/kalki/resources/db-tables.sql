@@ -66,11 +66,16 @@ CREATE TABLE IF NOT EXISTS device_tag(
     PRIMARY KEY (device_id, tag_id)
 );
 
+CREATE TABLE IF NOT EXISTS command(
+    id                 serial PRIMARY KEY,
+    name               varchar(255) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS command_lookup(
     device_type_id     int NOT NULL REFERENCES device_type(id),
     state_id           int NOT NULL REFERENCES security_state(id),
-    name               varchar(255),
-    PRIMARY KEY (device_type_id, state_id, name)
+    command_id         int NOT NULL REFERENCES command(id),
+    PRIMARY KEY (device_type_id, state_id, command_id)
 );
 
 CREATE TABLE IF NOT EXISTS umbox_instance(

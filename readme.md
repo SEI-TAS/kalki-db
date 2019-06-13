@@ -113,18 +113,31 @@ Device device = Postgres.findDevice(deviceId);
 |`insertOrUpdate(AlertType type)`               |`CompletionStage<Integer>`|
 |`deleteAlertType(int id)`                      |`CompletionStage<Boolean>`|
 
+#### Command
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |serial PRIMARY KEY|
+|name            |String   |
+###### Actions:  
+|Function Definition                   |Return Type|
+|:-------------------------------------|:--------|
+|`findAllCommands()`|`CompletionStage<List<DeviceCommand>>`|
+|`insertCommand(DeviceCommand command)`|`CompletionStage<Integer>`|
+
 #### CommandLookup
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
 |device_type_id  |int NOT NULL|  
 |state_id        |int NOT NULL|
-|name            |String   |
+|command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
-|`findCommandsByDevice(Device device)` |`CompletionStage<List<String>>`|
-|`insertCommand(int deviceTypeId, int stateId, String name)`|`int`|
+|`findAllCommandLookups()`             |`CompletionStage<List<DeviceCommand>>`|
+|`findCommandsByDevice(Device device)` |`CompletionStage<List<DeviceCommand>>`|
+|`insertCommandLookup(int deviceTypeId, int stateId, int commandId)`|`int`|
 
 #### Device
 ###### Schema:
@@ -414,7 +427,32 @@ This class supports:
     - returns `CompletionStage<List<DeviceStatus>>`
 - `statusesOfSameType()`
     - returns `CompletionStage<Map<Device, DeviceStatus>>`
-    
+
+#### DeviceCommand
+###### Schema:
+|Property  |Type      |
+|------------:|:---------|
+|id           |Integer   |  
+|deviceTypeId |Integer |
+|stateId      |Integer       | 
+|name         |String    |
+###### Constructors:
+|Definition |  
+|:---|
+|`DeviceCommand()`|
+|`DeviceCommand(String name)`|
+|`DeviceCommand(Integer id, String name)`|
+|`DeviceCommand(Integer deviceTypeId, Integer stateId, String name)`|
+|`DeviceCommand(Integer id, Integer deviceTypeId, Integer stateId, String name)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`    
+- `toString()`
+
 #### DeviceSecurityState
 ###### Schema:
 |Property  |Type      |

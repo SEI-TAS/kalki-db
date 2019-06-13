@@ -6,23 +6,50 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class DeviceCommand {
-    private int deviceId;
-    private int stateId;
+    private Integer id;
+    private Integer deviceTypeId;
+    private Integer stateId;
     private String name;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public DeviceCommand(int deviceId, int stateId, String name){
-        this.deviceId = deviceId;
+    public DeviceCommand() {}
+
+    public DeviceCommand(String name) {
+        this.name = name;
+    }
+
+    public DeviceCommand(Integer id, String name) {
+        this.deviceTypeId = null;
+        this.stateId = null;
+        this.id = id;
+        this.name = name;
+    }
+
+    public DeviceCommand(Integer deviceTypeId, Integer stateId, String name){
+        this.deviceTypeId = deviceTypeId;
         this.stateId = stateId;
         this.name = name;
     }
 
-    public void setStateId(int stateId) {
+    public DeviceCommand(Integer id, Integer deviceTypeId, Integer stateId, String name){
+        this(deviceTypeId, stateId, name);
+        this.id = id;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public void setStateId(Integer stateId) {
         this.stateId = stateId;
     }
 
-    public int getStateId() {
+    public Integer getStateId() {
         return stateId;
     }
 
@@ -34,12 +61,19 @@ public class DeviceCommand {
         this.name = name;
     }
 
-    public void setDeviceId(int deviceId) {
-        this.deviceId = deviceId;
+    public void setDeviceTypeId(Integer deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
     }
 
-    public int getDeviceId() {
-        return deviceId;
+    public Integer getDeviceTypeId() {
+        return deviceTypeId;
+    }
+
+    public void insert(){
+        Postgres.insertCommand(this).thenApplyAsync(id -> {
+            this.id = id;
+            return id;
+        });
     }
 
     public String toString() {
