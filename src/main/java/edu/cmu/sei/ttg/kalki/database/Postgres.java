@@ -2174,6 +2174,24 @@ public class Postgres {
      * inserts the given Group.
      * @param group Group to be inserted or updated.
      */
+    public static CompletionStage<Integer> insertOrUpdateGroup(Group group){
+        return findGroup(group.getId()).thenApplyAsync(g -> {
+            if(g == null) {
+                insertGroup(group);
+                return 0;
+            } else {
+                updateGroup(group);
+                return 1;
+            }
+        });
+    }
+
+    /**
+     * First, attempts to find the Group in the database.
+     * If successful, updates the existing Group with the given Groups's parameters. Otherwise,
+     * inserts the given Group.
+     * @param group Group to be inserted or updated.
+     */
     public static CompletionStage<Integer> Group(Group group){
         return findGroup(group.getId()).thenApplyAsync(g -> {
             if(g == null) {
