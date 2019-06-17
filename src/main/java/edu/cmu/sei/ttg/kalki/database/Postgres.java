@@ -1251,7 +1251,7 @@ public class Postgres {
                 return null;
             }
             try {
-                st = dbConn.prepareStatement("SELECT c.id AS cid, c.name, cl.device_type_id, cl.state_id, cl.id AS clid FROM command_lookup AS cl, command AS c WHERE cl.device_type_id = ? AND cl.state_id = ? AND cid = cl.command_id");
+                st = dbConn.prepareStatement("SELECT c.id AS cid, c.name, cl.device_type_id, cl.state_id, cl.id AS clid FROM command_lookup AS cl, command AS c WHERE cl.device_type_id = ? AND cl.state_id = ? AND c.id = cl.command_id");
                 st.setInt(1, device.getType().getId());
                 st.setInt(2, device.getCurrentState().getStateId());
                 rs = st.executeQuery();
