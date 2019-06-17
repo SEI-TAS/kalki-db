@@ -2174,7 +2174,7 @@ public class Postgres {
      * inserts the given Group.
      * @param group Group to be inserted or updated.
      */
-    public static CompletionStage<Integer> insertOrUpdateGroup(Group group){
+    public static CompletionStage<Integer> Group(Group group){
         return findGroup(group.getId()).thenApplyAsync(g -> {
             if(g == null) {
                 insertGroup(group);
@@ -3291,23 +3291,146 @@ public class Postgres {
      * UmboxLookup functions
      */
 
-    public static int insertUmboxLookup(int umboxImageId, int deviceTypeId, int secStateId, int dagOrder){
-        logger.info("Adding umbox lookup: ");
-        PreparedStatement st = null;
-        try{
-            st = dbConn.prepareStatement("INSERT INTO umbox_lookup (state_id, umbox_image_id, device_type_id, dag_order) VALUES (?,?,?,?)");
-            st.setInt(1, secStateId);
-            st.setInt(2, umboxImageId);
-            st.setInt(3, deviceTypeId);
-            st.setInt(4, dagOrder);
-            st.executeUpdate();
-            return 1;
-        }
-        catch (SQLException e){
-            e.printStackTrace();
-            logger.severe("SQL exception adding umbox instance: " + e.getClass().getName()+": "+e.getMessage());
-        }
-        return -1;
+    /**
+     * Finds a UmboxLookup from the database by its id.
+     * @param id id of the UmboxLookup to find.
+     * @return the UmboxLookup if it exists in the database, else null.
+     */
+    public static CompletionStage<UmboxLookup> findUmboxLookup(int id){
+        logger.info("Finding umboxLookup with id = " + id);
+        return findById(id, "umbox_lookup").thenApplyAsync(rs -> {
+            if(rs == null) {
+                return null;
+            } else {
+                UmboxLookup ul = rsToUmboxLookup(rs);
+                return ul;
+            }
+        });
     }
 
+    /**
+     * Finds all umboxLookup entries
+     */
+    public static CompletionStage<List<UmboxLookup>> findAllUmboxLookups() {
+        return CompletableFuture.supplyAsync(() -> {
+            ResultSet rs = getAllFromTable("umbox_lookup");
+            List<UmboxLookup> umboxLookups = new ArrayList<UmboxLookup>();
+            try {
+                while (rs.next()) {
+                    umboxLookups.add(rsToUmboxLookup(rs));
+                }
+                rs.close();
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all Umbox Lookups.");
+            }
+            return umboxLookups;
+        });
+    }
+
+    /**
+     * Extract a UmboxLookup from the result set of a database query.
+     */
+    private static UmboxLookup rsToUmboxLookup(ResultSet rs){
+        UmboxLookup umboxLookup = null;
+        Integer id = null;
+        Integer stateId = null;
+        Integer deviceTypeId = null;
+        Integer umboxImageId = null;
+        Integer dagOrder = null;
+        try{
+            id = rs.getInt("id");
+            stateId = rs.getInt("state_id");
+            deviceTypeId = rs.getInt("device_type_id");
+            umboxImageId = rs.getInt("umbox_image_id");
+            dagOrder = rs.getInt("dag_order");
+            umboxLookup = new UmboxLookup(id, stateId, deviceTypeId, umboxImageId, dagOrder);
+            return umboxLookup;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            logger.severe("Error converting rs to UmboxLookup name: " + e.getClass().getName()+": "+e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Adds the desired UmboxLookup to the database
+     */
+    public static CompletionStage<Integer> insertUmboxLookup(UmboxLookup ul){
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Adding umbox lookup: ");
+            PreparedStatement st = null;
+            try {
+                st = dbConn.prepareStatement("INSERT INTO umbox_lookup (state_id, device_type_id, umbox_image_id, dag_order) VALUES (?,?,?,?)");
+                st.setInt(1, ul.getStateId());
+                st.setInt(2, ul.getDeviceTypeId());
+                st.setInt(3, ul.getUmboxImageId());
+                st.setInt(4, ul.getDagOrder());
+                st.executeUpdate();
+                return 1;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("SQL exception adding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            finally {
+                try { if(st != null) st.close(); } catch (Exception e) {}
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * Edit desired UmboxLookup
+     */
+    public static CompletionStage<Integer> updateUmboxLookup(UmboxLookup ul) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info(String.format("Updating UmboxLookup with id = %d with values: %s", ul.getId(), ul));
+            if (dbConn == null) {
+                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            } else {
+                try {
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE umbox_lookup " +
+                            "SET state_id = ?, device_type_id = ?, umbox_image_id = ?, dag_order = ?"  +
+                            "WHERE id = ?");
+                    update.setInt(1, ul.getStateId());
+                    update.setInt(2, ul.getDeviceTypeId());
+                    update.setInt(3, ul.getUmboxImageId());
+                    update.setInt(4, ul.getDagOrder());
+                    update.setInt(5, ul.getId());
+                    update.executeUpdate();
+
+                    return ul.getId();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    logger.severe("Error updating UmboxLookup: " + e.getClass().toString() + ": " + e.getMessage());
+                }
+            }
+            return -1;
+        });
+    }
+
+    /**
+     * First, attempts to find the UmboxLookup in the database.
+     * If successful, updates the existing UmboxLookup with the given parameters Otherwise,
+     * inserts the given UmboxLookup.
+     * @param ul UmboxLookup to be inserted or updated.
+     */
+    public static CompletionStage<Integer> insertOrUpdateUmboxLookup(UmboxLookup ul){
+        return findUmboxLookup(ul.getId()).thenApplyAsync(i -> {
+            if(i == null) {
+                insertUmboxLookup(ul);
+                return 0;
+            } else {
+                updateUmboxLookup(ul);
+                return 1;
+            }
+        });
+    }
+
+    /**
+     * Deletes a UmboxLookup by its id.
+     */
+    public static CompletionStage<Boolean> deleteUmboxLookup(int id) {
+        return deleteById("umbox_lookup", id);
+    }
 }
