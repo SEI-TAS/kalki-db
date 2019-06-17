@@ -1,5 +1,7 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
+import java.util.concurrent.CompletionStage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -7,13 +9,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class DeviceCommand {
     private Integer id;
+    private Integer lookupId;
     private Integer deviceTypeId;
     private Integer stateId;
     private String name;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public DeviceCommand() {}
+    public DeviceCommand() {
+    }
 
     public DeviceCommand(String name) {
         this.name = name;
@@ -26,15 +30,23 @@ public class DeviceCommand {
         this.name = name;
     }
 
-    public DeviceCommand(Integer deviceTypeId, Integer stateId, String name){
+    public DeviceCommand(Integer deviceTypeId, Integer stateId, String name) {
         this.deviceTypeId = deviceTypeId;
         this.stateId = stateId;
         this.name = name;
     }
 
-    public DeviceCommand(Integer id, Integer deviceTypeId, Integer stateId, String name){
+    public DeviceCommand(Integer id, Integer lookupId, Integer deviceTypeId, Integer stateId, String name) {
         this(deviceTypeId, stateId, name);
         this.id = id;
+        this.lookupId = lookupId;
+    }
+
+    public DeviceCommand(Integer id, Integer lookupId, Integer deviceTypeId, Integer stateId) {
+        this.id = id;
+        this.lookupId = lookupId;
+        this.deviceTypeId = deviceTypeId;
+        this.stateId = stateId;
     }
 
     public Integer getId() {
@@ -43,6 +55,14 @@ public class DeviceCommand {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getLookupId() {
+        return lookupId;
+    }
+
+    public void setLookupId(Integer lookupId) {
+        this.lookupId = lookupId;
     }
 
     public void setStateId(Integer stateId) {
@@ -69,18 +89,21 @@ public class DeviceCommand {
         return deviceTypeId;
     }
 
-    public void insert(){
+    public void insert() {
         Postgres.insertCommand(this).thenApplyAsync(id -> {
             this.id = id;
             return id;
         });
     }
 
+    public CompletionStage<Integer> insertOrUpdate() {
+        return Postgres.insertOrUpdateCommandLookup(this);
+    }
+
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad DeviceCommand";
         }
     }

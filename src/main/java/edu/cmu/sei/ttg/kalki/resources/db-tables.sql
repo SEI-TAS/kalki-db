@@ -72,10 +72,11 @@ CREATE TABLE IF NOT EXISTS command(
 );
 
 CREATE TABLE IF NOT EXISTS command_lookup(
+    id                 serial PRIMARY KEY,
     device_type_id     int NOT NULL REFERENCES device_type(id),
     state_id           int NOT NULL REFERENCES security_state(id),
     command_id         int NOT NULL REFERENCES command(id),
-    PRIMARY KEY (device_type_id, state_id, command_id)
+    UNIQUE(device_type_id, state_id, command_id)
 );
 
 CREATE TABLE IF NOT EXISTS umbox_instance(
