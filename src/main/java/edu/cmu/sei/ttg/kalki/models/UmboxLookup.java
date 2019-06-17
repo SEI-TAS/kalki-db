@@ -75,12 +75,9 @@ public class UmboxLookup {
         }
     }
 
-    public void insert() {
-        Postgres.insertUmboxLookup(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        return Postgres.insertUmboxLookup(this);
     }
 
-    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateUmboxLookup(this); }
+    public Integer insertOrUpdate() { return Postgres.insertOrUpdateUmboxLookup(this); }
 }
