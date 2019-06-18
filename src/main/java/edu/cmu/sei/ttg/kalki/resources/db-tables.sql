@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS umbox_lookup(
     device_type_id     int NOT NULL REFERENCES device_type(id),
     umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
     dag_order          int NOT NULL,
-    UNIQUE(state_id, umbox_image_id, device_type_id)
+    UNIQUE(state_id, device_type_id, umbox_image_id),
+    UNIQUE(state_id, device_type_id, dag_order)
 );
 
 CREATE TABLE IF NOT EXISTS alert(
