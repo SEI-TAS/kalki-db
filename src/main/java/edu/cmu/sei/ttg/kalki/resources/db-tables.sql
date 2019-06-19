@@ -88,11 +88,13 @@ CREATE TABLE IF NOT EXISTS umbox_instance(
 );
 
 CREATE TABLE IF NOT EXISTS umbox_lookup(
-    state_id           int NOT NULL,
-    umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
+    id                 serial PRIMARY KEY,
+    state_id           int NOT NULL REFERENCES security_state(id),
     device_type_id     int NOT NULL REFERENCES device_type(id),
+    umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
     dag_order          int NOT NULL,
-    PRIMARY KEY(state_id, umbox_image_id, device_type_id)
+    UNIQUE(state_id, device_type_id, umbox_image_id),
+    UNIQUE(state_id, device_type_id, dag_order)
 );
 
 CREATE TABLE IF NOT EXISTS alert(
