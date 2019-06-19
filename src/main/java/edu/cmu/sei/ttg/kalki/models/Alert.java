@@ -114,11 +114,9 @@ public class Alert {
 
     public void setAlertTypeId(int alertTypeId ) { this.alertTypeId = alertTypeId; }
 
-    public void insert() {
-        Postgres.insertAlert(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        this.id = Postgres.insertAlert(this);
+        return this.id;
     }
 
     public String toString() {

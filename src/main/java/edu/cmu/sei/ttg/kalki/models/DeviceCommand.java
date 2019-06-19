@@ -1,7 +1,6 @@
 package edu.cmu.sei.ttg.kalki.models;
 
 import edu.cmu.sei.ttg.kalki.database.Postgres;
-import java.util.concurrent.CompletionStage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -89,14 +88,12 @@ public class DeviceCommand {
         return deviceTypeId;
     }
 
-    public void insert() {
-        Postgres.insertCommand(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        this.id = Postgres.insertCommand(this);
+        return this.id;
     }
 
-    public CompletionStage<Integer> insertOrUpdate() {
+    public Integer insertOrUpdate() {
         return Postgres.insertOrUpdateCommandLookup(this);
     }
 

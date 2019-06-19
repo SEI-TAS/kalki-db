@@ -63,19 +63,17 @@ public class DeviceStatus {
 
     public void setDeviceId(int id) { this.deviceId = id; }
 
-    public void insert(){
-        Postgres.insertDeviceStatus(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert(){
+        this.id = Postgres.insertDeviceStatus(this);
+        return this.id;
     }
 
-    public void update(){
-        Postgres.updateDeviceStatus(this);
+    public Integer update(){
+        return Postgres.updateDeviceStatus(this);
     }
 
-    public void insertOrUpdate(){
-        Postgres.insertOrUpdateDeviceStatus(this);
+    public Integer insertOrUpdate(){
+        return Postgres.insertOrUpdateDeviceStatus(this);
     }
 
     public String toString() {

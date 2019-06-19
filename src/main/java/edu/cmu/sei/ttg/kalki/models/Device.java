@@ -1,12 +1,10 @@
 package edu.cmu.sei.ttg.kalki.models;
 import edu.cmu.sei.ttg.kalki.database.Postgres;
-import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 
 public class Device {
@@ -54,8 +52,8 @@ public class Device {
         this.name = name;
         this.description = description;
         try {
-            this.type = Postgres.findDeviceType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
-            this.group = Postgres.findGroup(groupId).thenApplyAsync(group -> {return group;}).toCompletableFuture().get();
+            this.type = Postgres.findDeviceType(typeId);
+            this.group = Postgres.findGroup(groupId);
         } catch (Exception e) {
             System.out.println("ERROR initializing Device: "+name);
             e.printStackTrace();
@@ -71,8 +69,8 @@ public class Device {
         this.description = description;
         this.name = name;
         try {
-            this.type = Postgres.findDeviceType(typeId).thenApplyAsync(type -> { return type; }).toCompletableFuture().get();
-            this.group = Postgres.findGroup(groupId).thenApplyAsync(group -> {return group;}).toCompletableFuture().get();
+            this.type = Postgres.findDeviceType(typeId);
+            this.group = Postgres.findGroup(groupId);
         } catch (Exception e) {
             System.out.println("ERROR initializing Device: "+name);
             e.printStackTrace();
@@ -170,14 +168,12 @@ public class Device {
         this.lastAlert = lastAlert;
     }
 
-    public void insert(){
-        Postgres.insertDevice(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert(){
+        this.id = Postgres.insertDevice(this);
+        return this.id;
     }
 
-    public CompletionStage<Integer> insertOrUpdate(){
+    public Integer insertOrUpdate(){
         return Postgres.insertOrUpdateDevice(this);
     }
 
@@ -190,11 +186,11 @@ public class Device {
         }
     }
 
-    public CompletionStage<List<DeviceStatus>> lastNSamples(int N){
+    public List<DeviceStatus> lastNSamples(int N){
         return Postgres.findNDeviceStatuses(this.id, N);
     }
 
-    public CompletionStage<List<DeviceStatus>> samplesOverTime(int length, String timeUnit){
+    public List<DeviceStatus> samplesOverTime(int length, String timeUnit){
         return Postgres.findDeviceStatusesOverTime(this.id, length, timeUnit);
     }
 

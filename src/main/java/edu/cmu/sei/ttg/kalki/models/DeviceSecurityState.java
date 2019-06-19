@@ -87,11 +87,9 @@ public class DeviceSecurityState {
         this.name = name;
     }
 
-    public void insert(){
-        Postgres.insertDeviceSecurityState(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert(){
+        this.id = Postgres.insertDeviceSecurityState(this);
+        return this.id;
     }
 
     public String toString() {

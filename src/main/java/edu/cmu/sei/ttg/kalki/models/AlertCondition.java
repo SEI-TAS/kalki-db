@@ -2,7 +2,6 @@ package edu.cmu.sei.ttg.kalki.models;
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -75,19 +74,16 @@ public class AlertCondition {
         this.alertTypeId = alertTypeId;
     }
 
-    public void insert() {
+    public Integer insert() {
         if(deviceId != null) {
-            Postgres.insertAlertCondition(this).thenApplyAsync(id->{
-                this.id = id;
-                return id;
-            });
+            this.id = Postgres.insertAlertCondition(this);
+            return this.id;
         } else {
-            Postgres.insertAlertConditionByDeviceType(this).thenApplyAsync(id -> { return id; });
+            return Postgres.insertAlertConditionByDeviceType(this);
         }
-
     }
 
-    public CompletionStage<Integer> insertOrUpdate() {
+    public Integer insertOrUpdate() {
             return Postgres.insertOrUpdateAlertCondition(this);
     }
 

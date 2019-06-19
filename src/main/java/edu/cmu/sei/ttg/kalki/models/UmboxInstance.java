@@ -2,7 +2,6 @@ package edu.cmu.sei.ttg.kalki.models;
 
 import java.sql.Timestamp;
 import edu.cmu.sei.ttg.kalki.database.Postgres;
-import java.util.concurrent.CompletionStage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -80,11 +79,9 @@ public class UmboxInstance {
         this.startedAt = startedAt;
     }
 
-    public CompletionStage<Integer> insert() {
-        return Postgres.insertUmboxInstance(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        this.id = Postgres.insertUmboxInstance(this);
+        return this.id;
     }
 
     public String toString() {
