@@ -3513,20 +3513,18 @@ public class Postgres {
     /**
      * Finds all umboxLookup entries
      */
-    public static CompletionStage<List<UmboxLookup>> findAllUmboxLookups() {
-        return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = getAllFromTable("umbox_lookup");
-            List<UmboxLookup> umboxLookups = new ArrayList<UmboxLookup>();
-            try {
-                while (rs.next()) {
-                    umboxLookups.add(rsToUmboxLookup(rs));
-                }
-                rs.close();
-            } catch (SQLException e) {
-                logger.severe("Sql exception getting all Umbox Lookups.");
+    public static List<UmboxLookup> findAllUmboxLookups() {
+        ResultSet rs = getAllFromTable("umbox_lookup");
+        List<UmboxLookup> umboxLookups = new ArrayList<UmboxLookup>();
+        try {
+            while (rs.next()) {
+                umboxLookups.add(rsToUmboxLookup(rs));
             }
-            return umboxLookups;
-        });
+            rs.close();
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all Umbox Lookups.");
+        }
+        return umboxLookups;
     }
 
     /**
@@ -3631,7 +3629,7 @@ public class Postgres {
     /**
      * Deletes a UmboxLookup by its id.
      */
-    public static CompletionStage<Boolean> deleteUmboxLookup(int id) {
+    public static Boolean deleteUmboxLookup(int id) {
         return deleteById("umbox_lookup", id);
     }
 }
