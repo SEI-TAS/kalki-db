@@ -1,4 +1,5 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +14,8 @@ public class AlertType {
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public AlertType(){}
+    public AlertType() {
+    }
 
     public AlertType(String name, String description, String source) {
         this.name = name;
@@ -60,18 +62,20 @@ public class AlertType {
         this.source = source;
     }
 
-    public Integer insert(){
+    public Integer insert() {
         this.id = Postgres.insertAlertType(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateAlertType(this);}
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateAlertType(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad AlertType";
         }
     }

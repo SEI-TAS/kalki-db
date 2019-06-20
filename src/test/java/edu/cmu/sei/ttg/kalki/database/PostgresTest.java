@@ -106,6 +106,7 @@ public class PostgresTest {
         int newId = newAlertCondition.insertOrUpdate();
 
         assertEquals(Postgres.findAllAlertConditions().size(), 3);
+        assertEquals(Postgres.findAlertCondition(newId).toString(), newAlertCondition.toString());
     }
 
     @Test
@@ -120,6 +121,65 @@ public class PostgresTest {
 
         assertEquals(Postgres.findAllAlertConditions().size(), 4);
     }
+
+    /*
+        Alert Type Action Tests
+     */
+
+    @Test
+    public void testFindAlertType() {
+        AlertType at = Postgres.findAlertType(alertType.getId());
+        assertEquals(at.toString(), alertType.toString());
+    }
+
+    @Test
+    public void testFindAllAlertTypes() {
+        List<AlertType> alertTypeList = new ArrayList<AlertType>(Postgres.findAllAlertTypes());
+
+        assertEquals(alertTypeList.size(), 24);     //alertType plus the 23 added in Postgres.setupDatabase()
+        assertEquals(alertTypeList.get(23).toString(), alertType.toString());
+    }
+
+    @Test
+    public void testFindAlertTypesByDeviceType() {  //based on the setup database script
+        List<AlertType> atList = new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(2));
+
+        assertEquals(atList.size(), 14);
+    }
+
+    @Test
+    public void testUpdateAlertType() {
+        assertEquals(alertType.toString(), Postgres.findAlertType(alertType.getId()).toString());
+
+        alertType.setDescription("new description");
+        Postgres.updateAlertType(alertType);
+
+        assertEquals(alertType.toString(), Postgres.findAlertType(alertType.getId()).toString());
+    }
+
+    @Test
+    public void testInsertOrUpdateAlertType() {
+        assertEquals(Postgres.findAllAlertTypes().size(), 24);
+
+        alertType.setDescription("new description");
+        alertType.insertOrUpdate();
+
+        assertEquals(Postgres.findAllAlertTypes().size(), 24);
+
+        AlertType newAlertType = new AlertType("AlertType2", "test alert type 2", "IoT Monitor");
+        int newId = newAlertType.insertOrUpdate();
+
+        assertEquals(Postgres.findAllAlertTypes().size(), 25);
+        assertEquals(Postgres.findAlertType(newId).toString(), newAlertType.toString());
+    }
+
+    /*
+        Alert Action Tests
+     */
+
+
+
+
 
     private static void insertData() {
         // insert security state(s)

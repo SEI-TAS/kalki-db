@@ -1098,11 +1098,9 @@ public class Postgres {
     public static Integer insertOrUpdateAlertType(AlertType type) {
         AlertType a = findAlertType(type.getId());
         if (a == null) {
-            insertAlertType(type);
-            return 0;
+            return insertAlertType(type);
         } else {
-            updateAlertType(type);
-            return 1;
+            return updateAlertType(type);
         }
     }
 
