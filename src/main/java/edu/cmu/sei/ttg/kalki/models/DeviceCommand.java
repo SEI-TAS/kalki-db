@@ -25,6 +25,7 @@ public class DeviceCommand {
     public DeviceCommand(Integer id, String name) {
         this.deviceTypeId = null;
         this.stateId = null;
+        this.lookupId = null;
         this.id = id;
         this.name = name;
     }
@@ -93,8 +94,14 @@ public class DeviceCommand {
         return this.id;
     }
 
+    public Integer insertCommandLookup() {
+        this.lookupId = Postgres.insertCommandLookup(this);
+        return this.lookupId;
+    }
+
     public Integer insertOrUpdate() {
-        return Postgres.insertOrUpdateCommandLookup(this);
+        this.id = Postgres.insertOrUpdateCommandLookup(this);
+        return this.id;
     }
 
     public String toString() {

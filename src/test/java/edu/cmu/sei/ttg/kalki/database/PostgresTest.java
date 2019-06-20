@@ -1,6 +1,7 @@
 package edu.cmu.sei.ttg.kalki.database;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 import org.junit.BeforeClass;
@@ -27,6 +28,7 @@ import edu.cmu.sei.ttg.kalki.models.*;
 public class PostgresTest {
     private static SecurityState securityState;
     private static DeviceType deviceType;
+    private static DeviceType deviceTypeTwo;
     private static Group group;
     private static Device device;
     private static Device deviceTwo;
@@ -119,7 +121,7 @@ public class PostgresTest {
 
         Postgres.insertAlertConditionByDeviceType(alertCondition);
 
-        assertEquals(Postgres.findAllAlertConditions().size(), 4);
+        assertEquals(Postgres.findAllAlertConditions().size(), 3);
     }
 
     /*
@@ -224,6 +226,107 @@ public class PostgresTest {
     /*
         Command Action Tests
      */
+    /*  CONFUSED ABOUT THESE TESTS
+
+    @Test
+    public void testFindAllCommands() {
+        assertEquals(Postgres.findAllCommands().size(), 2);
+    }
+
+    @Test
+    public void testFindCommandLookup() {
+        assertEquals(Postgres.findCommandLookup(deviceCommandLookup.getLookupId()).toString(),
+                deviceCommandLookup.toString());
+    }
+
+    @Test
+    public void testFindAllCommandLookups() {
+
+    }
+
+    @Test
+    public void testFindCommandsByDevice() {
+
+    }
+
+    @Test
+    public void testInsertCommand() {
+
+    }
+
+    @Test
+    public void testInsertOrUpdateCommandLookup() {
+
+    }
+
+    @Test
+    public void testDeleteCommandLookup() {
+
+    }
+    */
+
+    /*
+        Test Device Actions
+     */
+
+    @Test
+    public void testFindDevice() {
+        assertEquals(Postgres.findDevice(device.getId()).getDescription(), device.getDescription());
+        assertEquals(Postgres.findDevice(deviceTwo.getId()).getDescription(), deviceTwo.getDescription());
+    }
+
+    @Test
+    public void testFindAllDevices() {
+        assertEquals(Postgres.findAllDevices().size(), 2);
+    }
+
+    @Test
+    public void testFindDevicesByGroup() {
+        ArrayList<Device> foundDevices = new ArrayList<Device>(Postgres.findDevicesByGroup(group.getId()));
+
+        assertEquals(foundDevices.size(), 1);
+        assertEquals(foundDevices.get(0).getDescription(), deviceTwo.getDescription());
+    }
+
+    @Test
+    public void testFindDeviceByAlert() {
+        Device foundDevice = Postgres.findDeviceByAlert(alertIoT);
+        assertEquals(foundDevice.getDescription(), device.getDescription());
+    }
+
+    @Test
+    public void testFindDevicesByType() {
+        ArrayList<Device> foundDevices = new ArrayList<Device>(Postgres.findDevicesByType(deviceTypeTwo.getId()));
+
+        assertEquals(foundDevices.size(), 1);
+        assertEquals(foundDevices.get(0).getDescription(), deviceTwo.getDescription());
+    }
+
+    @Test
+    public void testInsertOrUpdateDevice() {
+        assertEquals(Postgres.findAllDevices().size(), 2);
+
+        device.setDescription("new description");
+        device.insertOrUpdate();
+
+        assertEquals(Postgres.findAllDevices().size(), 2);
+
+        Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2);
+        int newId = newDevice.insertOrUpdate();
+
+        assertEquals(Postgres.findAllDevices().size(), 3);
+        assertEquals(Postgres.findDevice(newId).getDescription(), newDevice.getDescription());
+    }
+
+    @Test
+    public void testDeleteDevice() {
+        assertNotNull(Postgres.findDevice(deviceTwo.getId()));
+
+        Postgres.deleteAlertCondition(alertConditionTwo.getId());   //must delete before deleting device
+        Postgres.deleteDevice(deviceTwo.getId());
+
+        assertEquals(null, Postgres.findDevice(deviceTwo.getId()));
+    }
 
     private static void insertData() {
         // insert security state(s)
@@ -231,18 +334,21 @@ public class PostgresTest {
         securityState.insert();
 
         // insert device_type
-        deviceType = new DeviceType(1, "Udoo Neo");
+        deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
+
+        deviceTypeTwo = new DeviceType(0, "test device type");
+        deviceTypeTwo.insert();
 
         // insert Group
         group = new Group("Test Group");
         group.insert();
 
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType.getId(), group.getId(), "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
         device.insert();
 
-        deviceTwo = new Device("Device 2", "this is also a test device", deviceType.getId(), group.getId(), "0.0.0.1", 1, 1);
+        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1);
         deviceTwo.insert();
 
         // insert device_security_state
@@ -254,9 +360,12 @@ public class PostgresTest {
         // insert command_lookups
         deviceCommand = new DeviceCommand("Test Command");
         deviceCommand.insert();
-        deviceCommand.setDeviceTypeId(deviceType.getId());
-        deviceCommand.setStateId(securityState.getId());
-        Postgres.insertCommandLookup(deviceCommand);
+
+        deviceCommandLookup = new DeviceCommand("Test Command Lookup");
+        deviceCommandLookup.setDeviceTypeId(deviceType.getId());
+        deviceCommandLookup.setStateId(securityState.getId());
+        deviceCommandLookup.setId(deviceCommand.getId());
+        deviceCommandLookup.insertCommandLookup();
 
         // insert umbox_image
         umboxImage = new UmboxImage("UmboxImage", "path/to/image");

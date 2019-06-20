@@ -1700,11 +1700,9 @@ public class Postgres {
     public static Integer insertOrUpdateDevice(Device device) {
         Device d = findDevice(device.getId());
         if (d == null) {
-            insertDevice(device);
-            return 0;
+            return insertDevice(device);
         } else {
-            updateDevice(device);
-            return 1;
+            return updateDevice(device);
         }
     }
 

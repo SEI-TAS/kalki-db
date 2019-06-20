@@ -174,7 +174,8 @@ public class Device {
     }
 
     public Integer insertOrUpdate(){
-        return Postgres.insertOrUpdateDevice(this);
+        this.id = Postgres.insertOrUpdateDevice(this);
+        return this.id;
     }
 
     public String toString() {
