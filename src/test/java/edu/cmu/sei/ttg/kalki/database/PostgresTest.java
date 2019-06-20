@@ -177,9 +177,53 @@ public class PostgresTest {
         Alert Action Tests
      */
 
+    @Test
+    public void testFindAlert() {
+        assertEquals(Postgres.findAlert(alertIoT.getId()).toString(), alertIoT.toString());
+    }
 
+    @Test
+    public void testFindAlerts() {
+        ArrayList<String> alerterIds = new ArrayList<String>();
+        alerterIds.add(umboxInstance.getAlerterId());
 
+        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlerts(alerterIds));
 
+        assertEquals(foundAlerts.size(), 1);
+        assertEquals(foundAlerts.get(0).toString(), alertUmBox.toString());
+    }
+
+    @Test
+    public void testInsertAlert() {
+        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(), alertType.getId());
+        assertEquals(null, Postgres.findAlert(3));
+
+        newAlert.insert();
+
+        assertEquals(Postgres.findAlert(3).toString(), newAlert.toString());
+    }
+
+    @Test
+    public void testUpdateAlert() {
+        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+
+        alertIoT.setName("new iot alert name");
+        Postgres.updateAlert(alertIoT);
+
+        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+    }
+
+    @Test
+    public void testDeleteAlert() {
+        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+
+        Postgres.deleteAlert(alertIoT.getId());
+        assertEquals(null, Postgres.findAlert(alertIoT.getId()));
+    }
+
+    /*
+        Command Action Tests
+     */
 
     private static void insertData() {
         // insert security state(s)
@@ -248,8 +292,8 @@ public class PostgresTest {
         alertIoT.insert();
 
         // insert alert for alerter_id/alert_type
-        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), null, alertType.getId());
-        //alertUmBox.insert();
+        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(), alertType.getId());
+        alertUmBox.insert();
     }
 
 }
