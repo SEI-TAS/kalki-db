@@ -93,18 +93,33 @@ public class PostgresTest {
         assertEquals(updatedCondition.toString(), alertCondition.toString());
     }
 
-    @Test   //TODO assert that in the first case the length does not change, while in the second case, the length increases by 1
+    @Test
     public void testInsertOrUpdateAlertCondition() {
+        assertEquals(Postgres.findAllAlertConditions().size(), 2);
+
         alertCondition.getVariables().put("testKey1", "testValue1");
         alertCondition.insertOrUpdate();
-        assertEquals(Postgres.findAlertCondition(alertCondition.getId()).toString(), alertCondition.toString());
+
+        assertEquals(Postgres.findAllAlertConditions().size(), 2);
 
         AlertCondition newAlertCondition = new AlertCondition(null, device.getId(), alertType.getId());
         int newId = newAlertCondition.insertOrUpdate();
-        assertEquals(Postgres.findAlertCondition(newId).toString(), newAlertCondition.toString());
+
+        assertEquals(Postgres.findAllAlertConditions().size(), 3);
     }
 
-        //Postgres.insertAlertConditionByDeviceType(alertCondition);
+    @Test
+    public void testInsertAlertConditionByDeviceType() {
+        Postgres.insertAlertConditionByDeviceType(alertCondition); //device type is null
+
+        assertEquals(Postgres.findAllAlertConditions().size(), 2);
+
+        alertCondition.setDeviceTypeId(deviceType.getId());
+
+        Postgres.insertAlertConditionByDeviceType(alertCondition);
+
+        assertEquals(Postgres.findAllAlertConditions().size(), 4);
+    }
 
     private static void insertData() {
         // insert security state(s)
