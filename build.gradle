@@ -4,6 +4,7 @@
  * This is a general purpose Gradle build.
  * Learn how to create Gradle builds at https://guides.gradle.org/creating-new-gradle-builds/
  */
+
 group 'edu.cmu.sei.ttg'
 
 version '0.0.4-SNAPSHOT'
@@ -26,6 +27,18 @@ repositories {
 dependencies {
     compile group: 'org.postgresql', name: 'postgresql', version:'42.2.2'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.6'
+    testCompile 'junit:junit:4.12'
+}
+
+test {
+    dependsOn 'cleanTest'
+    testLogging {
+        events "passed", "skipped", "failed", "standard_out"
+        exceptionFormat 'full'
+        showCauses true
+        showExceptions true
+        showStackTraces true
+    }
 }
 
 publishing {

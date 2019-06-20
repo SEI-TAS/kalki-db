@@ -905,13 +905,11 @@ public class Postgres {
         AlertCondition c = findAlertCondition(condition.getId());
         if (c == null) {
             if (condition.getDeviceTypeId() != null)
-                insertAlertConditionByDeviceType(condition);
+                return insertAlertConditionByDeviceType(condition);
             else
-                insertAlertCondition(condition);
-            return 0;
+                return insertAlertCondition(condition);
         } else {
-            updateAlertCondition(condition);
-            return 1;
+            return updateAlertCondition(condition);
         }
     }
 
