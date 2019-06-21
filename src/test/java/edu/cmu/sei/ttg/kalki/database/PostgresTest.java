@@ -30,6 +30,7 @@ public class PostgresTest {
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static Group group;
+    private static Tag tag;
     private static Device device;
     private static Device deviceTwo;
     private static DeviceCommand deviceCommand;
@@ -584,6 +585,44 @@ public class PostgresTest {
 //
 //    }
 
+    /*
+        Test Tag Actions
+     */
+
+    @Test
+    public void testFindTag() {
+        assertEquals(tag.toString(), Postgres.findTag(tag.getId()).toString());
+    }
+
+    @Test
+    public void testFindAllTags() {
+        assertEquals(1, Postgres.findAllTags().size());
+    }
+
+    @Test
+    public void testInsertOrUpdateTag() {
+        assertEquals(1, Postgres.findAllTags().size());
+
+        tag.setName("new tag name");
+        tag.insertOrUpdate();
+
+        assertEquals(1, Postgres.findAllTags().size());
+        assertEquals(tag.toString(), Postgres.findTag(tag.getId()).toString());
+
+        Tag newTag = new Tag("Tag2");
+        int newId = newTag.insertOrUpdate();
+        assertEquals(2, Postgres.findAllTags().size());
+        assertEquals(newTag.toString(), Postgres.findTag(newId).toString());
+    }
+
+    @Test
+    public void testDeleteTag() {
+        assertEquals(tag.toString(), Postgres.findTag(tag.getId()).toString());
+        Postgres.deleteTag(tag.getId());
+        assertEquals(null, Postgres.findTag(tag.getId()));
+
+    }
+
     private static void insertData() {
         // insert security state(s)
         securityState = new SecurityState("Normal");
@@ -599,6 +638,10 @@ public class PostgresTest {
         // insert Group
         group = new Group("Test Group");
         group.insert();
+
+        // insert Tag
+        tag = new Tag("Tag1");
+        tag.insert();
 
         // insert device
         device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);

@@ -2899,11 +2899,9 @@ public class Postgres {
     public static Integer insertOrUpdateTag(Tag tag) {
         Tag t = findTag(tag.getId());
         if (t == null) {
-            insertTag(tag);
-            return 0;
+            return insertTag(tag);
         } else {
-            updateTag(tag);
-            return 1;
+            return updateTag(tag);
         }
     }
 

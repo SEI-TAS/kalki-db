@@ -1,4 +1,5 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -15,7 +16,7 @@ public class Tag {
 
     }
 
-    public Tag(String name){
+    public Tag(String name) {
         this.name = name;
     }
 
@@ -40,18 +41,20 @@ public class Tag {
         this.name = name;
     }
 
-    public Integer insert(){
+    public Integer insert() {
         this.id = Postgres.insertTag(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateTag(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateTag(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad Tag";
         }
     }
