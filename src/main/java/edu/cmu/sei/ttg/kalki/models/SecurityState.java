@@ -1,17 +1,19 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class SecurityState{
+public class SecurityState {
     private int id;
     private String name;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public SecurityState(){}
+    public SecurityState() {
+    }
 
     public SecurityState(int id, String name) {
         this.id = id;
@@ -38,18 +40,20 @@ public class SecurityState{
         return id;
     }
 
-    public Integer insert(){
+    public Integer insert() {
         this.id = Postgres.insertSecurityState(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateSecurityState(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateSecurityState(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad SecurityState";
         }
     }

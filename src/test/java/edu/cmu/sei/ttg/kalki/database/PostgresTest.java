@@ -543,6 +543,46 @@ public class PostgresTest {
 //        assertEquals(null, Postgres.findDeviceType(deviceType.getId()));
 //    }
 
+    /*
+        Security State Action Tests
+     */
+
+    @Test
+    public void testFindSecurityState() {
+        assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
+    }
+
+    @Test
+    public void testFindAllSecurityStates() {
+        ArrayList<SecurityState> foundSecurityStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        assertEquals(4, foundSecurityStates.size()); //3 added by resetDatabase and 1 added in insertData
+    }
+
+    @Test
+    public void testInsertOrUpdateSecurityState() {
+        ArrayList<SecurityState> foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        assertEquals(4, foundStates.size());
+
+        securityState.setName("changed security state");
+        securityState.insertOrUpdate();
+
+        foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        assertEquals(4, foundStates.size());
+        assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
+
+        SecurityState newSecurityState = new SecurityState("new security state");
+        int newId = newSecurityState.insertOrUpdate();
+
+        foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        assertEquals(5, foundStates.size());
+        assertEquals(newSecurityState.toString(), Postgres.findSecurityState(newSecurityState.getId()).toString());
+    }
+
+    //requires a lot of deleting so I am going to wait on this test until I separate into classes
+//    @Test
+//    public void testDeleteSecurityState() {
+//
+//    }
 
     private static void insertData() {
         // insert security state(s)

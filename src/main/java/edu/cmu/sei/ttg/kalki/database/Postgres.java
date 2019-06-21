@@ -2722,11 +2722,9 @@ public class Postgres {
     public static Integer insertOrUpdateSecurityState(SecurityState state) {
         SecurityState ss = findSecurityState(state.getId());
         if (ss == null) {
-            insertSecurityState(state);
-            return 0;
+            return insertSecurityState(state);
         } else {
-            updateSecurityState(state);
-            return 1;
+            return updateSecurityState(state);
         }
     }
 
