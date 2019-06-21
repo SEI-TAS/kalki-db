@@ -64,8 +64,7 @@ public class PostgresTest {
 
             //initialize test DB
             Postgres.initialize(dbHost, dbPort, dbName, dbUser, dbPass);
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
@@ -659,6 +658,77 @@ public class PostgresTest {
 //        assertEquals(null, Postgres.findUmboxImage(umboxImage.getId()));
 //    }
 
+    /*
+        Test umbox instance actions
+     */
+
+    @Test
+    public void testFindUmboxInstance() {
+        assertEquals(umboxInstance.toString(), Postgres.findUmboxInstance(umboxInstance.getAlerterId()).toString());
+    }
+
+    @Test
+    public void testFindUmboxInstances() {
+        ArrayList<UmboxInstance> foundInstances =
+                new ArrayList<UmboxInstance>(Postgres.findUmboxInstances(device.getId()));
+
+        assertEquals(1, foundInstances.size());
+        assertEquals(umboxInstance.toString(), foundInstances.get(0).toString());
+    }
+
+    @Test
+    public void testInsertUmboxInstance() {
+        UmboxInstance newUmboxInstance = new UmboxInstance("new alerter id", umboxImage.getId(), device.getId());
+
+        assertEquals(null, Postgres.findUmboxInstance(newUmboxInstance.getAlerterId()));
+
+        newUmboxInstance.insert();
+
+        assertEquals(newUmboxInstance.toString(),
+                Postgres.findUmboxInstance(newUmboxInstance.getAlerterId()).toString());
+    }
+
+    //  I think this is failing to update due to some reference, will try after separating classes
+//    @Test
+//    public void testUpdateUmboxInstance() {
+//        assertEquals(umboxInstance.getAlerterId(),
+//                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
+//
+//        umboxInstance.setAlerterId("changed alerter id");
+//        Postgres.updateUmboxInstance(umboxInstance);
+//
+//        assertEquals(umboxInstance.getAlerterId(),
+//                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
+//    }
+
+//    @Test
+//    public void testDeleteUmboxInstance() {
+//
+//    }
+
+    /*
+        test umbox lookup actions
+     */
+
+    @Test
+    public void testFindUmboxLookup() {
+
+    }
+
+    @Test
+    public void testFindAllUmboxLookups() {
+
+    }
+
+    @Test
+    public void testInsertOrUpdateUmboxLookup() {
+
+    }
+
+    @Test
+    public void testDeleteUmboxLookup() {
+
+    }
 
     private static void insertData() {
         // insert security state(s)
