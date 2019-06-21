@@ -1,4 +1,5 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,12 +17,12 @@ public class UmboxImage {
 
     }
 
-    public UmboxImage(String name, String path){
+    public UmboxImage(String name, String path) {
         this.name = name;
         this.path = path;
     }
 
-    public UmboxImage(int id, String name, String path){
+    public UmboxImage(int id, String name, String path) {
         this.id = id;
         this.name = name;
         this.path = path;
@@ -70,8 +71,7 @@ public class UmboxImage {
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad umbox image";
         }
     }
@@ -81,5 +81,8 @@ public class UmboxImage {
         return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateUmboxImage(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateUmboxImage(this);
+        return this.id;
+    }
 }

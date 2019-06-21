@@ -3277,11 +3277,9 @@ public class Postgres {
     public static Integer insertOrUpdateUmboxImage(UmboxImage image) {
         UmboxImage ui = findUmboxImage(image.getId());
         if (ui == null) {
-            insertUmboxImage(image);
-            return 0;
+            return insertUmboxImage(image);
         } else {
-            updateUmboxImage(image);
-            return 1;
+            return updateUmboxImage(image);
         }
     }
 
