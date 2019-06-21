@@ -63,27 +63,27 @@ public class PostgresTest {
     @Test
     public void testFindAlertCondition() {
         AlertCondition ac = Postgres.findAlertCondition(alertCondition.getId());
-        assertEquals(ac.toString(), alertCondition.toString());
+        assertEquals(alertCondition.toString(), ac.toString());
     }
 
     @Test
     public void testFindAlertConditionsByDevice() {
         List<AlertCondition> acList = Postgres.findAlertConditionsByDevice(device.getId());
         for (AlertCondition ac : acList) {
-            assertEquals(ac.toString(), alertCondition.toString());
+            assertEquals(alertCondition.toString(), ac.toString());
         }
 
         List<AlertCondition> acList2 = Postgres.findAlertConditionsByDevice(deviceTwo.getId());
         for (AlertCondition ac2 : acList2) {
-            assertEquals(ac2.toString(), alertConditionTwo.toString());
+            assertEquals(alertConditionTwo.toString(), ac2.toString());
         }
     }
 
     @Test
     public void testFindAllAlertConditions() {
         ArrayList<AlertCondition> acList = new ArrayList<AlertCondition>(Postgres.findAllAlertConditions());
-        assertEquals(acList.get(0).toString(), alertCondition.toString());
-        assertEquals(acList.get(1).toString(), alertConditionTwo.toString());
+        assertEquals(alertCondition.toString(), acList.get(0).toString());
+        assertEquals(alertConditionTwo.toString(), acList.get(1).toString());
     }
 
     @Test
@@ -92,36 +92,36 @@ public class PostgresTest {
         Postgres.updateAlertCondition(alertCondition);
 
         AlertCondition updatedCondition = Postgres.findAlertCondition(alertCondition.getId());
-        assertEquals(updatedCondition.toString(), alertCondition.toString());
+        assertEquals(alertCondition.toString(), updatedCondition.toString());
     }
 
     @Test
     public void testInsertOrUpdateAlertCondition() {
-        assertEquals(Postgres.findAllAlertConditions().size(), 2);
+        assertEquals(2, Postgres.findAllAlertConditions().size());
 
         alertCondition.getVariables().put("testKey1", "testValue1");
         alertCondition.insertOrUpdate();
 
-        assertEquals(Postgres.findAllAlertConditions().size(), 2);
+        assertEquals(2, Postgres.findAllAlertConditions().size());
 
         AlertCondition newAlertCondition = new AlertCondition(null, device.getId(), alertType.getId());
         int newId = newAlertCondition.insertOrUpdate();
 
-        assertEquals(Postgres.findAllAlertConditions().size(), 3);
-        assertEquals(Postgres.findAlertCondition(newId).toString(), newAlertCondition.toString());
+        assertEquals(3, Postgres.findAllAlertConditions().size());
+        assertEquals(newAlertCondition.toString(), Postgres.findAlertCondition(newId).toString());
     }
 
     @Test
     public void testInsertAlertConditionByDeviceType() {
         Postgres.insertAlertConditionByDeviceType(alertCondition); //device type is null
 
-        assertEquals(Postgres.findAllAlertConditions().size(), 2);
+        assertEquals(2, Postgres.findAllAlertConditions().size());
 
         alertCondition.setDeviceTypeId(deviceType.getId());
 
         Postgres.insertAlertConditionByDeviceType(alertCondition);
 
-        assertEquals(Postgres.findAllAlertConditions().size(), 3);
+        assertEquals(3, Postgres.findAllAlertConditions().size());
     }
 
     /*
@@ -131,15 +131,15 @@ public class PostgresTest {
     @Test
     public void testFindAlertType() {
         AlertType at = Postgres.findAlertType(alertType.getId());
-        assertEquals(at.toString(), alertType.toString());
+        assertEquals(alertType.toString(), at.toString());
     }
 
     @Test
     public void testFindAllAlertTypes() {
         List<AlertType> alertTypeList = new ArrayList<AlertType>(Postgres.findAllAlertTypes());
 
-        assertEquals(alertTypeList.size(), 24);     //alertType plus the 23 added in Postgres.setupDatabase()
-        assertEquals(alertTypeList.get(23).toString(), alertType.toString());
+        assertEquals(24, alertTypeList.size());     //alertType plus the 23 added in Postgres.setupDatabase()
+        assertEquals(alertType.toString(), alertTypeList.get(23).toString());
     }
 
     @Test
@@ -161,18 +161,18 @@ public class PostgresTest {
 
     @Test
     public void testInsertOrUpdateAlertType() {
-        assertEquals(Postgres.findAllAlertTypes().size(), 24);
+        assertEquals(24, Postgres.findAllAlertTypes().size());
 
         alertType.setDescription("new description");
         alertType.insertOrUpdate();
 
-        assertEquals(Postgres.findAllAlertTypes().size(), 24);
+        assertEquals(24, Postgres.findAllAlertTypes().size());
 
         AlertType newAlertType = new AlertType("AlertType2", "test alert type 2", "IoT Monitor");
         int newId = newAlertType.insertOrUpdate();
 
-        assertEquals(Postgres.findAllAlertTypes().size(), 25);
-        assertEquals(Postgres.findAlertType(newId).toString(), newAlertType.toString());
+        assertEquals(25, Postgres.findAllAlertTypes().size());
+        assertEquals(newAlertType.toString(), Postgres.findAlertType(newId).toString());
     }
 
     /*
@@ -181,7 +181,7 @@ public class PostgresTest {
 
     @Test
     public void testFindAlert() {
-        assertEquals(Postgres.findAlert(alertIoT.getId()).toString(), alertIoT.toString());
+        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
     }
 
     @Test
@@ -191,8 +191,8 @@ public class PostgresTest {
 
         ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlerts(alerterIds));
 
-        assertEquals(foundAlerts.size(), 1);
-        assertEquals(foundAlerts.get(0).toString(), alertUmBox.toString());
+        assertEquals(1, foundAlerts.size());
+        assertEquals(alertUmBox.toString(), foundAlerts.get(0).toString());
     }
 
     @Test
@@ -202,7 +202,7 @@ public class PostgresTest {
 
         newAlert.insert();
 
-        assertEquals(Postgres.findAlert(3).toString(), newAlert.toString());
+        assertEquals(newAlert.toString(), Postgres.findAlert(3).toString());
     }
 
     @Test
@@ -271,51 +271,51 @@ public class PostgresTest {
 
     @Test
     public void testFindDevice() {
-        assertEquals(Postgres.findDevice(device.getId()).getDescription(), device.getDescription());
-        assertEquals(Postgres.findDevice(deviceTwo.getId()).getDescription(), deviceTwo.getDescription());
+        assertEquals(device.getDescription(), Postgres.findDevice(device.getId()).getDescription());
+        assertEquals(deviceTwo.getDescription(), Postgres.findDevice(deviceTwo.getId()).getDescription());
     }
 
     @Test
     public void testFindAllDevices() {
-        assertEquals(Postgres.findAllDevices().size(), 2);
+        assertEquals(2, Postgres.findAllDevices().size());
     }
 
     @Test
     public void testFindDevicesByGroup() {
         ArrayList<Device> foundDevices = new ArrayList<Device>(Postgres.findDevicesByGroup(group.getId()));
 
-        assertEquals(foundDevices.size(), 1);
-        assertEquals(foundDevices.get(0).getDescription(), deviceTwo.getDescription());
+        assertEquals(1, foundDevices.size());
+        assertEquals(deviceTwo.getDescription(), foundDevices.get(0).getDescription());
     }
 
     @Test
     public void testFindDeviceByAlert() {
         Device foundDevice = Postgres.findDeviceByAlert(alertIoT);
-        assertEquals(foundDevice.getDescription(), device.getDescription());
+        assertEquals(device.getDescription(), foundDevice.getDescription());
     }
 
     @Test
     public void testFindDevicesByType() {
         ArrayList<Device> foundDevices = new ArrayList<Device>(Postgres.findDevicesByType(deviceTypeTwo.getId()));
 
-        assertEquals(foundDevices.size(), 1);
-        assertEquals(foundDevices.get(0).getDescription(), deviceTwo.getDescription());
+        assertEquals(1, foundDevices.size());
+        assertEquals(deviceTwo.getDescription(), foundDevices.get(0).getDescription());
     }
 
     @Test
     public void testInsertOrUpdateDevice() {
-        assertEquals(Postgres.findAllDevices().size(), 2);
+        assertEquals(2, Postgres.findAllDevices().size());
 
         device.setDescription("new description");
         device.insertOrUpdate();
 
-        assertEquals(Postgres.findAllDevices().size(), 2);
+        assertEquals(2, Postgres.findAllDevices().size());
 
         Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2);
         int newId = newDevice.insertOrUpdate();
 
-        assertEquals(Postgres.findAllDevices().size(), 3);
-        assertEquals(Postgres.findDevice(newId).getDescription(), newDevice.getDescription());
+        assertEquals(3, Postgres.findAllDevices().size());
+        assertEquals(newDevice.getDescription(), Postgres.findDevice(newId).getDescription());
     }
 
     @Test
@@ -326,6 +326,92 @@ public class PostgresTest {
         Postgres.deleteDevice(deviceTwo.getId());
 
         assertEquals(null, Postgres.findDevice(deviceTwo.getId()));
+    }
+
+    /*
+        Test Device Status Actions
+     */
+    @Test
+    public void testFindDeviceStatus() {
+        assertEquals(deviceStatus.toString(), Postgres.findDeviceStatus(deviceStatus.getId()).toString());
+    }
+
+    @Test
+    public void testFindDeviceStatuses() {
+        ArrayList<DeviceStatus> foundStatuses =
+                new ArrayList<DeviceStatus>(Postgres.findDeviceStatuses(device.getId()));
+
+        assertEquals(1, foundStatuses.size());
+        assertEquals(deviceStatus.toString(), foundStatuses.get(0).toString());
+
+        foundStatuses = new ArrayList<DeviceStatus>(Postgres.findDeviceStatuses(deviceTwo.getId()));
+
+        assertEquals(0, foundStatuses.size());
+    }
+
+    @Test
+    public void testFindNDeviceStatuses() {
+        ArrayList<DeviceStatus> foundStatuses =
+                new ArrayList<DeviceStatus>(Postgres.findNDeviceStatuses(device.getId(), 1));
+        assertEquals(1, foundStatuses.size());
+
+        foundStatuses = new ArrayList<DeviceStatus>(Postgres.findNDeviceStatuses(deviceTwo.getId(), 0));
+        assertEquals(0, foundStatuses.size());
+    }
+
+//    @Test
+//    public void testFindDeviceStatusesOverTime() {
+//        ArrayList<DeviceStatus> foundStatuses =
+//                new ArrayList<DeviceStatus>(Postgres.findDeviceStatusesOverTime(device.getId(), 6000000, "seconds"));
+//
+//        System.out.println(deviceStatus);
+//
+//        assertEquals(foundStatuses.size(), 0);
+//    }
+
+    //Is this important to test?
+//    @Test
+//    public void testFindDeviceStatusesByType() {
+//    }
+
+    //Is this important to test?
+//    @Test
+//    public void testFindDeviceStatusesByGroup() {
+//    }
+
+    @Test
+    public void testFindAllDeviceStatuses() {
+        ArrayList<DeviceStatus> foundStatuses = new ArrayList<DeviceStatus>(Postgres.findAllDeviceStatuses());
+        assertEquals(1, foundStatuses.size());
+        assertEquals(deviceStatus.toString(), foundStatuses.get(0).toString());
+    }
+
+    @Test
+    public void testInsertOrUpdateDeviceStatus() {
+        assertEquals(1, Postgres.findAllDeviceStatuses().size());
+
+        deviceStatus.setDeviceId(deviceTwo.getId());
+        deviceStatus.insertOrUpdate();
+
+        assertEquals(1, Postgres.findAllDeviceStatuses().size());
+
+        DeviceStatus newDeviceStatus = new DeviceStatus(device.getId());
+        int newId = newDeviceStatus.insertOrUpdate();
+
+        assertEquals(2, Postgres.findAllDeviceStatuses().size());
+        assertEquals(newDeviceStatus.toString(), Postgres.findDeviceStatus(newId).toString());
+    }
+
+    @Test
+    public void testDeleteDeviceStatus() {
+        assertEquals(1, Postgres.findAllDeviceStatuses().size());
+
+        Postgres.deleteAlert(alertIoT.getId()); //have to delete the alert first
+        Postgres.deleteAlert(alertUmBox.getId());
+        Postgres.deleteDeviceStatus(deviceStatus.getId());
+
+        assertEquals(0, Postgres.findAllDeviceStatuses().size());
+        assertEquals(null, Postgres.findDeviceStatus(deviceStatus.getId()));
     }
 
     private static void insertData() {

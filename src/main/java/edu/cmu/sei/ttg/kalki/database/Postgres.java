@@ -2150,11 +2150,9 @@ public class Postgres {
     public static Integer insertOrUpdateDeviceStatus(DeviceStatus deviceStatus) {
         DeviceStatus ds = findDeviceStatus(deviceStatus.getId());
         if (ds == null) {
-            insertDeviceStatus(deviceStatus);
-            return 0;
+            return insertDeviceStatus(deviceStatus);
         } else {
-            updateDeviceStatus(deviceStatus);
-            return 1;
+            return updateDeviceStatus(deviceStatus);
         }
     }
 

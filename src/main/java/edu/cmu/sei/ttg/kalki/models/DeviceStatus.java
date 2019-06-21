@@ -73,7 +73,8 @@ public class DeviceStatus {
     }
 
     public Integer insertOrUpdate(){
-        return Postgres.insertOrUpdateDeviceStatus(this);
+        this.id = Postgres.insertOrUpdateDeviceStatus(this);
+        return this.id;
     }
 
     public String toString() {
