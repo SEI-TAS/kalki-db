@@ -1,4 +1,5 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -67,18 +68,20 @@ public class DeviceType {
         this.policyFileName = policyFileName;
     }
 
-    public Integer insert(){
+    public Integer insert() {
         this.id = Postgres.insertDeviceType(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateDeviceType(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateDeviceType(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad DeviceType";
         }
     }

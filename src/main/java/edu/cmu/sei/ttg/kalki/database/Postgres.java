@@ -3067,11 +3067,9 @@ public class Postgres {
     public static Integer insertOrUpdateDeviceType(DeviceType type) {
         DeviceType dt = findDeviceType(type.getId());
         if (dt == null) {
-            insertDeviceType(type);
-            return 0;
+            return insertDeviceType(type);
         } else {
-            updateDeviceType(type);
-            return 1;
+            return updateDeviceType(type);
         }
     }
 
