@@ -2420,6 +2420,12 @@ public class Postgres {
             st.setInt(1, deviceId);
             rs = st.executeQuery();
 
+            if (!rs.next()) {
+                return null;
+            } else {
+                ss = rsToDeviceSecurityState(rs);
+            }
+
             while (rs.next()) {
                 ss = rsToDeviceSecurityState(rs);
             }
