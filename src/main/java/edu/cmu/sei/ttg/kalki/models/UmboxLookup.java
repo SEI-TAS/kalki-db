@@ -1,4 +1,5 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,15 +69,18 @@ public class UmboxLookup {
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad umbox lookup";
         }
     }
 
     public Integer insert() {
-        return Postgres.insertUmboxLookup(this);
+        this.id = Postgres.insertUmboxLookup(this);
+        return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateUmboxLookup(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateUmboxLookup(this);
+        return this.id;
+    }
 }

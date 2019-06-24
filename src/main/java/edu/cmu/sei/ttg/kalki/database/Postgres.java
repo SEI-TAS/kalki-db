@@ -3555,7 +3555,7 @@ public class Postgres {
             st.setInt(3, ul.getUmboxImageId());
             st.setInt(4, ul.getDagOrder());
             st.executeUpdate();
-            return 1;
+            return getLatestId("umbox_lookup");
         }
         catch (SQLException e){
             e.printStackTrace();
@@ -3608,11 +3608,9 @@ public class Postgres {
         UmboxLookup foundUl = findUmboxLookup(ul.getId());
 
         if (foundUl == null) {
-            insertUmboxLookup(ul);
-            return 0;
+            return insertUmboxLookup(ul);
         } else {
-            updateUmboxLookup(ul);
-            return 1;
+            return updateUmboxLookup(ul);
         }
     }
 

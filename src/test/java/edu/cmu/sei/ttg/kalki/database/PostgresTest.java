@@ -712,23 +712,38 @@ public class PostgresTest {
 
     @Test
     public void testFindUmboxLookup() {
-
+        assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
     }
 
     @Test
     public void testFindAllUmboxLookups() {
-
+        assertEquals(1, Postgres.findAllUmboxLookups().size());
     }
 
     @Test
     public void testInsertOrUpdateUmboxLookup() {
+        assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
 
+        umboxLookup.setDeviceTypeId(deviceTypeTwo.getId());
+        umboxLookup.insertOrUpdate();
+
+        assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
+
+        UmboxLookup newUmboxLookup = new UmboxLookup(-1, securityState.getId(), deviceType.getId(), umboxImage.getId(), 2);
+
+        assertEquals(null, Postgres.findUmboxLookup(newUmboxLookup.getId()));
+
+        int newId = newUmboxLookup.insertOrUpdate();
+
+        assertEquals(newUmboxLookup.toString(),
+                Postgres.findUmboxLookup(newId).toString());
     }
 
-    @Test
-    public void testDeleteUmboxLookup() {
-
-    }
+    //Waiting until separated
+//    @Test
+//    public void testDeleteUmboxLookup() {
+//
+//    }
 
     private static void insertData() {
         // insert security state(s)
