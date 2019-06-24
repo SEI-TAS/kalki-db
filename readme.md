@@ -129,6 +129,7 @@ Device device = Postgres.findDevice(deviceId);
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
+|id              |serial PRIMARY KEY|
 |device_type_id  |int NOT NULL|  
 |state_id        |int NOT NULL|
 |command_id      |int NOT NULL|
@@ -137,7 +138,10 @@ Device device = Postgres.findDevice(deviceId);
 |:-------------------------------------|:--------|
 |`findAllCommandLookups()`             |`CompletionStage<List<DeviceCommand>>`|
 |`findCommandsByDevice(Device device)` |`CompletionStage<List<DeviceCommand>>`|
-|`insertCommandLookup(int deviceTypeId, int stateId, int commandId)`|`int`|
+|`insertCommandLookup(DeviceCommand command)`|`int`|
+|`insertOrUpdateCommandLookup(DeviceCommand command)`|`CompletionStage<Integer>`|
+|`updateCommandLookup(DeviceCommand command)`|`CompletionStage<Integer>`|
+|`deleteCommandLookup(int id)`|`CompletionStage<Boolean>`|
 
 #### Device
 ###### Schema:
@@ -306,6 +310,7 @@ Device device = Postgres.findDevice(deviceId);
 ###### Schema:
 |Property        |Type      |
 |---------------:|:---------|
+|id              |serial PRIMARY KEY|  
 |state_id        |int NOT NULL|  
 |umbox_image_id  |int NOT NULL|
 |device_type_id  |int NOT NULL |
@@ -313,7 +318,15 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`insertUmboxLookup(int umboxImageId, int devicetypeId, int secStateId, int dagOrder)`  |`int`|
+|`findUmboxLookup(int id)`  |`UmboxLookup`|
+|`findAllUmboxLookups()`  |`CompletionStage<List<UmboxLookup>>`|
+|`insertUmboxLookup(UmboxLookup ul)`  |`Integer`|
+|`updateUmboxLookup(UmboxLookup ul)`  |`Integer`|
+|`insertOrUpdateUmboxLookup(UmboxLookup ul)`  |`Integer`|
+|`deleteUmboxLookup(int id)`  |`CompletionStage<Boolean>`|
+
+
+
 
 ### Java Objects
 #### Alert
