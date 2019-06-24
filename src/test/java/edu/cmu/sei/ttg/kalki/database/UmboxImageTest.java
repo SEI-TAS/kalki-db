@@ -57,13 +57,13 @@ public class UmboxImageTest extends AUsesDatabase {
         assertEquals(3, Postgres.findAllUmboxImages().size());
         assertEquals(newImage.toString(), Postgres.findUmboxImage(newId).toString());
     }
-//      waiting until I separate out the classes so I don't have to do so many deletes
-//    @Test
-//    public void testDeleteUmboxImage() {
-//        assertEquals(umboxImage.toString(), Postgres.findUmboxImage(umboxImage.getId()).toString());
-//        Postgres.deleteUmboxImage(umboxImage.getId());
-//        assertEquals(null, Postgres.findUmboxImage(umboxImage.getId()));
-//    }
+
+    @Test
+    public void testDeleteUmboxImage() {
+        assertEquals(umboxImage.toString(), Postgres.findUmboxImage(umboxImage.getId()).toString());
+        Postgres.deleteUmboxImage(umboxImage.getId());
+        assertEquals(null, Postgres.findUmboxImage(umboxImage.getId()));
+    }
 
     private static void insertData() {
         // insert umbox_image

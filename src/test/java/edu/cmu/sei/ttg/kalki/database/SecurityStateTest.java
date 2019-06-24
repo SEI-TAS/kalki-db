@@ -63,11 +63,14 @@ public class SecurityStateTest extends AUsesDatabase {
         assertEquals(newSecurityState.toString(), Postgres.findSecurityState(newSecurityState.getId()).toString());
     }
 
-//requires a lot of deleting so I am going to wait on this test until I separate into classes
-//    @Test
-//    public void testDeleteSecurityState() {
-//
-//    }
+    @Test
+    public void testDeleteSecurityState() {
+        assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
+
+        Postgres.deleteSecurityState(securityState.getId());
+
+        assertEquals(null, Postgres.findSecurityState(securityState.getId()));
+    }
 
     private static void insertData() {
         // insert security state(s)

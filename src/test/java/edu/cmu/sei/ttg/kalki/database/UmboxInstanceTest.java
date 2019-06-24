@@ -64,23 +64,25 @@ public class UmboxInstanceTest extends AUsesDatabase {
                 Postgres.findUmboxInstance(newUmboxInstance.getAlerterId()).toString());
     }
 
-//  I think this is failing to update due to some reference, will try after separating classes
-//    @Test
-//    public void testUpdateUmboxInstance() {
-//        assertEquals(umboxInstance.getAlerterId(),
-//                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
-//
-//        umboxInstance.setAlerterId("changed alerter id");
-//        Postgres.updateUmboxInstance(umboxInstance);
-//
-//        assertEquals(umboxInstance.getAlerterId(),
-//                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
-//    }
+    @Test
+    public void testUpdateUmboxInstance() {
+        assertEquals(umboxInstance.getAlerterId(),
+                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
 
-//    @Test
-//    public void testDeleteUmboxInstance() {
-//
-//    }
+        umboxInstance.setAlerterId("changed alerter id");
+
+        Postgres.updateUmboxInstance(umboxInstance);
+
+        assertEquals(umboxInstance.getAlerterId(),
+                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
+    }
+
+    @Test
+    public void testDeleteUmboxInstance() {
+        assertEquals(umboxInstance.toString(), Postgres.findUmboxInstance(umboxInstance.getAlerterId()).toString());
+        Postgres.deleteUmboxInstance(umboxInstance.getId());
+        assertEquals(null, Postgres.findUmboxInstance(umboxInstance.getAlerterId()));
+    }
 
     private static void insertData() {
         // insert device_type

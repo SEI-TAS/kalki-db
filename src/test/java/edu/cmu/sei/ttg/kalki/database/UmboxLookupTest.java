@@ -68,11 +68,12 @@ public class UmboxLookupTest extends AUsesDatabase {
                 Postgres.findUmboxLookup(newId).toString());
     }
 
-//Waiting until separated
-//    @Test
-//    public void testDeleteUmboxLookup() {
-//
-//    }
+    @Test
+    public void testDeleteUmboxLookup() {
+        assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
+        Postgres.deleteUmboxLookup(umboxLookup.getId());
+        assertEquals(null, Postgres.findUmboxLookup(umboxLookup.getId()));
+    }
 
     private static void insertData() {
         // insert security state(s)

@@ -77,18 +77,17 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
         assertEquals(2, Postgres.findDeviceSecurityStates(device.getId()).size());
     }
 
-//Confused why delete isn't working because nothing references the device security state
-//    @Test
-//    public void testDeleteDeviceSecurityState() {
-//        DeviceSecurityState foundState = Postgres.findDeviceSecurityState(deviceSecurityState.getId());
-//
-//        assertEquals(deviceSecurityState.getId(), foundState.getId());
-//        assertEquals(deviceSecurityState.getStateId(), foundState.getStateId());
-//
-//        Postgres.deleteDeviceSecurityState(deviceSecurityState.getId());
-//
-//        assertEquals(null, Postgres.findDeviceSecurityState(deviceSecurityState.getId()));
-//    }
+    @Test
+    public void testDeleteDeviceSecurityState() {
+        DeviceSecurityState foundState = Postgres.findDeviceSecurityState(deviceSecurityState.getId());
+
+        assertEquals(deviceSecurityState.getId(), foundState.getId());
+        assertEquals(deviceSecurityState.getStateId(), foundState.getStateId());
+
+        Postgres.deleteDeviceSecurityState(deviceSecurityState.getId());
+
+        assertEquals(null, Postgres.findDeviceSecurityState(deviceSecurityState.getId()));
+    }
 
     private static void insertData() {
         // insert security state(s)

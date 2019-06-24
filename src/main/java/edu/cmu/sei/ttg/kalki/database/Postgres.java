@@ -2593,7 +2593,7 @@ public class Postgres {
      * @return true if the deletion succeeded, false otherwise.
      */
     public static Boolean deleteDeviceSecurityState(int id) {
-        return deleteById("device_id", id);
+        return deleteById("device_security_state", id);
     }
 
     /*

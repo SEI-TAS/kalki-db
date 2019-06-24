@@ -10,7 +10,7 @@ public abstract class AUsesDatabase {
 
     @BeforeClass
     public static void initializeDB() {
-        if(!hasRun) {
+        if (!hasRun) {
             String rootPassword = "kalkipass";  //based on run script
             String dbHost = "localhost";        //based on run script
             String dbPort = "5432";             //based on run script

@@ -19,7 +19,7 @@ import edu.cmu.sei.ttg.kalki.models.*;
 
 import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
-public class DeviceStatusTest extends AUsesDatabase{
+public class DeviceStatusTest extends AUsesDatabase {
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static Group group;
@@ -63,26 +63,6 @@ public class DeviceStatusTest extends AUsesDatabase{
         foundStatuses = new ArrayList<DeviceStatus>(Postgres.findNDeviceStatuses(deviceTwo.getId(), 0));
         assertEquals(0, foundStatuses.size());
     }
-
-//    @Test
-//    public void testFindDeviceStatusesOverTime() {
-//        ArrayList<DeviceStatus> foundStatuses =
-//                new ArrayList<DeviceStatus>(Postgres.findDeviceStatusesOverTime(device.getId(), 6000000, "seconds"));
-//
-//        System.out.println(deviceStatus);
-//
-//        assertEquals(foundStatuses.size(), 0);
-//    }
-
-    //Is this important to test?
-//    @Test
-//    public void testFindDeviceStatusesByType() {
-//    }
-
-    //Is this important to test?
-//    @Test
-//    public void testFindDeviceStatusesByGroup() {
-//    }
 
     @Test
     public void testFindAllDeviceStatuses() {

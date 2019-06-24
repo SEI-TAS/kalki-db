@@ -66,22 +66,14 @@ public class DeviceTypeTest extends AUsesDatabase {
         assertEquals(newDeviceType.toString(), Postgres.findDeviceType(newDeviceType.getId()).toString());
     }
 
-    //So many things reference deviceType that it is extremely difficult to delete
-//    @Test
-//    public void testDeleteDeviceType() {
-//        //need to delete device and all lookups before you can delete a device type
-//        assertEquals(deviceType.toString(), Postgres.findDeviceType(deviceType.getId()).toString());
-//
-//        //need to delete device and all lookups before you can delete a device type
-//        Postgres.deleteAlertCondition(alertConditionTwo.getId());   //must delete before deleting device
-//        Postgres.deleteDevice(deviceTwo.getId());
-//        Postgres.deleteCommandLookup(deviceCommandLookup.getId());
-//        Postgres.deleteUmboxLookup(umboxLookup.getId());
-//
-//        Postgres.deleteDeviceType(deviceType.getId());
-//
-//        assertEquals(null, Postgres.findDeviceType(deviceType.getId()));
-//    }
+    @Test
+    public void testDeleteDeviceType() {
+        assertEquals(deviceType.toString(), Postgres.findDeviceType(deviceType.getId()).toString());
+
+        Postgres.deleteDeviceType(deviceType.getId());
+
+        assertEquals(null, Postgres.findDeviceType(deviceType.getId()));
+    }
 
 
     private static void insertData() {
