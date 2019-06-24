@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS tag(
 CREATE TABLE IF NOT EXISTS umbox_image(
     id           serial PRIMARY KEY,
     name         varchar(255) NOT NULL,
-    path         varchar(255) NOT NULL
+    file_name     varchar(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device(

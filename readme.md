@@ -277,7 +277,7 @@ Device device = Postgres.findDevice(deviceId);
 |---------:|:------|
 |id        |int |  
 |name      |String NOT NULL|
-|path      |String NOT NULL| 
+|file_name |String NOT NULL| 
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
@@ -619,15 +619,15 @@ This class supports:
 |---------:|:------|
 |id        |int |  
 |name      |String |
-|path      |String | 
+|fileName  |String | 
 |dagOrder  |int    |
 ###### Constructors:
 | Definition |  
 |:---|
 |`UmboxImage()`|
-|`UmboxImage(String name, String path)`|
-|`UmboxImage(String name, String path, int dagOrder)`|
-|`UmboxImage(int id, String name, String path)`|
+|`UmboxImage(String name, String fileName)`|
+|`UmboxImage(String name, String fileName, int dagOrder)`|
+|`UmboxImage(int id, String name, String fileName)`|
 ###### Methods:
 This class supports:
 - `get<field>()`

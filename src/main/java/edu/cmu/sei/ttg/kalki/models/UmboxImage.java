@@ -9,7 +9,7 @@ public class UmboxImage {
 
     private int id;
     private String name;
-    private String path;
+    private String fileName;
     private Integer dagOrder;
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -17,22 +17,22 @@ public class UmboxImage {
 
     }
 
-    public UmboxImage(String name, String path){
+    public UmboxImage(String name, String fileName){
         this.name = name;
-        this.path = path;
+        this.fileName = fileName;
     }
 
-    public UmboxImage(int id, String name, String path){
+    public UmboxImage(int id, String name, String fileName){
         this.id = id;
         this.name = name;
-        this.path = path;
+        this.fileName = fileName;
         this.dagOrder = null;
     }
 
-    public UmboxImage(int id, String name, String path, Integer dagOrder) {
+    public UmboxImage(int id, String name, String fileName, Integer dagOrder) {
         this.id = id;
         this.name = name;
-        this.path = path;
+        this.fileName = fileName;
         this.dagOrder = dagOrder;
     }
 
@@ -52,12 +52,12 @@ public class UmboxImage {
         this.name = name;
     }
 
-    public String getPath() {
-        return path;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public Integer getDagOrder() {

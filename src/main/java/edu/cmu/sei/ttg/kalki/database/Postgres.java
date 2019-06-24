@@ -3245,7 +3245,7 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT ui.id, ui.name, ui.path, ul.dag_order " +
+            st = dbConn.prepareStatement("SELECT ui.id, ui.name, ui.file_name, ul.dag_order " +
                     "FROM umbox_image ui, umbox_lookup ul " +
                     "WHERE ul.device_type_id = ? AND ul.state_id = ? AND ul.umbox_image_id = ui.id");
             st.setInt(1, devTypeId);
@@ -3313,8 +3313,8 @@ public class Postgres {
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
-            String path = rs.getString("path");
-            umboxImage = new UmboxImage(id, name, path);
+            String fileName = rs.getString("file_name");
+            umboxImage = new UmboxImage(id, name, fileName);
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName() + ": " + e.getMessage());
@@ -3333,9 +3333,9 @@ public class Postgres {
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
-            String path = rs.getString("path");
+            String fileName = rs.getString("file_name");
             int dagOrder = rs.getInt("dag_order");
-            umboxImage = new UmboxImage(id, name, path, dagOrder);
+            umboxImage = new UmboxImage(id, name, fileName, dagOrder);
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName() + ": " + e.getMessage());
@@ -3354,9 +3354,9 @@ public class Postgres {
             logger.info("Adding umbox image: " + u);
             PreparedStatement st = null;
             try {
-                st = dbConn.prepareStatement("INSERT INTO umbox_image (name, path) VALUES (?, ?)");
+                st = dbConn.prepareStatement("INSERT INTO umbox_image (name, file_name) VALUES (?, ?)");
                 st.setString(1, u.getName());
-                st.setString(2, u.getPath());
+                st.setString(2, u.getFileName());
                 st.executeUpdate();
                 return getLatestId("umbox_image");
             } catch (SQLException e) {
@@ -3384,10 +3384,10 @@ public class Postgres {
             PreparedStatement st = null;
             try {
                 st = dbConn.prepareStatement("UPDATE umbox_image " +
-                        "SET name = ?, path = ? " +
+                        "SET name = ?, file_name = ? " +
                         "WHERE id = ?");
                 st.setString(1, u.getName());
-                st.setString(2, u.getPath());
+                st.setString(2, u.getFileName());
                 st.setInt(3, u.getId());
                 st.executeUpdate();
                 return u.getId();
