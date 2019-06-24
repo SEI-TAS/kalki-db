@@ -41,18 +41,20 @@ public class Group {
         this.name = name;
     }
 
-    public Integer insert(){
+    public Integer insert() {
         this.id = Postgres.insertGroup(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() { return Postgres.insertOrUpdateGroup(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateGroup(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad Group";
         }
     }

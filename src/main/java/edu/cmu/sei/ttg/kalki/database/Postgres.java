@@ -2321,11 +2321,9 @@ public class Postgres {
     public static Integer insertOrUpdateGroup(Group group) {
         Group g = findGroup(group.getId());
         if (g == null) {
-            insertGroup(group);
-            return 0;
+            return insertGroup(group);
         } else {
-            updateGroup(group);
-            return 1;
+            return updateGroup(group);
         }
     }
 

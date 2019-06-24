@@ -76,6 +76,7 @@ public class CommandTest extends AUsesDatabase {
     public void testDeleteCommandLookup() {
 
     }
+    */
 
     private static void insertData() {
         // insert security state(s)
@@ -93,9 +94,7 @@ public class CommandTest extends AUsesDatabase {
         deviceCommand = new DeviceCommand("Test Command");
         deviceCommand.insert();
 
-        deviceCommandLookup = new DeviceCommand(deviceType.getId(), securityState.getId(), deviceCommand.getId());
-        deviceCommandLookup.insertCommandLookup();
+//        deviceCommandLookup = new DeviceCommand(deviceType.getId(), securityState.getId(), deviceCommand.getId());
+//        deviceCommandLookup.insertCommandLookup();
     }
-
-     */
 }
