@@ -327,7 +327,6 @@ Device device = Postgres.findDevice(deviceId);
 
 
 
-
 ### Java Objects
 #### Alert
 ###### Schema:
@@ -446,9 +445,11 @@ This class supports:
 |Property  |Type      |
 |------------:|:---------|
 |id           |Integer   |  
+|lookupId     |Integer   |
 |deviceTypeId |Integer |
 |stateId      |Integer       | 
 |name         |String    |
+
 ###### Constructors:
 |Definition |  
 |:---|
@@ -457,6 +458,7 @@ This class supports:
 |`DeviceCommand(Integer id, String name)`|
 |`DeviceCommand(Integer deviceTypeId, Integer stateId, String name)`|
 |`DeviceCommand(Integer id, Integer deviceTypeId, Integer stateId, String name)`|
+|`DeviceCommand(Integer id, Integer lookupId, Integer deviceTypeId, Integer stateId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -464,6 +466,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`    
+- `insertOrUpdate`
 - `toString()`
 
 #### DeviceSecurityState
@@ -659,3 +662,28 @@ This class supports:
  - ex: setName("Name")
 - `insert()`
 - `toString()`
+
+#### UmboxLookup
+###### Schema:
+|Property        |Type      |
+|---------------:|:---------|
+|id              |String    |  
+|stateId         |Integer    |
+|deviceTypeId    |Integer    |
+|umboxImageId    |Integer     |
+|dagOrder        |Integer |
+###### Constructors:
+|Function Definition |
+|:---|
+|`UmboxLookup()`  |
+|`UmboxLookup(int id, Integer stateId, Integer deviceTypeId, Integer umboxImageId, Integer dagOrder)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `insertOrUpdate()`
+- `toString()`
+
