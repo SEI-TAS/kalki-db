@@ -35,7 +35,8 @@ public class CommandTest extends AUsesDatabase {
     /*
         Command Action Tests
      */
-    /*  CONFUSED ABOUT THESE TESTS
+
+    /* finish after tables are updated
 
     @Test
     public void testFindAllCommands() {
@@ -50,7 +51,10 @@ public class CommandTest extends AUsesDatabase {
 
     @Test
     public void testFindAllCommandLookups() {
+        ArrayList<DeviceCommand> foundLookups = new ArrayList<DeviceCommand>(Postgres.findAllCommandLookups());
 
+        assertEquals(2, foundLookups.size());   //1 from setupDatabase and 1 from insert data
+        assertEquals(deviceCommandLookup.toString(), foundLookups.get(1).toString());
     }
 
     @Test
@@ -72,7 +76,6 @@ public class CommandTest extends AUsesDatabase {
     public void testDeleteCommandLookup() {
 
     }
-    */
 
     private static void insertData() {
         // insert security state(s)
@@ -90,10 +93,9 @@ public class CommandTest extends AUsesDatabase {
         deviceCommand = new DeviceCommand("Test Command");
         deviceCommand.insert();
 
-        deviceCommandLookup = new DeviceCommand("Test Command Lookup");
-        deviceCommandLookup.setDeviceTypeId(deviceType.getId());
-        deviceCommandLookup.setStateId(securityState.getId());
-        deviceCommandLookup.setId(deviceCommand.getId());
+        deviceCommandLookup = new DeviceCommand(deviceType.getId(), securityState.getId(), deviceCommand.getId());
         deviceCommandLookup.insertCommandLookup();
     }
+
+     */
 }

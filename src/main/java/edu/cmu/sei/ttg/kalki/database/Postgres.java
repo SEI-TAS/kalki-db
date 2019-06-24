@@ -1347,6 +1347,7 @@ public class Postgres {
             insertCommand.setInt(2, command.getStateId());
             insertCommand.setInt(3, command.getId());
             insertCommand.executeUpdate();
+
             return 1;
         } catch (SQLException e) {
             logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
@@ -1363,11 +1364,9 @@ public class Postgres {
     public static Integer insertOrUpdateCommandLookup(DeviceCommand command) {
        DeviceCommand cl = findCommandLookup(command.getLookupId());
         if (cl == null) {
-            insertCommandLookup(command);
-            return 0;
+            return insertCommandLookup(command);
         } else {
-            updateCommandLookup(command);
-            return 1;
+            return updateCommandLookup(command);
         }
     }
 
