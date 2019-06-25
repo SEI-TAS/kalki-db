@@ -80,8 +80,8 @@ Device device = Postgres.findDevice(deviceId);
 |---------------:|:--------|
 |id              |int      |  
 |variables       |hstore   |
-|device_id       |int      |
-|alert_type_id   |int      |  
+|device_id       |int NOT NULL |
+|alert_type_id   |int NOT NULL |  
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
@@ -99,9 +99,9 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
-|name            |String   |
+|name            |String NOT NULL |
 |description     |String   |
-|source          |String   |
+|source          |String NOT NULL |
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
@@ -214,7 +214,7 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
-|name            |String   |
+|name            |String NOT NULL |
 |policy_file     |byte[]   | 
 |policy_file_name  |String   | 
 ###### Actions:
@@ -231,7 +231,7 @@ Device device = Postgres.findDevice(deviceId);
 |Property     |Type     |
 |------------:|:--------|
 |id           |int      |  
-|name         |String   |
+|name         |String NOT NULL |
 ###### Actions:  
 |Function Definition | Return Type |  
 |:---|:---| 

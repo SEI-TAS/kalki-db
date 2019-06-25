@@ -2,19 +2,19 @@ CREATE TABLE IF NOT EXISTS alert_type(
     id                 serial PRIMARY KEY,
     name               varchar(255) NOT NULL,
     description        varchar(255),
-    source             varchar(255)
+    source             varchar(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device_type(
     id    serial PRIMARY KEY,
-    name  varchar(255),
+    name  varchar(255) NOT NULL,
     policy_file    bytea,
     policy_file_name    varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS device_group(
     id    serial PRIMARY KEY,
-    name  varchar(255)
+    name  varchar(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS security_state(
@@ -109,8 +109,8 @@ CREATE TABLE IF NOT EXISTS alert(
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
     variables          hstore,
-    device_id          int REFERENCES device(id),
-    alert_type_id      int REFERENCES alert_type(id)
+    device_id          int NOT NULL REFERENCES device(id),
+    alert_type_id      int NOT NULL REFERENCES alert_type(id)
 );
 
 CREATE TABLE IF NOT EXISTS alert_type_lookup(
