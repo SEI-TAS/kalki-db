@@ -80,8 +80,8 @@ Device device = Postgres.findDevice(deviceId);
 |---------------:|:--------|
 |id              |int      |  
 |variables       |hstore   |
-|device_id       |int      |
-|alert_type_id   |int      |  
+|device_id       |int NOT NULL |
+|alert_type_id   |int NOT NULL |  
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
@@ -99,9 +99,9 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
-|name            |String   |
+|name            |String NOT NULL |
 |description     |String   |
-|source          |String   |
+|source          |String NOT NULL |
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
@@ -129,6 +129,7 @@ Device device = Postgres.findDevice(deviceId);
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
+|id              |serial PRIMARY KEY|
 |device_type_id  |int NOT NULL|  
 |state_id        |int NOT NULL|
 |command_id      |int NOT NULL|
@@ -137,7 +138,10 @@ Device device = Postgres.findDevice(deviceId);
 |:-------------------------------------|:--------|
 |`findAllCommandLookups()`             |`CompletionStage<List<DeviceCommand>>`|
 |`findCommandsByDevice(Device device)` |`CompletionStage<List<DeviceCommand>>`|
-|`insertCommandLookup(int deviceTypeId, int stateId, int commandId)`|`int`|
+|`insertCommandLookup(DeviceCommand command)`|`int`|
+|`insertOrUpdateCommandLookup(DeviceCommand command)`|`CompletionStage<Integer>`|
+|`updateCommandLookup(DeviceCommand command)`|`CompletionStage<Integer>`|
+|`deleteCommandLookup(int id)`|`CompletionStage<Boolean>`|
 
 #### Device
 ###### Schema:
@@ -210,7 +214,7 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
-|name            |String   |
+|name            |String NOT NULL |
 |policy_file     |byte[]   | 
 |policy_file_name  |String   | 
 ###### Actions:
@@ -227,7 +231,7 @@ Device device = Postgres.findDevice(deviceId);
 |Property     |Type     |
 |------------:|:--------|
 |id           |int      |  
-|name         |String   |
+|name         |String NOT NULL |
 ###### Actions:  
 |Function Definition | Return Type |  
 |:---|:---| 
@@ -273,7 +277,7 @@ Device device = Postgres.findDevice(deviceId);
 |---------:|:------|
 |id        |int |  
 |name      |String NOT NULL|
-|path      |String NOT NULL| 
+|file_name |String NOT NULL| 
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
@@ -306,6 +310,7 @@ Device device = Postgres.findDevice(deviceId);
 ###### Schema:
 |Property        |Type      |
 |---------------:|:---------|
+|id              |serial PRIMARY KEY|  
 |state_id        |int NOT NULL|  
 |umbox_image_id  |int NOT NULL|
 |device_type_id  |int NOT NULL |
@@ -313,7 +318,14 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`insertUmboxLookup(int umboxImageId, int devicetypeId, int secStateId, int dagOrder)`  |`int`|
+|`findUmboxLookup(int id)`  |`UmboxLookup`|
+|`findAllUmboxLookups()`  |`CompletionStage<List<UmboxLookup>>`|
+|`insertUmboxLookup(UmboxLookup ul)`  |`Integer`|
+|`updateUmboxLookup(UmboxLookup ul)`  |`Integer`|
+|`insertOrUpdateUmboxLookup(UmboxLookup ul)`  |`Integer`|
+|`deleteUmboxLookup(int id)`  |`CompletionStage<Boolean>`|
+
+
 
 ### Java Objects
 #### Alert
@@ -433,9 +445,11 @@ This class supports:
 |Property  |Type      |
 |------------:|:---------|
 |id           |Integer   |  
+|lookupId     |Integer   |
 |deviceTypeId |Integer |
 |stateId      |Integer       | 
 |name         |String    |
+
 ###### Constructors:
 |Definition |  
 |:---|
@@ -444,6 +458,7 @@ This class supports:
 |`DeviceCommand(Integer id, String name)`|
 |`DeviceCommand(Integer deviceTypeId, Integer stateId, String name)`|
 |`DeviceCommand(Integer id, Integer deviceTypeId, Integer stateId, String name)`|
+|`DeviceCommand(Integer id, Integer lookupId, Integer deviceTypeId, Integer stateId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -451,6 +466,7 @@ This class supports:
 - `set<field>(<field type> value)`
  - ex: setName("Name")
 - `insert()`    
+- `insertOrUpdate`
 - `toString()`
 
 #### DeviceSecurityState
@@ -603,15 +619,15 @@ This class supports:
 |---------:|:------|
 |id        |int |  
 |name      |String |
-|path      |String | 
+|fileName  |String | 
 |dagOrder  |int    |
 ###### Constructors:
 | Definition |  
 |:---|
 |`UmboxImage()`|
-|`UmboxImage(String name, String path)`|
-|`UmboxImage(String name, String path, int dagOrder)`|
-|`UmboxImage(int id, String name, String path)`|
+|`UmboxImage(String name, String fileName)`|
+|`UmboxImage(String name, String fileName, int dagOrder)`|
+|`UmboxImage(int id, String name, String fileName)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -646,3 +662,28 @@ This class supports:
  - ex: setName("Name")
 - `insert()`
 - `toString()`
+
+#### UmboxLookup
+###### Schema:
+|Property        |Type      |
+|---------------:|:---------|
+|id              |String    |  
+|stateId         |Integer    |
+|deviceTypeId    |Integer    |
+|umboxImageId    |Integer     |
+|dagOrder        |Integer |
+###### Constructors:
+|Function Definition |
+|:---|
+|`UmboxLookup()`  |
+|`UmboxLookup(int id, Integer stateId, Integer deviceTypeId, Integer umboxImageId, Integer dagOrder)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `insertOrUpdate()`
+- `toString()`
+
