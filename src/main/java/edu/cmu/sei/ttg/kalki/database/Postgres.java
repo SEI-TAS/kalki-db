@@ -1177,63 +1177,57 @@ public class Postgres {
     }
 
     /*
-     *      CommandLookup specific actions
+     *      Command specific actions
      */
+
+    /**
+     * Finds a command based on the given id
+     */
+    public static DeviceCommand findCommand(int id) {
+        logger.info("Finding command with id = " + id);
+
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement(String.format("SELECT * FROM command WHERE id = ?"));
+            st.setInt(1, id);
+            rs = st.executeQuery();
+            // Moves the result set to the first row if it exists. Returns null otherwise.
+            if (!rs.next()) {
+                rs = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        if (rs == null) {
+            return null;
+        } else {
+            DeviceCommand command = rsToCommand(rs);
+            return command;
+        }
+    }
 
     /**
      * Finds all rows in the command table
      */
-    public static CompletionStage<List<DeviceCommand>> findAllCommands() {
-        return CompletableFuture.supplyAsync(() -> {
-            ResultSet rs = getAllFromTable("command");
-            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
-            try {
-                while (rs.next()) {
-                    commands.add(rsToCommand(rs));
-                }
-                rs.close();
-            } catch (SQLException e) {
-                logger.severe("Sql exception getting all device commands.");
+    public static List<DeviceCommand> findAllCommands() {
+        ResultSet rs = getAllFromTable("command");
+        List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
+        try {
+            while (rs.next()) {
+                commands.add(rsToCommand(rs));
             }
-            return commands;
-        });
-    }
-
-    /**
-     * Finds a command lookup based on the given id
-     */
-    public static CompletionStage<DeviceCommand> findCommandLookup(int id) {
-        logger.info("Finding command lookup with id = " + id);
-        return findById(id, "command_lookup").thenApplyAsync(rs -> {
-            if (rs == null) {
-                return null;
-            } else {
-                DeviceCommand command = rsToCommandLookupBasic(rs);
-                return command;
-            }
-        });
-    }
-
-    /**
-     * Finds all rows in the command lookup table
-     */
-    public static CompletionStage<List<DeviceCommand>> findAllCommandLookups() {
-        return CompletableFuture.supplyAsync(() -> {
-            PreparedStatement st = null;
-            ResultSet rs = null;
-            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
-            try {
-                st = dbConn.prepareStatement("SELECT c.id AS cid, c.name, cl.device_type_id, cl.state_id, cl.id AS clid FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
-                rs = st.executeQuery();
-                while (rs.next()) {
-                    commands.add(rsToCommandLookup(rs));
-                }
-                rs.close();
-            } catch (SQLException e) {
-                logger.severe("Sql exception getting all device commands: " + e.getClass().getName() + ": " + e.getMessage());
-            }
-            return commands;
-        });
+            rs.close();
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all device commands.");
+        }
+        return commands;
     }
 
     /**
@@ -1307,6 +1301,128 @@ public class Postgres {
     }
 
     /**
+     * insert a command into the db
+     */
+    public static Integer insertCommand(DeviceCommand command) {
+        logger.info("Inserting command: " + command.getName());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+        try {
+            PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command(name) VALUES (?);");
+            insertCommand.setString(1, command.getName());
+            insertCommand.executeUpdate();
+            return getLatestId("command");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * Updates the command entry
+     *
+     * @input the command to update
+     */
+    public static Integer updateCommand(DeviceCommand command) {
+        logger.info("Updating command; commandId: " +command.getId()+ " name: " +command.getName());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command SET name = ? WHERE id = ?");
+            updatecommand.setString(1, command.getName());
+            updatecommand.setInt(2, command.getId());
+            updatecommand.executeUpdate();
+
+            return command.getId();
+        } catch (SQLException e) {
+            logger.severe("Error updating Command: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * First, attempts to find the Command id in the database.
+     * If successful, updates the existing Command with the given Device Commands's parameters Otherwise,
+     * inserts the given Device Command as a Command Lookup.
+     */
+    public static Integer insertOrUpdateCommand(DeviceCommand command) {
+        DeviceCommand dc = findCommand(command.getId());
+        if (dc == null) {
+            return insertCommand(command);
+        } else {
+            return updateCommand(command);
+        }
+    }
+
+    /**
+     * Deletes a Command by its id.
+     *
+     * @param id id of the Command Lookup to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static Boolean deleteCommand(int id) {
+        logger.info(String.format("Deleting command with id = %d", id));
+        PreparedStatement st = null;
+        try {
+            deleteById("command", id);
+            return true;
+        } finally {
+            try {
+                if (st != null) st.close();
+            } catch (Exception e) {
+            }
+            return false;
+        }
+    }
+
+
+    /*
+     *      CommandLookup specific actions
+     */
+
+    /**
+     * Finds a command lookup based on the given id
+     */
+    public static CompletionStage<DeviceCommand> findCommandLookup(int id) {
+        logger.info("Finding command lookup with id = " + id);
+        return findById(id, "command_lookup").thenApplyAsync(rs -> {
+            if (rs == null) {
+                return null;
+            } else {
+                DeviceCommand command = rsToCommandLookupBasic(rs);
+                return command;
+            }
+        });
+    }
+
+    /**
+     * Finds all rows in the command lookup table
+     */
+    public static CompletionStage<List<DeviceCommand>> findAllCommandLookups() {
+        return CompletableFuture.supplyAsync(() -> {
+            PreparedStatement st = null;
+            ResultSet rs = null;
+            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
+            try {
+                st = dbConn.prepareStatement("SELECT c.id AS cid, c.name, cl.device_type_id, cl.state_id, cl.id AS clid FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
+                rs = st.executeQuery();
+                while (rs.next()) {
+                    commands.add(rsToCommandLookup(rs));
+                }
+                rs.close();
+            } catch (SQLException e) {
+                logger.severe("Sql exception getting all device commands: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+            return commands;
+        });
+    }
+
+    /**
      * Extract a Command from the result set of a database query.
      *
      * @param rs ResultSet from a CommandLookup query.
@@ -1358,30 +1474,6 @@ public class Postgres {
             logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * insert a command into the db
-     */
-    public static CompletionStage<Integer> insertCommand(DeviceCommand command) {
-        return CompletableFuture.supplyAsync(() -> {
-
-            logger.info("Inserting command: " + command.getName());
-            if (dbConn == null) {
-                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-                return -1;
-            }
-            try {
-                PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command(name) VALUES (?);");
-                insertCommand.setString(1, command.getName());
-                insertCommand.executeUpdate();
-                return getLatestId("command");
-            } catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
-            }
-            return -1;
-        });
     }
 
     /**
@@ -1477,8 +1569,6 @@ public class Postgres {
             }
         });
     }
-
-
 
     /*
      *       Device specific actions

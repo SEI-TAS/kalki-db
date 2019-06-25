@@ -89,14 +89,16 @@ public class DeviceCommand {
         return deviceTypeId;
     }
 
-    public void insert() {
-        Postgres.insertCommand(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public int insert() {
+        this.id = Postgres.insertCommand(this);
+        return this.id;
     }
 
-    public CompletionStage<Integer> insertOrUpdate() {
+    public Integer insertOrUpdate() {
+        return Postgres.insertOrUpdateCommand(this);
+    }
+
+    public CompletionStage<Integer> insertOrUpdateCommandLookup() {
         return Postgres.insertOrUpdateCommandLookup(this);
     }
 
