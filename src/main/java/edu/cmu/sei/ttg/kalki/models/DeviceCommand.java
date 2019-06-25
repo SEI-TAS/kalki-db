@@ -89,7 +89,7 @@ public class DeviceCommand {
         return deviceTypeId;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = Postgres.insertCommand(this);
         return this.id;
     }
@@ -100,6 +100,10 @@ public class DeviceCommand {
     }
 
     public Integer insertOrUpdate() {
+        return Postgres.insertOrUpdateCommand(this);
+    }
+
+    public Integer insertOrUpdateCommandLookup() {
         this.id = Postgres.insertOrUpdateCommandLookup(this);
         return this.id;
     }
