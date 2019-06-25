@@ -68,11 +68,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition                             |Return Type|
 |:-----------------------------------------------|:--------|
-|`findAlert(int id) `                             |`CompletionStage<Alert>`      |
-|`findAlerts(List<String> alerterIds)`            |`CompletionStage<List<Alert>>`|  
-|`insertAlert(Alert alert)`                       |`CompletionStage<Integer>`           |
-|`updateAlert(Alert alert)`                       |`CompletionStage<Integer>`           |
-|`deleteAlert(int id)`                            |`CompletionStage<Boolean>`           |
+|`findAlert(int id) `                             |`Alert`      |
+|`findAlerts(List<String> alerterIds)`            |`List<Alert>`|  
+|`insertAlert(Alert alert)`                       |`Integer`           |
+|`updateAlert(Alert alert)`                       |`Integer`           |
+|`deleteAlert(int id)`                            |`Boolean`           |
 
 #### AlertCondition
 ###### Schema:
@@ -85,14 +85,14 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
-|`findAlertCondition(int id) `                       |`CompletionStage<AlertCondition>`      |
-|`findAlertConditionsByDevice(int deviceId)`         |`CompletionStage<List<AlertCondition>>`|
+|`findAlertCondition(int id) `                       |`AlertCondition`      |
+|`findAlertConditionsByDevice(int deviceId)`         |`List<AlertCondition>`|
 |`findAllAlertConditions()`                          |`List<AlertCondition>`|
-|`insertAlertCondition(AlertCondition condition`     |`CompletionStage<Integer>`           |
-|`insertAlertConditionByDeviceType(AlertCondition cond) `|`CompletionStage<Integer>`       |
-|`updateAlertCondition(AlertCondition condition)`    |`CompletionStage<Integer>`           |
-|`insertOrUpdateAlertCondition(AlertCondition condition)`| `CompletionStage<Integer>`      |
-|`deleteAlertCondition(int id)`                      |`CompletionStage<Boolean>`           |
+|`insertAlertCondition(AlertCondition condition`     |`Integer`           |
+|`insertAlertConditionByDeviceType(AlertCondition cond) `|`Integer`       |
+|`updateAlertCondition(AlertCondition condition)`    |`Integer`           |
+|`insertOrUpdateAlertCondition(AlertCondition condition)`| `Integer`      |
+|`deleteAlertCondition(int id)`                      |`Boolean`           |
 
 #### AlertType
 ###### Schema:
@@ -105,12 +105,12 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
-|`findAlertType(int id) `                       |`CompletionStage<AlertType>`      |
+|`findAlertType(int id) `                       |`AlertType`      |
 |`findAllAlertTypes()  `                        |`List<AlerType>`                  |
-|`findAlertTypesByDeviceType(int deviceTypeId)` |`CompletionStage<List<AlertType>>`|
-|`insertAlertType(AlertType type)`              |`CompletionStage<Integer>`|
-|`updateAlertType(AlertType type)`              |`CompletionStage<Integer>`|
-|`insertOrUpdate(AlertType type)`               |`CompletionStage<Integer>`|
+|`findAlertTypesByDeviceType(int deviceTypeId)` |`List<AlertType>`|
+|`insertAlertType(AlertType type)`              |`Integer`|
+|`updateAlertType(AlertType type)`              |`Integer`|
+|`insertOrUpdate(AlertType type)`               |`Integer`|
 |`deleteAlertType(int id)`                      |`CompletionStage<Boolean>`|
 
 #### Command
@@ -122,8 +122,8 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
-|`findAllCommands()`|`CompletionStage<List<DeviceCommand>>`|
-|`insertCommand(DeviceCommand command)`|`CompletionStage<Integer>`|
+|`findAllCommands()`|`<List<DeviceCommand>>`|
+|`insertCommand(DeviceCommand command)`|`<Integer>`|
 
 #### CommandLookup
 ###### Schema:
@@ -136,12 +136,12 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
-|`findAllCommandLookups()`             |`CompletionStage<List<DeviceCommand>>`|
-|`findCommandsByDevice(Device device)` |`CompletionStage<List<DeviceCommand>>`|
+|`findAllCommandLookups()`             |`<List<DeviceCommand>>`|
+|`findCommandsByDevice(Device device)` |`<List<DeviceCommand>>`|
 |`insertCommandLookup(DeviceCommand command)`|`int`|
-|`insertOrUpdateCommandLookup(DeviceCommand command)`|`CompletionStage<Integer>`|
-|`updateCommandLookup(DeviceCommand command)`|`CompletionStage<Integer>`|
-|`deleteCommandLookup(int id)`|`CompletionStage<Boolean>`|
+|`insertOrUpdateCommandLookup(DeviceCommand command)`|`<Integer>`|
+|`updateCommandLookup(DeviceCommand command)`|`<Integer>`|
+|`deleteCommandLookup(int id)`|`<Boolean>`|
 
 #### Device
 ###### Schema:
@@ -160,14 +160,14 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
-|`findDevice(int id)`                  |`CompletionStage<Device>`       |
-|`findAllDevices()`                    |`CompletionStage<List<Device>>` |  
+|`findDevice(int id)`                  |`Device`       |
+|`findAllDevices()`                    |`List<Device>` |  
 |`findDevicesByGroup(int groupId)`     |`List<Device>`                  |
 |`findDevicesByType(int typeId)`       |`List<Device>`                  |
-|`insertDevice(Device device)`         |`CompletionStage<Integer>`      |
-|`insertOrUpdateDevice(Device device)` |`CompletionStage<Integer>`      | 
-|`updateDevice(Device device)`         |`CompletionStage<Integer>`      |
-|`deleteDevice(int id)`                |`CompletionStage<Boolean>`      |
+|`insertDevice(Device device)`         |`Integer`      |
+|`insertOrUpdateDevice(Device device)` |`Integer`      | 
+|`updateDevice(Device device)`         |`Integer`      |
+|`deleteDevice(int id)`                |`Boolean`      |
 
 #### DeviceSecurityState
 ###### Schema:
@@ -182,9 +182,9 @@ Device device = Postgres.findDevice(deviceId);
 |:---|:---| 
 |`findDeviceSecurityState(int id)`                        |`DeviceSecurityState`|
 |`findDeviceSecurityStateByDevice(int deviceId)`          |`DeviceSecurityState`|
-|`findDeviceSecurityStates(int deviceId)`                 |`CompletionStage<List<DeviceSecurityState>>`|
-|`insertDeviceSecurityState(DeviceState deviceState)`     |`CompletionStage<Integer>`           |
-|`deleteDeviceSecurityState(int id)`                      |`CompletionStage<Boolean>`           |
+|`findDeviceSecurityStates(int deviceId)`                 |`List<DeviceSecurityState>`|
+|`insertDeviceSecurityState(DeviceState deviceState)`     |`Integer`           |
+|`deleteDeviceSecurityState(int id)`                      |`Boolean`           |
 
 #### DeviceStatus
 ###### Schema:
@@ -197,17 +197,17 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---|  
-|`findDeviceStatus(int id)`                                             |`CompletionStage<DeviceStatus>`      |
-|`findDeviceStatuses(int deviceId)`                                     |`CompletionStage<List<DeviceStatus>>`|
-|`findNDeviceStatuses(int deviceId, int N)`                             |`CompletionStage<List<DeviceStatus>>`|
-|`findDeviceStatusesOverTime(int deviceId, int length, String timeUnit)`|`CompletionStage<List<DeviceStatus>>`|
-|`findDeviceStatusesByType(int typeId)`                                 |`<Map<Device, DeviceStatus>`|
-|`findDeviceStatusesByGroup(int groupId)`                               |`<Map<Device, DeviceStatus>`|
-|`findAllDeviceStatuses()`                                              |`CompletionStage<List<DeviceStatus>>`|
-|`insertDeviceStatus(DeviceStatus deviceStatus)`                        |`CompletionStage<Integer>`           |
-|`insertOrUpdateDeviceStatus(DeviceStatus deviceStatus)`                |`CompletionStage<Integer>`           |
-|`updateDeviceStatus(DeviceStatus deviceStatus)`                        |`CompletionStage<Integer>`           |
-|`deleteDeviceStatus(int id)`                                           |`CompletionStage<Boolean>`           |
+|`findDeviceStatus(int id)`                                             |`DeviceStatus>`      |
+|`findDeviceStatuses(int deviceId)`                                     |`List<DeviceStatus>`|
+|`findNDeviceStatuses(int deviceId, int N)`                             |`List<DeviceStatus>`|
+|`findDeviceStatusesOverTime(int deviceId, int length, String timeUnit)`|`List<DeviceStatus>`|
+|`findDeviceStatusesByType(int typeId)`                                 |`Map<Device, DeviceStatus>`|
+|`findDeviceStatusesByGroup(int groupId)`                               |`Map<Device, DeviceStatus>`|
+|`findAllDeviceStatuses()`                                              |`List<DeviceStatus>`|
+|`insertDeviceStatus(DeviceStatus deviceStatus)`                        |`Integer`           |
+|`insertOrUpdateDeviceStatus(DeviceStatus deviceStatus)`                |`Integer`           |
+|`updateDeviceStatus(DeviceStatus deviceStatus)`                        |`Integer`           |
+|`deleteDeviceStatus(int id)`                                           |`Boolean`           |
 
 #### DeviceType
 ###### Schema:
@@ -220,11 +220,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findDeviceType(int id)`     |`CompletionStage<DeviceType>`      |
-|`findAllDeviceTypes()`       |`CompletionStage<List<DeviceType>>`|
-|`insertDeviceType(DeviceType type)`|`CompletionStage<Integer>`   |
-|`updateDeviceType(DeviceType type)`|`CompletionStage<Integer>`   |
-|`deleteDeviceType(int id)`   |`CompletionStage<Boolean>`   |
+|`findDeviceType(int id)`     |`DeviceType>`      |
+|`findAllDeviceTypes()`       |`List<DeviceType>`|
+|`insertDeviceType(DeviceType type)`|`Integer`   |
+|`updateDeviceType(DeviceType type)`|`Integer`   |
+|`deleteDeviceType(int id)`   |`Boolean`   |
 
 #### Group
 ###### Schema:
@@ -235,11 +235,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:  
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findGroup(int id)`        |`CompletionStage<Group>`      |
-|`findAllGroups()`          |`CompletionStage<List<Group>>`|
-|`insertGroup(Group group)` |`CompletionStage<Integer>`    |
-|`updateGroup(Group group)` |`CompletionStage<Integer>`    |
-|`deleteGroup(int id)`      |`CompletionStage<Boolean>`    |
+|`findGroup(int id)`        |`Group>`      |
+|`findAllGroups()`          |`List<Group>`|
+|`insertGroup(Group group)` |`Integer`    |
+|`updateGroup(Group group)` |`Integer`    |
+|`deleteGroup(int id)`      |`Boolean`    |
 
 #### SecurityState
 ###### Schema:
@@ -250,11 +250,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findSecurityState(int id)`                |`CompletionStage<SecurityState>`      |
-|`findAllSecurityStates()`                  |`CompletionStage<List<SecurityState>` |
+|`findSecurityState(int id)`                |`SecurityState`      |
+|`findAllSecurityStates()`                  |`List<SecurityState>` |
 |`insertSecurityState(SecurityState state)` |`Integer`            |
-|`updateSecurityState(SecurityState state)` |`CompletionStage<Integer>`            |
-|`deleteSecurityState(int id)`              |`CompletionStage<Boolean>`            |
+|`updateSecurityState(SecurityState state)` |`Integer`            |
+|`deleteSecurityState(int id)`              |`Boolean`            |
 
 #### Tag
 ###### Schema:
@@ -265,11 +265,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---|
-|`findAllTags()`           |`CompletionStage<List<Tag>>`|
+|`findAllTags()`           |`List<Tag>`|
 |`findTagIds(int deviceId)`|`List<Integer>`             |
-|`insertTag(Tag tag)`      |`CompletionStage<Integer>`  |
-|`updateTag(Tag tag)`      |`CompletionStage<Integer>`  |
-|`deleteTag(int id)`       |`CompletionStage<Boolean>`  |
+|`insertTag(Tag tag)`      |`Integer`  |
+|`updateTag(Tag tag)`      |`Integer`  |
+|`deleteTag(int id)`       |`Boolean`  |
 
 #### UmboxImage
 ###### Schema:
@@ -281,12 +281,12 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findUmboxImage(int id)`         |`CompletionStage<UmboxImage>`      |
+|`findUmboxImage(int id)`         |`UmboxImage`      |
 |`findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId)`|`List<UmboxImage>`|
-|`findAllUmboxImages()`           |`CompletionStage<List<UmboxImage>>`|
-|`insertUmboxImage(UmboxImage u)` |`CompletionStage<Integer>`            |
-|`updateUmboxImage(UmboxImage u)` |`CompletionStage<Integer>`            |
-|`deleteUmboxImage(int id)`       |`CompletionStage<Boolean>`            |
+|`findAllUmboxImages()`           |`List<UmboxImage>`|
+|`insertUmboxImage(UmboxImage u)` |`Integer`            |
+|`updateUmboxImage(UmboxImage u)` |`Integer`            |
+|`deleteUmboxImage(int id)`       |`Boolean`            |
 
 #### UmboxInstance
 ###### Schema:
@@ -300,11 +300,11 @@ Device device = Postgres.findDevice(deviceId);
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findUmboxInstance(String alerterId)`  |`CompletionStage<UmboxInstance>`|
-|`findUmboxInstances(int deviceId)`     |`CompletionStage<List<UmboxInstance>>`|
-|`insertUmboxInstance(UmboxInstance u)` |`CompletionStage<Integer>`|
-|`updateUmboxInstance(UmboxInstance u)` |`CompletionStage<Integere>`|
-|`deleteUmboxInstance(int id)`          |`CompletionStage<Boolean>`|
+|`findUmboxInstance(String alerterId)`  |`UmboxInstance`|
+|`findUmboxInstances(int deviceId)`     |`List<UmboxInstance>`|
+|`insertUmboxInstance(UmboxInstance u)` |`Integer`|
+|`updateUmboxInstance(UmboxInstance u)` |`Integer`|
+|`deleteUmboxInstance(int id)`          |`Boolean`|
 
 #### UmboxLookup
 ###### Schema:
@@ -319,11 +319,11 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxLookup(int id)`  |`UmboxLookup`|
-|`findAllUmboxLookups()`  |`CompletionStage<List<UmboxLookup>>`|
+|`findAllUmboxLookups()`  |`List<UmboxLookup>`|
 |`insertUmboxLookup(UmboxLookup ul)`  |`Integer`|
 |`updateUmboxLookup(UmboxLookup ul)`  |`Integer`|
 |`insertOrUpdateUmboxLookup(UmboxLookup ul)`  |`Integer`|
-|`deleteUmboxLookup(int id)`  |`CompletionStage<Boolean>`|
+|`deleteUmboxLookup(int id)`  |`Boolean`|
 
 
 
@@ -434,11 +434,11 @@ This class supports:
 - `insertOrUpdate()`
 - `toString()`
 - `lastNSamples(int N)`
-    - returns `CompletionStage<List<DeviceStatus>>`
+    - returns `<List<DeviceStatus>>`
 - `samplesOverTime(int length, String timeUnit)`
-    - returns `CompletionStage<List<DeviceStatus>>`
+    - returns `<List<DeviceStatus>>`
 - `statusesOfSameType()`
-    - returns `CompletionStage<Map<Device, DeviceStatus>>`
+    - returns `<Map<Device, DeviceStatus>>`
 
 #### DeviceCommand
 ###### Schema:
