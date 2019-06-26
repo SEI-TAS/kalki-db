@@ -66,7 +66,7 @@ public class CommandTest extends AUsesDatabase {
         assertEquals(deviceCommand.getName(), Postgres.findCommand(deviceCommand.getId()).getName());
         assertEquals(2, Postgres.findAllCommands().size());
 
-        DeviceCommand newCommand = new DeviceCommand("new command 2");
+        DeviceCommand newCommand = new DeviceCommand("new command 2", deviceType.getId());
 
         int newId = newCommand.insertOrUpdate();
 
@@ -98,10 +98,10 @@ public class CommandTest extends AUsesDatabase {
         device.insert();
 
         // insert command
-        deviceCommand = new DeviceCommand("Test Command");
+        deviceCommand = new DeviceCommand("Test Command", deviceType.getId());
         deviceCommand.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(deviceType.getId(), securityState.getId(), deviceCommand.getId());
+        deviceCommandLookup = new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
         deviceCommandLookup.insert();
 
         // insert device_security_state

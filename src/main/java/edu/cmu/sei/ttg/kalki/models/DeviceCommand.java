@@ -9,19 +9,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public class DeviceCommand {
     private int id;
     private String name;
+    private Integer deviceTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommand() {
     }
 
-    public DeviceCommand(String name) {
+    public DeviceCommand(String name, Integer deviceTypeId) {
         this.name = name;
+        this.deviceTypeId = deviceTypeId;
     }
 
-    public DeviceCommand(int id, String name) {
+    public DeviceCommand(int id, String name, Integer deviceTypeId) {
         this.id = id;
         this.name = name;
+        this.deviceTypeId = deviceTypeId;
     }
 
     public int getId() {
@@ -38,6 +41,14 @@ public class DeviceCommand {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDeviceTypeId(Integer deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
+    }
+
+    public Integer getDeviceTypeId() {
+        return deviceTypeId;
     }
 
     public int insert() {

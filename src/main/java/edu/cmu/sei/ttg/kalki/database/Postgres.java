@@ -1200,7 +1200,7 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT c.id, c.name FROM command_lookup AS cl, command AS c WHERE cl.device_type_id = ? AND cl.state_id = ? AND c.id = cl.command_id");
+            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.state_id = ? AND c.id = cl.command_id");
             st.setInt(1, device.getType().getId());
             st.setInt(2, device.getCurrentState().getStateId());
             rs = st.executeQuery();
@@ -1242,10 +1242,13 @@ public class Postgres {
         DeviceCommand command = null;
         Integer id = null;
         String name = "";
+        Integer deviceTypeId = null;
+
         try {
             id = rs.getInt("id");
             name = rs.getString("name");
-            command = new DeviceCommand(id, name);
+            deviceTypeId = rs.getInt("device_type_id");
+            command = new DeviceCommand(id, name, deviceTypeId);
             return command;
         } catch (Exception e) {
             e.printStackTrace();
@@ -1264,8 +1267,9 @@ public class Postgres {
             return -1;
         }
         try {
-            PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command(name) VALUES (?);");
+            PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command(name, device_type_id) VALUES (?,?);");
             insertCommand.setString(1, command.getName());
+            insertCommand.setInt(2, command.getDeviceTypeId());
             insertCommand.executeUpdate();
             return getLatestId("command");
         } catch (SQLException e) {
@@ -1286,9 +1290,10 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         }
         try {
-            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command SET name = ? WHERE id = ?");
+            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command SET name = ?, device_type_id = ? WHERE id = ?");
             updatecommand.setString(1, command.getName());
-            updatecommand.setInt(2, command.getId());
+            updatecommand.setInt(2, command.getDeviceTypeId());
+            updatecommand.setInt(3, command.getId());
             updatecommand.executeUpdate();
 
             return command.getId();
@@ -1359,7 +1364,7 @@ public class Postgres {
         ResultSet rs = null;
         List<DeviceCommandLookup> commandLookups = new ArrayList<DeviceCommandLookup>();
         try {
-            st = dbConn.prepareStatement("SELECT cl.command_id, cl.device_type_id, cl.state_id, cl.id FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
+            st = dbConn.prepareStatement("SELECT cl.command_id, cl.state_id, cl.id FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
             rs = st.executeQuery();
             while (rs.next()) {
                 commandLookups.add(rsToCommandLookup(rs));
@@ -1379,16 +1384,14 @@ public class Postgres {
      */
     private static DeviceCommandLookup rsToCommandLookup(ResultSet rs) {
         DeviceCommandLookup commandLookup = null;
-        Integer deviceTypeId = null;
         Integer stateId = null;
         Integer id = null;
         Integer commandId = null;
         try {
             id = rs.getInt("id");
-            deviceTypeId = rs.getInt("device_type_id");
             stateId = rs.getInt("state_id");
             commandId = rs.getInt("command_id");
-            commandLookup = new DeviceCommandLookup(id, deviceTypeId, stateId, commandId);
+            commandLookup = new DeviceCommandLookup(id, stateId, commandId);
             return commandLookup;
         } catch (Exception e) {
             e.printStackTrace();
@@ -1398,23 +1401,22 @@ public class Postgres {
     }
 
     /**
-     * inserts into command lookup to relate a device_type, state, command
+     * inserts into command lookup to relate a state and command
      *
      * @return -1 on failure, 1 on success
      */
     public static int insertCommandLookup(DeviceCommandLookup commandLookup) {
-        logger.info("Inserting command lookup; deviceTypeId: " + commandLookup.getDeviceTypeId() + " stateId: "
-                + commandLookup.getStateId() + " commandId: " + commandLookup.getCommandId());
+        logger.info("Inserting command lookup; stateId: " + commandLookup.getStateId() + " commandId: "
+                + commandLookup.getCommandId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
         try {
             PreparedStatement insertCommandLookup =
-                    dbConn.prepareStatement("INSERT INTO command_lookup(device_type_id, state_id, command_id) VALUES (?,?,?);");
-            insertCommandLookup.setInt(1, commandLookup.getDeviceTypeId());
-            insertCommandLookup.setInt(2, commandLookup.getStateId());
-            insertCommandLookup.setInt(3, commandLookup.getCommandId());
+                    dbConn.prepareStatement("INSERT INTO command_lookup(state_id, command_id) VALUES (?,?);");
+            insertCommandLookup.setInt(1, commandLookup.getStateId());
+            insertCommandLookup.setInt(2, commandLookup.getCommandId());
             insertCommandLookup.executeUpdate();
 
             return getLatestId("command_lookup");
@@ -1447,17 +1449,16 @@ public class Postgres {
      */
 
     public static Integer updateCommandLookup(DeviceCommandLookup commandLookup) {
-        logger.info("Updating command lookup; deviceTypeId: " + commandLookup.getDeviceTypeId() + " stateId: "
-                + commandLookup.getStateId() + " commandId: " +commandLookup.getCommandId());
+        logger.info("Updating command lookup; stateId: " + commandLookup.getStateId() +
+                " commandId: " +commandLookup.getCommandId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         }
         try {
-            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET device_type_id = ?, state_id = ?, command_id = ? WHERE id = ?");
-            updatecommand.setInt(1, commandLookup.getDeviceTypeId());
-            updatecommand.setInt(2, commandLookup.getStateId());
-            updatecommand.setInt(3, commandLookup.getCommandId());
-            updatecommand.setInt(4, commandLookup.getId());
+            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET state_id = ?, command_id = ? WHERE id = ?");
+            updatecommand.setInt(1, commandLookup.getStateId());
+            updatecommand.setInt(2, commandLookup.getCommandId());
+            updatecommand.setInt(3, commandLookup.getId());
             updatecommand.executeUpdate();
 
             return commandLookup.getId();

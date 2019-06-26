@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class DeviceCommandLookup {
     private int id;
-    private Integer deviceTypeId;
     private Integer stateId;
     private Integer commandId;
 
@@ -17,15 +16,13 @@ public class DeviceCommandLookup {
     public DeviceCommandLookup() {
     }
 
-    public DeviceCommandLookup(Integer deviceTypeId, Integer stateId, Integer commandId) {
-        this.deviceTypeId = deviceTypeId;
+    public DeviceCommandLookup(Integer stateId, Integer commandId) {
         this.stateId = stateId;
         this.commandId = commandId;
     }
 
-    public DeviceCommandLookup(int id, Integer deviceTypeId, Integer stateId, Integer commandId) {
+    public DeviceCommandLookup(int id, Integer stateId, Integer commandId) {
         this.id = id;
-        this.deviceTypeId = deviceTypeId;
         this.stateId = stateId;
         this.commandId = commandId;
     }
@@ -44,14 +41,6 @@ public class DeviceCommandLookup {
 
     public Integer getStateId() {
         return stateId;
-    }
-
-    public void setDeviceTypeId(Integer deviceTypeId) {
-        this.deviceTypeId = deviceTypeId;
-    }
-
-    public Integer getDeviceTypeId() {
-        return deviceTypeId;
     }
 
     public void setCommandId(Integer commandId) {
