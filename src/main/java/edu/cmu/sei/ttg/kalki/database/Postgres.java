@@ -1326,17 +1326,7 @@ public class Postgres {
      */
     public static Boolean deleteCommand(int id) {
         logger.info(String.format("Deleting command with id = %d", id));
-        PreparedStatement st = null;
-        try {
-            deleteById("command", id);
-            return true;
-        } finally {
-            try {
-                if (st != null) st.close();
-            } catch (Exception e) {
-            }
-            return false;
-        }
+        return deleteById("command", id);
     }
 
     /*
@@ -1477,16 +1467,7 @@ public class Postgres {
      */
     public static Boolean deleteCommandLookup(int id) {
         logger.info(String.format("Deleting command lookup with id = %d", id));
-        PreparedStatement st = null;
-        try {
-            deleteById("command_lookup", id);
-            return true;
-        } finally {
-            try {
-                if (st != null) st.close();
-            } catch (Exception e) {
-            }
-        }
+        return deleteById("command_lookup", id);
     }
 
     /*
