@@ -1200,14 +1200,14 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT c.id AS cid, c.name, cl.device_type_id, cl.state_id, cl.id AS clid FROM command_lookup AS cl, command AS c WHERE cl.device_type_id = ? AND cl.state_id = ? AND c.id = cl.command_id");
+            st = dbConn.prepareStatement("SELECT c.id, c.name FROM command_lookup AS cl, command AS c WHERE cl.device_type_id = ? AND cl.state_id = ? AND c.id = cl.command_id");
             st.setInt(1, device.getType().getId());
             st.setInt(2, device.getCurrentState().getStateId());
             rs = st.executeQuery();
 
             List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
             while (rs.next()) {
-                commands.add(rsToCommandLookup(rs));
+                commands.add(rsToCommand(rs));
             }
             return commands;
         } catch (SQLException e) {
@@ -1341,35 +1341,34 @@ public class Postgres {
     /**
      * Finds a command lookup based on the given id
      */
-    public static DeviceCommand findCommandLookup(int id) {
+    public static DeviceCommandLookup findCommandLookup(int id) {
         logger.info("Finding command lookup with id = " + id);
         ResultSet rs = findById(id, "command_lookup");
         if (rs == null) {
             return null;
         } else {
-            DeviceCommand command = rsToCommandLookupBasic(rs);
-            return command;
+            return rsToCommandLookup(rs);
         }
     }
 
     /**
      * Finds all rows in the command lookup table
      */
-    public static List<DeviceCommand> findAllCommandLookups() {
+    public static List<DeviceCommandLookup> findAllCommandLookups() {
         PreparedStatement st = null;
         ResultSet rs = null;
-        List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
+        List<DeviceCommandLookup> commandLookups = new ArrayList<DeviceCommandLookup>();
         try {
-            st = dbConn.prepareStatement("SELECT c.id AS cid, c.name, cl.device_type_id, cl.state_id, cl.id AS clid FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
+            st = dbConn.prepareStatement("SELECT cl.command_id, cl.device_type_id, cl.state_id, cl.id FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
             rs = st.executeQuery();
             while (rs.next()) {
-                commands.add(rsToCommandLookup(rs));
+                commandLookups.add(rsToCommandLookup(rs));
             }
             rs.close();
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device commands: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return commands;
+        return commandLookups;
     }
 
     /**
@@ -1378,47 +1377,19 @@ public class Postgres {
      * @param rs ResultSet from a CommandLookup query.
      * @return The command.
      */
-    private static DeviceCommand rsToCommandLookup(ResultSet rs) {
-        DeviceCommand command = null;
+    private static DeviceCommandLookup rsToCommandLookup(ResultSet rs) {
+        DeviceCommandLookup commandLookup = null;
         Integer deviceTypeId = null;
         Integer stateId = null;
         Integer id = null;
-        Integer lookupId = null;
-        String name = "";
+        Integer commandId = null;
         try {
-            id = rs.getInt("cid");
-            name = rs.getString("name");
+            id = rs.getInt("id");
             deviceTypeId = rs.getInt("device_type_id");
             stateId = rs.getInt("state_id");
-            lookupId = rs.getInt("clid");
-            command = new DeviceCommand(id, lookupId, deviceTypeId, stateId, name);
-            return command;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return null;
-    }
-
-    /**
-     * Extract a Command from the result set of a database query on just the command_lookup table.
-     *
-     * @param rs ResultSet from a CommandLookup query.
-     * @return The command.
-     */
-    private static DeviceCommand rsToCommandLookupBasic(ResultSet rs) {
-        DeviceCommand command = null;
-        Integer deviceTypeId = null;
-        Integer stateId = null;
-        Integer id = null;
-        Integer lookupId = null;
-        try {
-            id = rs.getInt("command_id");
-            deviceTypeId = rs.getInt("device_type_id");
-            stateId = rs.getInt("state_id");
-            lookupId = rs.getInt("id");
-            command = new DeviceCommand(id, lookupId, deviceTypeId, stateId);
-            return command;
+            commandId = rs.getInt("command_id");
+            commandLookup = new DeviceCommandLookup(id, deviceTypeId, stateId, commandId);
+            return commandLookup;
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName() + ": " + e.getMessage());
@@ -1431,22 +1402,24 @@ public class Postgres {
      *
      * @return -1 on failure, 1 on success
      */
-    public static int insertCommandLookup(DeviceCommand command) {
-        logger.info("Inserting command lookup; deviceTypeId: " + command.getDeviceTypeId() + " stateId: " + command.getStateId() + " commandId: " + command.getId());
+    public static int insertCommandLookup(DeviceCommandLookup commandLookup) {
+        logger.info("Inserting command lookup; deviceTypeId: " + commandLookup.getDeviceTypeId() + " stateId: "
+                + commandLookup.getStateId() + " commandId: " + commandLookup.getCommandId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
         try {
-            PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command_lookup(device_type_id, state_id, command_id) VALUES (?,?,?);");
-            insertCommand.setInt(1, command.getDeviceTypeId());
-            insertCommand.setInt(2, command.getStateId());
-            insertCommand.setInt(3, command.getId());
-            insertCommand.executeUpdate();
+            PreparedStatement insertCommandLookup =
+                    dbConn.prepareStatement("INSERT INTO command_lookup(device_type_id, state_id, command_id) VALUES (?,?,?);");
+            insertCommandLookup.setInt(1, commandLookup.getDeviceTypeId());
+            insertCommandLookup.setInt(2, commandLookup.getStateId());
+            insertCommandLookup.setInt(3, commandLookup.getCommandId());
+            insertCommandLookup.executeUpdate();
 
-            return 1;
+            return getLatestId("command_lookup");
         } catch (SQLException e) {
-            logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Error inserting CommandLookup: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
         return -1;
@@ -1457,12 +1430,12 @@ public class Postgres {
      * If successful, updates the existing Command Lookup with the given Device Commands's parameters Otherwise,
      * inserts the given Device Command as a Command Lookup.
      */
-    public static Integer insertOrUpdateCommandLookup(DeviceCommand command) {
-       DeviceCommand cl = findCommandLookup(command.getLookupId());
+    public static Integer insertOrUpdateCommandLookup(DeviceCommandLookup commandLookup) {
+        DeviceCommandLookup cl = findCommandLookup(commandLookup.getId());
         if (cl == null) {
-            return insertCommandLookup(command);
+            return insertCommandLookup(commandLookup);
         } else {
-            return updateCommandLookup(command);
+            return updateCommandLookup(commandLookup);
         }
     }
 
@@ -1473,20 +1446,21 @@ public class Postgres {
      * @input the device command to update
      */
 
-    public static Integer updateCommandLookup(DeviceCommand command) {
-        logger.info("Updating command lookup; deviceTypeId: " + command.getDeviceTypeId() + " stateId: " + command.getStateId() + " commandId: ");
+    public static Integer updateCommandLookup(DeviceCommandLookup commandLookup) {
+        logger.info("Updating command lookup; deviceTypeId: " + commandLookup.getDeviceTypeId() + " stateId: "
+                + commandLookup.getStateId() + " commandId: " +commandLookup.getCommandId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         }
         try {
             PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET device_type_id = ?, state_id = ?, command_id = ? WHERE id = ?");
-            updatecommand.setInt(1, command.getDeviceTypeId());
-            updatecommand.setInt(2, command.getStateId());
-            updatecommand.setInt(3, command.getId());
-            updatecommand.setInt(4, command.getLookupId());
+            updatecommand.setInt(1, commandLookup.getDeviceTypeId());
+            updatecommand.setInt(2, commandLookup.getStateId());
+            updatecommand.setInt(3, commandLookup.getCommandId());
+            updatecommand.setInt(4, commandLookup.getId());
             updatecommand.executeUpdate();
 
-            return command.getId();
+            return commandLookup.getId();
         } catch (SQLException e) {
             logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
