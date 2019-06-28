@@ -256,6 +256,7 @@ public class Postgres {
 
         device.setCurrentState(deviceSecurityState);
 
+        //insert device statuses
         HashMap<String, String> hmap = new HashMap<String, String>();
         hmap.put("key", "value");
         hmap.put("key2", "value2");
@@ -267,6 +268,57 @@ public class Postgres {
         hmapTwo.put("otherKey2", "otherValue2");
         DeviceStatus deviceStatusTwo = new DeviceStatus(device.getId(), hmapTwo);
         deviceStatusTwo.insert();
+
+        // insert alert_type
+        AlertType alertType = new AlertType("testAlertType", "test alert type", "test source");
+        alertType.insert();
+
+        AlertType alertTypeTwo = new AlertType("testAlertTypeTwo", "test alert type two", "test source two");
+        alertTypeTwo.insert();
+
+        // insert umbox_image
+        UmboxImage umboxImage = new UmboxImage("testUmboxImage", "path/to/test/image");
+        umboxImage.insert();
+
+        // insert umbox_instance from umbox_lookup
+        UmboxInstance umboxInstance = new UmboxInstance("testUmboxInstance", umboxImage.getId(), device.getId());
+        umboxInstance.insert();
+
+        // insert alert for device_status/alert_type
+        Alert alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
+        alertIoT.insert();
+
+        // insert alert for alerter_id/alert_type
+        Alert alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(),
+                alertTypeTwo.getId());
+        alertUmBox.insert();
+
+        //--------------SECOND TEST DEVICE---------------
+        // insert security state(s)
+        SecurityState securityStateTwo = new SecurityState("TestStateTwo");
+        securityStateTwo.insert();
+
+        // insert device_type
+        DeviceType deviceTypeTwo = new DeviceType(0, "TestDeviceTypeTwo");
+        deviceTypeTwo.insert();
+
+        // insert device
+        Device deviceTwo = new Device("TestDeviceTwo", "this is a test device two",
+                deviceTypeTwo, "127.0.0.1", 6666, 6666);
+        deviceTwo.insert();
+
+        // insert device_security_state
+        DeviceSecurityState deviceSecurityStateTwo = new DeviceSecurityState(deviceTwo.getId(), securityStateTwo.getId());
+        deviceSecurityStateTwo.insert();
+
+        deviceTwo.setCurrentState(deviceSecurityState);
+
+        DeviceStatus deviceStatusThree = new DeviceStatus(deviceTwo.getId(), hmapTwo);
+        deviceStatusThree.insert();
+
+        // insert alert for device_status/alert_type
+        Alert alertIoTTwo = new Alert(alertTypeTwo.getName(), deviceStatusThree.getId(), alertTypeTwo.getId());
+        alertIoTTwo.insert();
     }
 
     /**
@@ -289,7 +341,7 @@ public class Postgres {
         initDB("db-alert-type-lookups.sql");
 
         //TODO: remove test data
-        insertTestData();
+        //insertTestData();
 
         //TODO:
         //initDB("db-umbox-images.sql");
@@ -635,6 +687,49 @@ public class Postgres {
                     }
                 } catch (Exception e) {
                 }
+            }
+        }
+        return alertHistory;
+    }
+
+    /**
+     * Finds all Alerts from the database for the given deviceId.
+     *
+     * @param id of the device
+     * @return a list of all Alerts in the database associated to the device with the given id
+     */
+    public static List<Alert> findAlertsByDevice(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        List<Alert> alertHistory = new ArrayList<Alert>();
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM alert WHERE a.device_status_id = ds.id AND ds.device_id = ?");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                alertHistory.add(rsToAlert(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception e) {
+            }
+            try {
+                if (st != null) {
+                    st.close();
+                }
+            } catch (Exception e) {
             }
         }
         return alertHistory;
