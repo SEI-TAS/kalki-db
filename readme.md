@@ -119,28 +119,33 @@ Device device = Postgres.findDevice(deviceId);
 |---------------:|:--------|
 |id              |serial PRIMARY KEY|
 |name            |String   |
+|device_type_id  |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
+|`findCommand(int id)`           |`DeviceCommand`|
 |`findAllCommands()`|`<List<DeviceCommand>>`|
+|`findCommandsByDevice(Device device)` |`<List<DeviceCommand>>`|
 |`insertCommand(DeviceCommand command)`|`<Integer>`|
+|`insertOrUpdateCommand(DeviceCommand command)`|`<Integer>`|
+|`updateCommand(DeviceCommand command)`|`<Integer>`|
+|`deleteCommand(int id)`|`<Boolean>`|
 
 #### CommandLookup
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
-|id              |serial PRIMARY KEY|
-|device_type_id  |int NOT NULL|  
+|id              |serial PRIMARY KEY|  
 |state_id        |int NOT NULL|
 |command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
-|`findAllCommandLookups()`             |`<List<DeviceCommand>>`|
-|`findCommandsByDevice(Device device)` |`<List<DeviceCommand>>`|
-|`insertCommandLookup(DeviceCommand command)`|`int`|
-|`insertOrUpdateCommandLookup(DeviceCommand command)`|`<Integer>`|
-|`updateCommandLookup(DeviceCommand command)`|`<Integer>`|
+|`findCommandLookup(int id)`           |`DeviceCommandLookup`|
+|`findAllCommandLookups()`             |`<List<DeviceCommandLookup>>`|
+|`insertCommandLookup(DeviceCommandLookup commandLookup)`|`int`|
+|`insertOrUpdateCommandLookup(DeviceCommandLookup commandLookup)`|`<Integer>`|
+|`updateCommandLookup(DeviceCommandLookup commandLookup)`|`<Integer>`|
 |`deleteCommandLookup(int id)`|`<Boolean>`|
 
 #### Device
@@ -444,21 +449,40 @@ This class supports:
 ###### Schema:
 |Property  |Type      |
 |------------:|:---------|
-|id           |Integer   |  
-|lookupId     |Integer   |
-|deviceTypeId |Integer |
-|stateId      |Integer       | 
-|name         |String    |
+|id           |int       | 
+|name         |String    | 
+|deviceTypeId |Integer   |
 
 ###### Constructors:
 |Definition |  
 |:---|
 |`DeviceCommand()`|
-|`DeviceCommand(String name)`|
-|`DeviceCommand(Integer id, String name)`|
-|`DeviceCommand(Integer deviceTypeId, Integer stateId, String name)`|
-|`DeviceCommand(Integer id, Integer deviceTypeId, Integer stateId, String name)`|
-|`DeviceCommand(Integer id, Integer lookupId, Integer deviceTypeId, Integer stateId)`|
+|`DeviceCommand(String name, Integer deviceTypeId)`|
+|`DeviceCommand(int id, String name, Integer deviceTypeId)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`    
+- `insertOrUpdate`
+- `toString()`
+
+#### DeviceCommandLookup
+###### Schema:
+|Property  |Type      |
+|------------:|:---------|
+|id           |int       |  
+|stateId      |Integer   | 
+|commandId    |Integer   |
+
+###### Constructors:
+|Definition |  
+|:---|
+|`DeviceCommandLookup()`|
+|`DeviceCommandLookup(Integer stateId, Integer commandId)`|
+|`DeviceCommandLookup(int id, Integer stateId, Integer commandId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
