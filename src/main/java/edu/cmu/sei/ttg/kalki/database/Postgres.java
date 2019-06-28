@@ -15,6 +15,8 @@ import java.net.URL;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import java.util.HashMap; ////REEEEEMOOOOVEEEE
+
 public class Postgres {
     private static final String DEFAULT_IP = "localhost";
     private static final String DEFAULT_PORT = "5432";
@@ -233,6 +235,41 @@ public class Postgres {
     }
 
     /**
+     * Insert test data for dashboard
+     */
+    private static void insertTestData() {
+        // insert security state(s)
+        SecurityState securityState = new SecurityState("TestState");
+        securityState.insert();
+
+        // insert device_type
+        DeviceType deviceType = new DeviceType(0, "TestDeviceType");
+        deviceType.insert();
+
+        // insert device
+        Device device = new Device("TestDevice", "this is a test device", deviceType, "0.0.0.0", 123, 123);
+        device.insert();
+
+        // insert device_security_state
+        DeviceSecurityState deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());
+        deviceSecurityState.insert();
+
+        device.setCurrentState(deviceSecurityState);
+
+        HashMap<String, String> hmap = new HashMap<String, String>();
+        hmap.put("key", "value");
+        hmap.put("key2", "value2");
+        DeviceStatus deviceStatus = new DeviceStatus(device.getId(), hmap);
+        deviceStatus.insert();
+
+        HashMap<String, String> hmapTwo = new HashMap<String, String>();
+        hmapTwo.put("otherKey", "otherValue");
+        hmapTwo.put("otherKey2", "otherValue2");
+        DeviceStatus deviceStatusTwo = new DeviceStatus(device.getId(), hmapTwo);
+        deviceStatusTwo.insert();
+    }
+
+    /**
      * First time database setup.
      * Creates necessary extensions, databases, and tables
      */
@@ -250,6 +287,9 @@ public class Postgres {
         initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
+
+        //TODO: remove test data
+        insertTestData();
 
         //TODO:
         //initDB("db-umbox-images.sql");
