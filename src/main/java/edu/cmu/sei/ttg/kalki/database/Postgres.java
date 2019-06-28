@@ -1350,20 +1350,17 @@ public class Postgres {
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        List<DeviceCommandLookup> commandLookups = new ArrayList<DeviceCommandLookup>();
+        ResultSet rs = getAllFromTable("command_lookup");
+        List<DeviceCommandLookup> commands = new ArrayList<DeviceCommandLookup>();
         try {
-            st = dbConn.prepareStatement("SELECT cl.command_id, cl.state_id, cl.id FROM command_lookup AS cl, command AS c WHERE c.id = cl.command_id");
-            rs = st.executeQuery();
             while (rs.next()) {
-                commandLookups.add(rsToCommandLookup(rs));
+                commands.add(rsToCommandLookup(rs));
             }
             rs.close();
         } catch (SQLException e) {
-            logger.severe("Sql exception getting all device commands: " + e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Sql exception getting all device command lookups.");
         }
-        return commandLookups;
+        return commands;
     }
 
     /**
