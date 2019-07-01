@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,19 +25,13 @@ public class CommandLookupTest extends AUsesDatabase {
     private static DeviceCommand deviceCommand;
     private static DeviceCommandLookup deviceCommandLookup;
 
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
-
     /*
         Command Lookup Action Tests
      */
 
     @Test
     public void testFindAllCommandLookups() {
-        assertEquals(Postgres.findAllCommandLookups().size(), 2);
+        assertEquals(1, Postgres.findAllCommandLookups().size());
     }
 
     @Test
@@ -50,21 +42,21 @@ public class CommandLookupTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateCommandLookup() {
-        assertEquals(2, Postgres.findAllCommandLookups().size());
+        assertEquals(1, Postgres.findAllCommandLookups().size());
 
         deviceCommandLookup.setStateId(securityStateTwo.getId());
         deviceCommandLookup.insertOrUpdate();
 
         assertEquals(deviceCommandLookup.getStateId(),
                 Postgres.findCommandLookup(deviceCommandLookup.getId()).getStateId());
-        assertEquals(2, Postgres.findAllCommandLookups().size());
+        assertEquals(1, Postgres.findAllCommandLookups().size());
 
         DeviceCommandLookup newLookup =
                 new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
 
         int newId = newLookup.insertOrUpdate();
 
-        assertEquals(3, Postgres.findAllCommandLookups().size());
+        assertEquals(2, Postgres.findAllCommandLookups().size());
         assertEquals(newLookup.toString(), Postgres.findCommandLookup(newId).toString());
     }
 
@@ -78,7 +70,7 @@ public class CommandLookupTest extends AUsesDatabase {
         assertEquals(null, Postgres.findCommandLookup(deviceCommandLookup.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert security state(s)
         securityState = new SecurityState("Normal");
         securityState.insert();

@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,12 +19,6 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class TagTest extends AUsesDatabase {
     private static Tag tag;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
     /*
         Test Tag Actions
@@ -65,7 +57,7 @@ public class TagTest extends AUsesDatabase {
         assertEquals(null, Postgres.findTag(tag.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert Tag
         tag = new Tag("Tag1");
         tag.insert();

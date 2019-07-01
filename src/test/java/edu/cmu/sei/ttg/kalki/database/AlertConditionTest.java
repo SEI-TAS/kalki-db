@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +25,6 @@ public class AlertConditionTest extends AUsesDatabase {
     private static Device device;
     private static Device deviceTwo;
     private static AlertType alertType;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
     /*
         Alert Condition Action Tests
@@ -101,7 +93,7 @@ public class AlertConditionTest extends AUsesDatabase {
         assertEquals(3, Postgres.findAllAlertConditions().size());
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();

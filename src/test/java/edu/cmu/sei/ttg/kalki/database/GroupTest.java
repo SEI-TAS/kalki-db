@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,12 +19,6 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class GroupTest extends AUsesDatabase {
     private static Group group;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
     /*
         Test Group Actions
@@ -65,7 +57,7 @@ public class GroupTest extends AUsesDatabase {
         assertEquals(null, Postgres.findGroup(group.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert Group
         group = new Group("Test Group");
         group.insert();

@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,12 +21,6 @@ public class DeviceTypeTest extends AUsesDatabase {
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
 
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
-
     /*
         Test Device Type Actions
      */
@@ -43,26 +35,26 @@ public class DeviceTypeTest extends AUsesDatabase {
     public void testFindAllDeviceTypes() {
         ArrayList<DeviceType> foundTypes = new ArrayList<DeviceType>(Postgres.findAllDeviceTypes());
 
-        assertEquals(6, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
+        assertEquals(2, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
     }
 
     @Test
     public void testInsertOrUpdateDeviceType() {
         ArrayList<DeviceType> foundTypes = new ArrayList<DeviceType>(Postgres.findAllDeviceTypes());
-        assertEquals(6, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
+        assertEquals(2, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
 
         deviceType.setName("changed name");
         deviceType.insertOrUpdate();
 
         foundTypes = new ArrayList<DeviceType>(Postgres.findAllDeviceTypes());
-        assertEquals(6, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
+        assertEquals(2, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
         assertEquals(deviceType.getName(), Postgres.findDeviceType(deviceType.getId()).getName());
 
         DeviceType newDeviceType = new DeviceType(0, "new device type");
         int newId = newDeviceType.insertOrUpdate();
 
         foundTypes = new ArrayList<DeviceType>(Postgres.findAllDeviceTypes());
-        assertEquals(7, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
+        assertEquals(3, foundTypes.size()); //4 inserted by setupDatabase() plus 2 in insertData()
         assertEquals(newDeviceType.toString(), Postgres.findDeviceType(newDeviceType.getId()).toString());
     }
 
@@ -76,7 +68,7 @@ public class DeviceTypeTest extends AUsesDatabase {
     }
 
 
-    private static void insertData() {
+    public void insertData() {
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();

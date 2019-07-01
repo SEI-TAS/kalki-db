@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,12 +25,6 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
     private static Device device;
     private static Device deviceTwo;
     private static DeviceSecurityState deviceSecurityState;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
      /*
         Test Device Security State Actions
@@ -89,7 +81,7 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
         assertEquals(null, Postgres.findDeviceSecurityState(deviceSecurityState.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert security state(s)
         securityState = new SecurityState("Normal");
         securityState.insert();

@@ -2,6 +2,7 @@ package edu.cmu.sei.ttg.kalki.database;
 
 import org.junit.Test;
 import org.junit.BeforeClass;
+import org.junit.Before;
 
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
@@ -33,4 +34,12 @@ public abstract class AUsesDatabase {
             hasRun = true;
         }
     }
+
+    @Before
+    public void resetDB() {
+        Postgres.setupTestDatabase();
+        insertData();
+    }
+
+    public abstract void insertData();
 }

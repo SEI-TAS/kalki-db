@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,12 +26,6 @@ public class CommandTest extends AUsesDatabase {
     private static DeviceCommandLookup deviceCommandLookup;
     private static DeviceSecurityState deviceSecurityState;
 
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
-
     /*
         Command Action Tests
      */
@@ -45,7 +37,7 @@ public class CommandTest extends AUsesDatabase {
 
     @Test
     public void testFindAllCommands() {
-        assertEquals(2, Postgres.findAllCommands().size());
+        assertEquals(1, Postgres.findAllCommands().size());
     }
 
     @Test
@@ -58,19 +50,19 @@ public class CommandTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateCommand() {
-        assertEquals(2, Postgres.findAllCommands().size());
+        assertEquals(1, Postgres.findAllCommands().size());
 
         deviceCommand.setName("new command");
         deviceCommand.insertOrUpdate();
 
         assertEquals(deviceCommand.getName(), Postgres.findCommand(deviceCommand.getId()).getName());
-        assertEquals(2, Postgres.findAllCommands().size());
+        assertEquals(1, Postgres.findAllCommands().size());
 
         DeviceCommand newCommand = new DeviceCommand("new command 2", deviceType.getId());
 
         int newId = newCommand.insertOrUpdate();
 
-        assertEquals(3, Postgres.findAllCommands().size());
+        assertEquals(2, Postgres.findAllCommands().size());
         assertEquals(newCommand.toString(), Postgres.findCommand(newId).toString());
     }
 
@@ -84,7 +76,7 @@ public class CommandTest extends AUsesDatabase {
         assertEquals(null, Postgres.findCommand(deviceCommand.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert security state(s)
         securityState = new SecurityState("Normal");
         securityState.insert();
