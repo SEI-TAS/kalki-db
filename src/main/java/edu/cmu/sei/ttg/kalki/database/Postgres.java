@@ -723,7 +723,6 @@ public class Postgres {
 
             return getLatestId("alert");
         } catch (SQLException e) {
-            System.out.println("ERRORORORORO: " +e.getMessage());
             e.printStackTrace();
             logger.severe("Error inserting Alert: " + alert.toString() + " " + e.getClass().getName() + ": " + e.getMessage());
         }
