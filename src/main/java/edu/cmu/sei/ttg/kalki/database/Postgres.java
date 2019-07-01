@@ -15,8 +15,6 @@ import java.net.URL;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import java.util.HashMap; ////REEEEEMOOOOVEEEE
-
 public class Postgres {
     private static final String DEFAULT_IP = "localhost";
     private static final String DEFAULT_PORT = "5432";
@@ -235,92 +233,6 @@ public class Postgres {
     }
 
     /**
-     * Insert test data for dashboard
-     */
-    private static void insertTestData() {
-        // insert security state(s)
-        SecurityState securityState = new SecurityState("TestState");
-        securityState.insert();
-
-        // insert device_type
-        DeviceType deviceType = new DeviceType(0, "TestDeviceType");
-        deviceType.insert();
-
-        // insert device
-        Device device = new Device("TestDevice", "this is a test device", deviceType, "0.0.0.0", 123, 123);
-        device.insert();
-
-        // insert device_security_state
-        DeviceSecurityState deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());
-        deviceSecurityState.insert();
-
-        device.setCurrentState(deviceSecurityState);
-
-        //insert device statuses
-        HashMap<String, String> hmap = new HashMap<String, String>();
-        hmap.put("key", "value");
-        hmap.put("key2", "value2");
-        DeviceStatus deviceStatus = new DeviceStatus(device.getId(), hmap);
-        deviceStatus.insert();
-
-        HashMap<String, String> hmapTwo = new HashMap<String, String>();
-        hmapTwo.put("otherKey", "otherValue");
-        hmapTwo.put("otherKey2", "otherValue2");
-        DeviceStatus deviceStatusTwo = new DeviceStatus(device.getId(), hmapTwo);
-        deviceStatusTwo.insert();
-
-        // insert alert_type
-        AlertType alertType = new AlertType("testAlertType", "test alert type", "test source");
-        alertType.insert();
-
-        AlertType alertTypeTwo = new AlertType("testAlertTypeTwo", "test alert type two", "test source two");
-        alertTypeTwo.insert();
-
-        // insert umbox_image
-        UmboxImage umboxImage = new UmboxImage("testUmboxImage", "path/to/test/image");
-        umboxImage.insert();
-
-        // insert umbox_instance from umbox_lookup
-        UmboxInstance umboxInstance = new UmboxInstance("testUmboxInstance", umboxImage.getId(), device.getId());
-        umboxInstance.insert();
-
-        // insert alert for device_status/alert_type
-        Alert alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
-        alertIoT.insert();
-
-        // insert alert for alerter_id/alert_type
-        Alert alertUmBox = new Alert(alertTypeTwo.getName(), umboxInstance.getAlerterId(), alertTypeTwo.getId());
-        alertUmBox.insert();
-
-        //--------------SECOND TEST DEVICE---------------
-        // insert security state(s)
-        SecurityState securityStateTwo = new SecurityState("TestStateTwo");
-        securityStateTwo.insert();
-
-        // insert device_type
-        DeviceType deviceTypeTwo = new DeviceType(0, "TestDeviceTypeTwo");
-        deviceTypeTwo.insert();
-
-        // insert device
-        Device deviceTwo = new Device("TestDeviceTwo", "this is a test device two",
-                deviceTypeTwo, "127.0.0.1", 6666, 6666);
-        deviceTwo.insert();
-
-        // insert device_security_state
-        DeviceSecurityState deviceSecurityStateTwo = new DeviceSecurityState(deviceTwo.getId(), securityStateTwo.getId());
-        deviceSecurityStateTwo.insert();
-
-        deviceTwo.setCurrentState(deviceSecurityState);
-
-        DeviceStatus deviceStatusThree = new DeviceStatus(deviceTwo.getId(), hmapTwo);
-        deviceStatusThree.insert();
-
-        // insert alert for device_status/alert_type
-        Alert alertIoTTwo = new Alert(alertTypeTwo.getName(), deviceStatusThree.getId(), alertTypeTwo.getId());
-        alertIoTTwo.insert();
-    }
-
-    /**
      * First time database setup.
      * Creates necessary extensions, databases, and tables
      */
@@ -338,12 +250,6 @@ public class Postgres {
         initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
-
-        //TODO: remove test data
-        insertTestData();
-
-        //TODO:
-        //initDB("db-umbox-images.sql");
     }
 
     /**
@@ -358,8 +264,6 @@ public class Postgres {
         initDB("db-tables.sql");
         initDB("db-triggers.sql");
     }
-
-
 
     /**
      * Add the hstore extension to the postgres database.
