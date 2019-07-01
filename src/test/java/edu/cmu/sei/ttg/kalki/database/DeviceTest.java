@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,12 +29,6 @@ public class DeviceTest extends AUsesDatabase {
     private static DeviceStatus deviceStatus;
     private static Alert alertIoT;
     private static Alert alertUmBox;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
      /*
         Test Device Actions
@@ -100,7 +92,7 @@ public class DeviceTest extends AUsesDatabase {
         assertEquals(null, Postgres.findDevice(deviceTwo.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();

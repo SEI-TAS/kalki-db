@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,12 +26,6 @@ public class UmboxLookupTest extends AUsesDatabase {
     private static Device deviceTwo;
     private static UmboxImage umboxImage;
     private static UmboxLookup umboxLookup;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
     /*
         test umbox lookup actions
@@ -75,7 +67,7 @@ public class UmboxLookupTest extends AUsesDatabase {
         assertEquals(null, Postgres.findUmboxLookup(umboxLookup.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert security state(s)
         securityState = new SecurityState("Normal");
         securityState.insert();

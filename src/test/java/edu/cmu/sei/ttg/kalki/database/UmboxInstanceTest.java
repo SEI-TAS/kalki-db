@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,11 +26,6 @@ public class UmboxInstanceTest extends AUsesDatabase {
     private static UmboxImage umboxImage;
     private static UmboxInstance umboxInstance;
 
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
 
      /*
         Test umbox instance actions
@@ -84,7 +77,7 @@ public class UmboxInstanceTest extends AUsesDatabase {
         assertEquals(null, Postgres.findUmboxInstance(umboxInstance.getAlerterId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();

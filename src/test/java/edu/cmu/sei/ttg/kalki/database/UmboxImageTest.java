@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,12 +20,6 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 public class UmboxImageTest extends AUsesDatabase {
     private static UmboxImage umboxImage;
 
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
-
     /*
         Test Umbox Image Actions
      */
@@ -39,22 +31,22 @@ public class UmboxImageTest extends AUsesDatabase {
 
     @Test
     public void testFindAllUmboxImages() {
-        assertEquals(2, Postgres.findAllUmboxImages().size()); //one added in setupDatabase and one in insertData
+        assertEquals(1, Postgres.findAllUmboxImages().size());
     }
 
     @Test
     public void testInsertOrUpdateUmboxImage() {
-        assertEquals(2, Postgres.findAllUmboxImages().size());
+        assertEquals(1, Postgres.findAllUmboxImages().size());
 
         umboxImage.setName("changed name");
         umboxImage.insertOrUpdate();
 
-        assertEquals(2, Postgres.findAllUmboxImages().size());
+        assertEquals(1, Postgres.findAllUmboxImages().size());
         assertEquals(umboxImage.toString(), Postgres.findUmboxImage(umboxImage.getId()).toString());
 
         UmboxImage newImage = new UmboxImage("image2", "path/to/new/image");
         int newId = newImage.insertOrUpdate();
-        assertEquals(3, Postgres.findAllUmboxImages().size());
+        assertEquals(2, Postgres.findAllUmboxImages().size());
         assertEquals(newImage.toString(), Postgres.findUmboxImage(newId).toString());
     }
 
@@ -65,7 +57,7 @@ public class UmboxImageTest extends AUsesDatabase {
         assertEquals(null, Postgres.findUmboxImage(umboxImage.getId()));
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert umbox_image
         umboxImage = new UmboxImage("UmboxImage", "path/to/image");
         umboxImage.insert();

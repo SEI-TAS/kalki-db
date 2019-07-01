@@ -348,6 +348,21 @@ public class Postgres {
     }
 
     /**
+     * First time database setup for tests.
+     * Creates necessary extensions, databases, and tables
+     */
+    public static void setupTestDatabase() {
+        logger.info("Setting up test database.");
+        dropTables();
+        createHstoreExtension();
+        // DB Structure
+        initDB("db-tables.sql");
+        initDB("db-triggers.sql");
+    }
+
+
+
+    /**
      * Add the hstore extension to the postgres database.
      */
     public static void createHstoreExtension() {

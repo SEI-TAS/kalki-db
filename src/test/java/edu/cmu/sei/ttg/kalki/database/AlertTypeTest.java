@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.Before;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,12 +19,8 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class AlertTypeTest extends AUsesDatabase {
     private static AlertType alertType;
-
-    @Before
-    public void resetDB() {
-        Postgres.resetDatabase();
-        insertData();
-    }
+    private static DeviceType deviceType;
+    private static DeviceType deviceTypeTwo;
 
     /*
         Alert Type Action Tests
@@ -42,15 +36,20 @@ public class AlertTypeTest extends AUsesDatabase {
     public void testFindAllAlertTypes() {
         List<AlertType> alertTypeList = new ArrayList<AlertType>(Postgres.findAllAlertTypes());
 
-        assertEquals(24, alertTypeList.size());     //alertType plus the 23 added in Postgres.setupDatabase()
-        assertEquals(alertType.toString(), alertTypeList.get(23).toString());
+        assertEquals(1, alertTypeList.size());
+        assertEquals(alertType.toString(), alertTypeList.get(0).toString());
     }
 
     @Test
-    public void testFindAlertTypesByDeviceType() {  //based on the setup database script
-        List<AlertType> atList = new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(2));
+    public void testFindAlertTypesByDeviceType() {
+        List<AlertType> atList =
+                new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(deviceType.getId()));
 
-        assertEquals(atList.size(), 14);
+        assertEquals(1, atList.size());
+        assertEquals(alertType.toString(), atList.get(0).toString());
+
+        atList = new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(deviceTypeTwo.getId()));
+        assertEquals(0, atList.size());
     }
 
     @Test
@@ -65,23 +64,33 @@ public class AlertTypeTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateAlertType() {
-        assertEquals(24, Postgres.findAllAlertTypes().size());
+        assertEquals(1, Postgres.findAllAlertTypes().size());
 
         alertType.setDescription("new description");
         alertType.insertOrUpdate();
 
-        assertEquals(24, Postgres.findAllAlertTypes().size());
+        assertEquals(1, Postgres.findAllAlertTypes().size());
 
         AlertType newAlertType = new AlertType("AlertType2", "test alert type 2", "IoT Monitor");
         int newId = newAlertType.insertOrUpdate();
 
-        assertEquals(25, Postgres.findAllAlertTypes().size());
+        assertEquals(2, Postgres.findAllAlertTypes().size());
         assertEquals(newAlertType.toString(), Postgres.findAlertType(newId).toString());
     }
 
-    private static void insertData() {
+    public void insertData() {
         // insert alert_type unts-temperature
         alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
         alertType.insert();
+
+        //insert device type
+        deviceType = new DeviceType(-1, "testDeviceType");
+        deviceType.insert();
+
+        deviceTypeTwo = new DeviceType(-1, "testDeviceType2");
+        deviceTypeTwo.insert();
+
+        Postgres.executeCommand("INSERT INTO alert_type_lookup(alert_type_id, device_type_id) values " +
+                "("+alertType.getId()+ ", " +deviceType.getId()+");");
     }
 }
