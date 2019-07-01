@@ -70,6 +70,7 @@ Device device = Postgres.findDevice(deviceId);
 |:-----------------------------------------------|:--------|
 |`findAlert(int id) `                             |`Alert`      |
 |`findAlerts(List<String> alerterIds)`            |`List<Alert>`|  
+|`findAlertsByDevice(Integer deviceId)`           |`List<Alert>`|  
 |`insertAlert(Alert alert)`                       |`Integer`           |
 |`updateAlert(Alert alert)`                       |`Integer`           |
 |`deleteAlert(int id)`                            |`Boolean`           |

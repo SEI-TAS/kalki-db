@@ -645,7 +645,6 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
-            System.out.println("ERRORORORORO: " +e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
