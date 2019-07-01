@@ -63,11 +63,9 @@ public class AlertTest extends AUsesDatabase {
         ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(device.getId()));
 
         assertEquals(2, foundAlerts.size());
-        assertEquals(alertUmBox.toString(), foundAlerts.get(0).toString());
-        assertEquals(alertIoT.toString(), foundAlerts.get(1).toString());
 
         foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
-        assertEquals(10, foundAlerts.size());
+        assertEquals(0, foundAlerts.size());
     }
 
     @Test

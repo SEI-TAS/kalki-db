@@ -289,7 +289,7 @@ public class Postgres {
         alertIoT.insert();
 
         // insert alert for alerter_id/alert_type
-        Alert alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(),
+        Alert alertUmBox = new Alert(alertTypeTwo.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(),
                 alertTypeTwo.getId());
         alertUmBox.insert();
 
@@ -341,7 +341,7 @@ public class Postgres {
         initDB("db-alert-type-lookups.sql");
 
         //TODO: remove test data
-        //insertTestData();
+        insertTestData();
 
         //TODO:
         //initDB("db-umbox-images.sql");
@@ -706,8 +706,12 @@ public class Postgres {
             return null;
         }
         List<Alert> alertHistory = new ArrayList<Alert>();
+
         try {
-            st = dbConn.prepareStatement("SELECT * FROM alert WHERE a.device_status_id = ds.id AND ds.device_id = ?");
+            st = dbConn.prepareStatement("SELECT DISTINCT alert.id, alert.name, alert.timestamp, alert.alert_type_id, " +
+                    "  alert.alerter_id, alert.device_status_id FROM alert" +
+                    "  INNER JOIN device_status ON alert.device_status_id = device_status.id" +
+                    "  INNER JOIN device ON device_status.device_id = ?;");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -715,6 +719,7 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("ERRORORORORO: " +e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
