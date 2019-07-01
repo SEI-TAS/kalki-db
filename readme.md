@@ -346,9 +346,9 @@ Device device = Postgres.findDevice(deviceId);
 ###### Constructors:  
 |Definition|
 |:-----------------------------------------------|
+|`Alert()`|
 |`Alert(String name, String alerterId, int alertTypeId)`|
 |`Alert(String name, Integer deviceStatusId, int alertTypeId)`|
-|`Alert(String name, String alerterId, Integer deviceStatusId, int alertTypeId)`|
 |`Alert(String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId)`|
 |`Alert(int id, String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId)`|
 ###### Methods

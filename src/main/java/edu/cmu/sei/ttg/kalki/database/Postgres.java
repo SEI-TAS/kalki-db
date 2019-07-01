@@ -289,8 +289,7 @@ public class Postgres {
         alertIoT.insert();
 
         // insert alert for alerter_id/alert_type
-        Alert alertUmBox = new Alert(alertTypeTwo.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(),
-                alertTypeTwo.getId());
+        Alert alertUmBox = new Alert(alertTypeTwo.getName(), umboxInstance.getAlerterId(), alertTypeTwo.getId());
         alertUmBox.insert();
 
         //--------------SECOND TEST DEVICE---------------
@@ -723,10 +722,18 @@ public class Postgres {
         List<Alert> alertHistory = new ArrayList<Alert>();
 
         try {
-            st = dbConn.prepareStatement("SELECT DISTINCT alert.id, alert.name, alert.timestamp, alert.alert_type_id, " +
-                    "  alert.alerter_id, alert.device_status_id FROM alert" +
-                    "  INNER JOIN device_status ON alert.device_status_id = device_status.id" +
-                    "  INNER JOIN device ON device_status.device_id = ?;");
+            //retrieve all IoT device alerts
+            st = dbConn.prepareStatement("SELECT alert.* FROM alert, device_status " +
+                    "WHERE alert.device_status_id = device_status.id AND device_status.device_id = ?;");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                alertHistory.add(rsToAlert(rs));
+            }
+
+            //retrieve all UmBox alerts
+            st = dbConn.prepareStatement("SELECT alert.* FROM alert, umbox_instance " +
+                    "WHERE alert.alerter_id = umbox_instance.alerter_id AND umbox_instance.device_id = ?;");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -780,6 +787,7 @@ public class Postgres {
 
     /**
      * Insert a row into the alert table
+     * Will insert the alert with either an alerterId or deviceStatusId, but not both
      *
      * @param alert The Alert to be added
      * @return id of new Alert on success. -1 on error
@@ -791,15 +799,28 @@ public class Postgres {
             return -1;
         }
         try {
-            PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
-            insertAlert.setString(1, alert.getName());
-            insertAlert.setTimestamp(2, alert.getTimestamp());
-            insertAlert.setInt(3, alert.getAlertTypeId());
-            insertAlert.setString(4, alert.getAlerterId());
-            insertAlert.setInt(5, alert.getDeviceStatusId());
+            PreparedStatement insertAlert;
+            if(alert.getDeviceStatusId() == 0) {
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id) VALUES (?,?,?,?);");
+                insertAlert.setString(1, alert.getName());
+                insertAlert.setTimestamp(2, alert.getTimestamp());
+                insertAlert.setInt(3, alert.getAlertTypeId());
+                insertAlert.setString(4, alert.getAlerterId());
+            }
+            else {
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
+                insertAlert.setString(1, alert.getName());
+                insertAlert.setTimestamp(2, alert.getTimestamp());
+                insertAlert.setInt(3, alert.getAlertTypeId());
+                insertAlert.setString(4, alert.getAlerterId());
+                insertAlert.setInt(5, alert.getDeviceStatusId());
+            }
+
             insertAlert.executeUpdate();
+
             return getLatestId("alert");
         } catch (SQLException e) {
+            System.out.println("ERRORORORORO: " +e.getMessage());
             e.printStackTrace();
             logger.severe("Error inserting Alert: " + alert.toString() + " " + e.getClass().getName() + ": " + e.getMessage());
         }

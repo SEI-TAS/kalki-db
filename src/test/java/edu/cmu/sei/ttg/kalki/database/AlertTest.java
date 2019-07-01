@@ -62,7 +62,7 @@ public class AlertTest extends AUsesDatabase {
 
     @Test
     public void testInsertAlert() {
-        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(), alertType.getId());
+        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
         assertEquals(null, Postgres.findAlert(3));
 
         newAlert.insert();
@@ -131,7 +131,7 @@ public class AlertTest extends AUsesDatabase {
         alertIoT.insert();
 
         // insert alert for alerter_id/alert_type
-        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(), alertType.getId());
+        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
         alertUmBox.insert();
     }
 }
