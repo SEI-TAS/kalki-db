@@ -1,22 +1,24 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class AlertCondition {
     private int id;
-    private Map<String,String> variables;
+    private Map<String, String> variables;
     private Integer deviceId;
     private Integer deviceTypeId;
     private int alertTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public AlertCondition() {}
+    public AlertCondition() {
+    }
 
     public AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId) {
         this.variables = variables;
@@ -61,7 +63,9 @@ public class AlertCondition {
         this.deviceId = deviceId;
     }
 
-    public Integer getDeviceTypeId(){ return deviceTypeId; }
+    public Integer getDeviceTypeId() {
+        return deviceTypeId;
+    }
 
     public void setDeviceTypeId(Integer deviceTypeId) {
         this.deviceTypeId = deviceTypeId;
@@ -75,27 +79,24 @@ public class AlertCondition {
         this.alertTypeId = alertTypeId;
     }
 
-    public void insert() {
-        if(deviceId != null) {
-            Postgres.insertAlertCondition(this).thenApplyAsync(id->{
-                this.id = id;
-                return id;
-            });
+    public Integer insert() {
+        if (deviceId != null) {
+            this.id = Postgres.insertAlertCondition(this);
+            return this.id;
         } else {
-            Postgres.insertAlertConditionByDeviceType(this).thenApplyAsync(id -> { return id; });
+            return Postgres.insertAlertConditionByDeviceType(this);
         }
-
     }
 
-    public CompletionStage<Integer> insertOrUpdate() {
-            return Postgres.insertOrUpdateAlertCondition(this);
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateAlertCondition(this);
+        return this.id;
     }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad AlertCondition";
         }
     }

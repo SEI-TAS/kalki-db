@@ -1,15 +1,15 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.cmu.sei.ttg.kalki.database.Postgres;
-import java.util.concurrent.CompletionStage;
 
 public class UmboxImage {
 
     private int id;
     private String name;
-    private String path;
+    private String fileName;
     private Integer dagOrder;
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -17,22 +17,22 @@ public class UmboxImage {
 
     }
 
-    public UmboxImage(String name, String path){
+    public UmboxImage(String name, String fileName){
         this.name = name;
-        this.path = path;
+        this.fileName = fileName;
     }
 
-    public UmboxImage(int id, String name, String path){
+    public UmboxImage(int id, String name, String fileName){
         this.id = id;
         this.name = name;
-        this.path = path;
+        this.fileName = fileName;
         this.dagOrder = null;
     }
 
-    public UmboxImage(int id, String name, String path, Integer dagOrder) {
+    public UmboxImage(int id, String name, String fileName, Integer dagOrder) {
         this.id = id;
         this.name = name;
-        this.path = path;
+        this.fileName = fileName;
         this.dagOrder = dagOrder;
     }
 
@@ -52,12 +52,12 @@ public class UmboxImage {
         this.name = name;
     }
 
-    public String getPath() {
-        return path;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public Integer getDagOrder() {
@@ -71,19 +71,18 @@ public class UmboxImage {
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad umbox image";
         }
     }
 
-    public void insert() {
-        Postgres.insertUmboxImage(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        this.id = Postgres.insertUmboxImage(this);
+        return this.id;
     }
 
-    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateUmboxImage(this); }
-
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateUmboxImage(this);
+        return this.id;
+    }
 }

@@ -4,7 +4,6 @@ import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.concurrent.CompletionStage;
 
 public class Group {
 
@@ -42,20 +41,20 @@ public class Group {
         this.name = name;
     }
 
-    public void insert(){
-        Postgres.insertGroup(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        this.id = Postgres.insertGroup(this);
+        return this.id;
     }
 
-    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateGroup(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateGroup(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad Group";
         }
     }

@@ -1,9 +1,9 @@
 package edu.cmu.sei.ttg.kalki.models;
+
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.concurrent.CompletionStage;
 
 public class Tag {
 
@@ -16,7 +16,7 @@ public class Tag {
 
     }
 
-    public Tag(String name){
+    public Tag(String name) {
         this.name = name;
     }
 
@@ -41,20 +41,20 @@ public class Tag {
         this.name = name;
     }
 
-    public void insert(){
-        Postgres.insertTag(this).thenApplyAsync(id -> {
-            this.id = id;
-            return id;
-        });
+    public Integer insert() {
+        this.id = Postgres.insertTag(this);
+        return this.id;
     }
 
-    public CompletionStage<Integer> insertOrUpdate() { return Postgres.insertOrUpdateTag(this); }
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateTag(this);
+        return this.id;
+    }
 
     public String toString() {
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return "Bad Tag";
         }
     }
