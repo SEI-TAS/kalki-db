@@ -2883,6 +2883,42 @@ public class Postgres {
     }
 
     /**
+     * Find the respective tags for given device id
+     *
+     * @param deviceId The device id the tags are for
+     * @return A list of tags or null
+     */
+    public static List<Tag> findTagsByDevice(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            st = dbConn.prepareStatement("SELECT tag.* FROM tag, device_tag " +
+                    "WHERE tag.id = device_tag.tag_id AND device_tag.device_id = ?");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+
+            List<Tag> tags = new ArrayList<Tag>();
+            while (rs.next()) {
+                tags.add(rsToTag(rs));
+            }
+            return tags;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error finding tags by device_id: " + deviceId + ": " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) rs.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (st != null) st.close();
+            } catch (Exception e) {
+            }
+        }
+        return null;
+    }
+
+    /**
      * Find the respective tag ids for given device id
      *
      * @param deviceId The device id the tags are for
