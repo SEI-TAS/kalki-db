@@ -1,23 +1,28 @@
-package kalkidb.models;
+package edu.cmu.sei.ttg.kalki.models;
+
+import edu.cmu.sei.ttg.kalki.database.Postgres;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class UmboxImage {
+public class Group {
 
     private int id;
     private String name;
-    private String path;
+
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public UmboxImage() {
+    public Group() {
 
     }
 
-    public UmboxImage(int id, String name, String path) {
+    public Group(String name) {
+        this.name = name;
+    }
+
+    public Group(int id, String name) {
         this.id = id;
         this.name = name;
-        this.path = path;
     }
 
     public int getId() {
@@ -36,22 +41,21 @@ public class UmboxImage {
         this.name = name;
     }
 
-    public String getPath() {
-        return path;
+    public Integer insert() {
+        this.id = Postgres.insertGroup(this);
+        return this.id;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public Integer insertOrUpdate() {
+        this.id = Postgres.insertOrUpdateGroup(this);
+        return this.id;
     }
 
     public String toString() {
-//        return String.format("{ id: \"%d\", name: \"%s\", path: \"%s\" }", id, name, path);
         try {
             return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad umbox image";
+        } catch (JsonProcessingException e) {
+            return "Bad Group";
         }
     }
-
 }
