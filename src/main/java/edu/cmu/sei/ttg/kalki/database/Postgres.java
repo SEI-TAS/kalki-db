@@ -13,7 +13,7 @@ public class Postgres {
     private static final String DEFAULT_IP = "localhost";
     private static final String DEFAULT_PORT = "5432";
 
-    private static final String ROOT_USER = "kalkiuser";
+    private static final String DEFAULT_ROOT_USER = "kalkiuser";
     private static final String BASE_DB = "postgres";
     private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
 
