@@ -1843,6 +1843,7 @@ public class Postgres {
                 if (st != null) st.close();
             } catch (Exception e) {
             }
+            return false;
         }
     }
 
