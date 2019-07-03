@@ -1425,6 +1425,31 @@ public class Postgres {
     }
 
     /**
+     * Finds a command lookup based on the given command id
+     */
+    public static DeviceCommandLookup findCommandLookupByCommand(int commandId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM command_lookup WHERE command_id = ?");
+            st.setInt(1, commandId);
+            rs = st.executeQuery();
+            if (!rs.next()) {
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        return rsToCommandLookup(rs);
+    }
+
+    /**
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
@@ -3659,6 +3684,35 @@ public class Postgres {
 
         return rsToUmboxLookup(rs);
     }
+
+    /**
+     * Finds a UmboxLookup from the database by its UmboxImageId.
+     *
+     * @param imageId id of the UmboxImage.
+     * @return the UmboxLookup if it exists in the database, else null.
+     */
+    public static UmboxLookup findUmboxLookupByImage(int imageId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM umbox_lookup WHERE umbox_image_id = ?");
+            st.setInt(1, imageId);
+            rs = st.executeQuery();
+            if (!rs.next()) {
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Exception finding umbox lookup by ID: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        return rsToUmboxLookup(rs);
+    }
+
 
     /**
      * Finds all umboxLookup entries

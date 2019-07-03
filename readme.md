@@ -143,6 +143,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
 |`findCommandLookup(int id)`           |`DeviceCommandLookup`|
+|`findCommandLookupByCommand(int commandId)`    |`DeviceCommandLookup`|
 |`findAllCommandLookups()`             |`<List<DeviceCommandLookup>>`|
 |`insertCommandLookup(DeviceCommandLookup commandLookup)`|`int`|
 |`insertOrUpdateCommandLookup(DeviceCommandLookup commandLookup)`|`<Integer>`|
@@ -325,6 +326,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxLookup(int id)`  |`UmboxLookup`|
+|`findUmboxLookupByImage(int imageId)`  |`UmboxLookup`|
 |`findAllUmboxLookups()`  |`List<UmboxLookup>`|
 |`insertUmboxLookup(UmboxLookup ul)`  |`Integer`|
 |`updateUmboxLookup(UmboxLookup ul)`  |`Integer`|

@@ -36,8 +36,14 @@ public class CommandLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindCommandLookup() {
-        assertEquals(Postgres.findCommandLookup(deviceCommandLookup.getId()).toString(),
-                deviceCommandLookup.toString());
+        assertEquals(deviceCommandLookup.toString(),
+                Postgres.findCommandLookup(deviceCommandLookup.getId()).toString());
+    }
+
+    @Test
+    public void testFindCommandLookupByCommand() {
+        assertEquals(deviceCommandLookup.toString(),
+                Postgres.findCommandLookupByCommand(deviceCommand.getId()).toString());
     }
 
     @Test

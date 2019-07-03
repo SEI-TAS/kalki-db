@@ -37,6 +37,11 @@ public class UmboxLookupTest extends AUsesDatabase {
     }
 
     @Test
+    public void testFindUmboxLookupByImage() {
+        assertEquals(umboxLookup.toString(), Postgres.findUmboxLookupByImage(umboxImage.getId()).toString());
+    }
+
+    @Test
     public void testFindAllUmboxLookups() {
         assertEquals(1, Postgres.findAllUmboxLookups().size());
     }
