@@ -273,9 +273,6 @@ public class Postgres {
         initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
-
-        //TODO:
-        //initDB("db-umbox-images.sql");
     }
 
     /**
@@ -290,8 +287,6 @@ public class Postgres {
         initDB("db-tables.sql");
         initDB("db-triggers.sql");
     }
-
-
 
     /**
      * Add the hstore extension to the postgres database.
@@ -639,6 +634,61 @@ public class Postgres {
     }
 
     /**
+     * Finds all Alerts from the database for the given deviceId.
+     *
+     * @param id of the device
+     * @return a list of all Alerts in the database associated to the device with the given id
+     */
+    public static List<Alert> findAlertsByDevice(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        List<Alert> alertHistory = new ArrayList<Alert>();
+
+        try {
+            //retrieve all IoT device alerts
+            st = dbConn.prepareStatement("SELECT alert.* FROM alert, device_status " +
+                    "WHERE alert.device_status_id = device_status.id AND device_status.device_id = ?;");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                alertHistory.add(rsToAlert(rs));
+            }
+
+            //retrieve all UmBox alerts
+            st = dbConn.prepareStatement("SELECT alert.* FROM alert, umbox_instance " +
+                    "WHERE alert.alerter_id = umbox_instance.alerter_id AND umbox_instance.device_id = ?;");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                alertHistory.add(rsToAlert(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception e) {
+            }
+            try {
+                if (st != null) {
+                    st.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+        return alertHistory;
+    }
+
+    /**
      * Extract an Alert from the result set of a database query.
      *
      * @param rs ResultSet from a Alert query.
@@ -663,6 +713,7 @@ public class Postgres {
 
     /**
      * Insert a row into the alert table
+     * Will insert the alert with either an alerterId or deviceStatusId, but not both
      *
      * @param alert The Alert to be added
      * @return id of new Alert on success. -1 on error
@@ -674,13 +725,25 @@ public class Postgres {
             return -1;
         }
         try {
-            PreparedStatement insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
-            insertAlert.setString(1, alert.getName());
-            insertAlert.setTimestamp(2, alert.getTimestamp());
-            insertAlert.setInt(3, alert.getAlertTypeId());
-            insertAlert.setString(4, alert.getAlerterId());
-            insertAlert.setInt(5, alert.getDeviceStatusId());
+            PreparedStatement insertAlert;
+            if(alert.getDeviceStatusId() == 0) {
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id) VALUES (?,?,?,?);");
+                insertAlert.setString(1, alert.getName());
+                insertAlert.setTimestamp(2, alert.getTimestamp());
+                insertAlert.setInt(3, alert.getAlertTypeId());
+                insertAlert.setString(4, alert.getAlerterId());
+            }
+            else {
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
+                insertAlert.setString(1, alert.getName());
+                insertAlert.setTimestamp(2, alert.getTimestamp());
+                insertAlert.setInt(3, alert.getAlertTypeId());
+                insertAlert.setString(4, alert.getAlerterId());
+                insertAlert.setInt(5, alert.getDeviceStatusId());
+            }
+
             insertAlert.executeUpdate();
+
             return getLatestId("alert");
         } catch (SQLException e) {
             e.printStackTrace();

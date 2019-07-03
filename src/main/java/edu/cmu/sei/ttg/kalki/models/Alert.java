@@ -28,7 +28,7 @@ public class Alert {
         this.name = name;
         this.alerterId = alerterId;
         this.alertTypeId = alertTypeId;
-        this.deviceStatusId = null;
+        this.deviceStatusId = 0;
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
@@ -42,16 +42,6 @@ public class Alert {
         this.timestamp = new Timestamp(millis);
     }
 
-    public Alert(String name, String alerterId, Integer deviceStatusId, int alertTypeId) {
-        this.name = name;
-        this.alerterId = alerterId;
-        this.deviceStatusId = deviceStatusId;
-        this.alertTypeId = alertTypeId;
-
-        long millis = System.currentTimeMillis();
-        this.timestamp = new Timestamp(millis);
-    }
-
     public Alert(String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId) {
         this.name = name;
         this.timestamp = timestamp;
@@ -59,7 +49,6 @@ public class Alert {
         this.deviceStatusId = deviceStatusId;
         this.alertTypeId = alertTypeId;
     }
-
 
     public Alert(int id, String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId) {
         this.id = id;
