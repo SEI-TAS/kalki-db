@@ -1425,28 +1425,40 @@ public class Postgres {
     }
 
     /**
-     * Finds a command lookup based on the given command id
+     * Finds all command lookups based on the given device id
      */
-    public static DeviceCommandLookup findCommandLookupByCommand(int commandId) {
+    public static List<DeviceCommandLookup> findCommandLookupsByDevice(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
+        int deviceTypeId = -1;
+        List<DeviceCommandLookup> lookupList = new ArrayList<DeviceCommandLookup>();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT * FROM command_lookup WHERE command_id = ?");
-            st.setInt(1, commandId);
+            st = dbConn.prepareStatement("SELECT device.type_id FROM device WHERE id = ?;");
+            st.setInt(1, deviceId);
             rs = st.executeQuery();
             if (!rs.next()) {
                 return null;
             }
+            deviceTypeId = rs.getInt("type_id");
+
+            st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, command c " +
+                    "WHERE c.device_type_id = ? AND cl.command_id = c.id;");
+            st.setInt(1, deviceTypeId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                lookupList.add(rsToCommandLookup(rs));
+            }
+            rs.close();
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
-        return rsToCommandLookup(rs);
+        return lookupList;
     }
 
     /**
@@ -3686,31 +3698,31 @@ public class Postgres {
     }
 
     /**
-     * Finds a UmboxLookup from the database by its UmboxImageId.
-     *
-     * @param imageId id of the UmboxImage.
-     * @return the UmboxLookup if it exists in the database, else null.
+     * Finds all umbox lookups based on the given device id
      */
-    public static UmboxLookup findUmboxLookupByImage(int imageId) {
+    public static List<UmboxLookup> findUmboxLookupsByDevice(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
+        List<UmboxLookup> lookupList = new ArrayList<UmboxLookup>();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT * FROM umbox_lookup WHERE umbox_image_id = ?");
-            st.setInt(1, imageId);
+            st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d " +
+                    "WHERE ul.device_type_id = d.type_id AND d.id = ?;");
+            st.setInt(1, deviceId);
             rs = st.executeQuery();
-            if (!rs.next()) {
-                return null;
+            while (rs.next()) {
+                lookupList.add(rsToUmboxLookup(rs));
             }
+            rs.close();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Exception finding umbox lookup by ID: " + e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
-        return rsToUmboxLookup(rs);
+        return lookupList;
     }
 
 
