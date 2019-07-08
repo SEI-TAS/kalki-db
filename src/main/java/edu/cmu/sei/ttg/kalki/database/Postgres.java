@@ -5,13 +5,7 @@ import org.postgresql.util.HStoreConverter;
 
 import java.sql.*;
 import java.util.*;
-import java.io.File;
-import java.io.FileReader;
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.FileNotFoundException;
-import java.net.URL;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -19,9 +13,9 @@ public class Postgres {
     private static final String DEFAULT_IP = "localhost";
     private static final String DEFAULT_PORT = "5432";
 
-    private static final String ROOT_USER = "kalkiuser";
+    private static final String DEFAULT_ROOT_USER = "kalkiuser";
     private static final String BASE_DB = "postgres";
-    private static final String DEFAULT_DB_URL = "jdbc:postgresql://" + DEFAULT_IP + ":" + DEFAULT_PORT;
+    private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
 
@@ -92,7 +86,7 @@ public class Postgres {
         try {
             Class.forName("org.postgresql.Driver");
             dbConn = DriverManager
-                    .getConnection("jdbc:postgresql://" + ip + ":" + port + "/" + this.dbName, this.dbUser, this.dbPassword);
+                    .getConnection(POSTGRES_URL_SCHEMA + ip + ":" + port + "/" + this.dbName, this.dbUser, this.dbPassword);
             return dbConn;
         } catch (Exception e) {
             e.printStackTrace();
@@ -105,10 +99,17 @@ public class Postgres {
      * Creates a DB if it does not exist.
      */
     public static boolean createDBIfNotExists(String rootPassword, String dbName, String dbOwner) throws SQLException {
+        return createDBIfNotExists(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, dbName, dbOwner);
+    }
+
+    /**
+     * Creates a DB if it does not exist.
+     */
+    public static boolean createDBIfNotExists(String ip, String rootUser, String rootPassword, String dbName, String dbOwner) throws SQLException {
         // First check it DB exists.
         String checkDB = "SELECT datname FROM pg_catalog.pg_database "
                 + "WHERE datname = '" + dbName + "';";
-        try (Connection rootConn = getRootConnection(rootPassword);
+        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword);
              Statement stmt = rootConn.createStatement();
              ResultSet result = stmt.executeQuery(checkDB)) {
             if (!result.next()) {
@@ -138,8 +139,15 @@ public class Postgres {
      * Removes the database.
      */
     public static void removeDatabase(String rootPassword, String dbName) {
+        removeDatabase(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, dbName);
+    }
+
+    /**
+     * Removes the database.
+     */
+    public static void removeDatabase(String ip, String rootUser, String rootPassword, String dbName) {
         logger.info("Removing database.");
-        try (Connection rootConn = getRootConnection(rootPassword)) {
+        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword)) {
             executeCommand("DROP DATABASE IF EXISTS " + dbName + ";", rootConn);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -151,8 +159,15 @@ public class Postgres {
      * Removes the user.
      */
     public static void removeUser(String rootPassword, String userName) {
+        removeUser(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, userName);
+    }
+
+    /**
+     * Removes the user.
+     */
+    public static void removeUser(String ip, String rootUser, String rootPassword, String userName) {
         logger.info("Removing user.");
-        try (Connection rootConn = getRootConnection(rootPassword)) {
+        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword)) {
             executeCommand("DROP ROLE IF EXISTS " + userName + ";", rootConn);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -165,6 +180,13 @@ public class Postgres {
      * Creates the user if it does not exist.
      */
     public static void createUserIfNotExists(String rootPassword, String user, String password) {
+        createUserIfNotExists(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, user, password);
+    }
+
+    /**
+     * Creates the user if it does not exist.
+     */
+    public static void createUserIfNotExists(String ip, String rootUser, String rootPassword, String user, String password) {
         String createUser = "DO\n" +
                 "$body$\n" +
                 "BEGIN\n" +
@@ -178,7 +200,7 @@ public class Postgres {
                 "   END IF;\n" +
                 "END\n" +
                 "$body$;";
-        try (Connection rootConn = getRootConnection(rootPassword)) {
+        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword)) {
             executeCommand(createUser, rootConn);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -189,12 +211,13 @@ public class Postgres {
     /**
      * Gets a connection to the root user.
      */
-    private static Connection getRootConnection(String rootPwd) throws SQLException {
+    private static Connection getRootConnection(String ip, String rootUser, String rootPwd) throws SQLException {
         Properties connectionProps = new Properties();
-        connectionProps.put("user", ROOT_USER);
+        connectionProps.put("user", rootUser);
         connectionProps.put("password", rootPwd);
-        return DriverManager.getConnection(DEFAULT_DB_URL + "/" + BASE_DB, connectionProps);
+        return DriverManager.getConnection(POSTGRES_URL_SCHEMA + ip + ":" + DEFAULT_PORT + "/" + BASE_DB, connectionProps);
     }
+
 
     /**
      * Executes the given SQL command in the database, using the already set up, default connection.
@@ -1943,6 +1966,7 @@ public class Postgres {
                 if (st != null) st.close();
             } catch (Exception e) {
             }
+            return false;
         }
     }
 
