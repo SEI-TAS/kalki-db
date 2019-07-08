@@ -572,6 +572,23 @@ public class Postgres {
      */
 
     /**
+     * inserts a state reset alert for the given device id
+     */
+    public static void insertStateReset(int deviceId) {
+        logger.info("Inserting a state reset alert for device id: " +deviceId);
+        PreparedStatement st = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            st = dbConn.prepareStatement("INSERT INTO alert(name, alert_type_id) SELECT at.name, at.id FROM alert_type AS at WHERE at.name = 'state-reset';");
+            st.executeUpdate();
+        } catch (SQLException e) {
+            logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+    }
+
+    /**
      * Finds an Alert from the databse with the given id
      *
      * @param id The id of the desired Alert
