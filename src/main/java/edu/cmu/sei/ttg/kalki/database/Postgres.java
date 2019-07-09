@@ -593,11 +593,8 @@ public class Postgres {
 
                 Alert alert = new Alert(name, deviceId, alertTypeId);
                 alert.insert();
-            } else {
-                System.out.println("error");
             }
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
             logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
@@ -790,7 +787,6 @@ public class Postgres {
             return getLatestId("alert");
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println(e.getMessage());
             logger.severe("Error inserting Alert: " + alert.toString() + " " + e.getClass().getName() + ": " + e.getMessage());
         }
         return -1;
@@ -836,7 +832,6 @@ public class Postgres {
                 return alert.getId();
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println(e.getMessage());
                 logger.severe("Error updating Alert: " + e.getClass().toString() + ": " + e.getMessage());
             }
         }
@@ -1792,7 +1787,6 @@ public class Postgres {
                 return rsToDevice(rs);
 
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
             logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
