@@ -62,6 +62,7 @@ Device device = Postgres.findDevice(deviceId);
 |id              |int      |  
 |name            |String NOT NULL |
 |timestamp       |Timestamp NOT NULL|
+|device_id       |int      |
 |alert_type_id   |int      |
 |alerter_id      |String   |
 |device_status_id|int      |  
@@ -343,6 +344,7 @@ Device device = Postgres.findDevice(deviceId);
 |id              |int      |  
 |name            |String   |
 |timestamp       |Timestamp|
+|deviceId        |int      |
 |alerterId       |String   |
 |deviceStatusId  |Integer  |
 |alertTypeId     |int      |
@@ -350,10 +352,11 @@ Device device = Postgres.findDevice(deviceId);
 |Definition|
 |:-----------------------------------------------|
 |`Alert()`|
+|`Alert(String name, int deviceId, int alertTypeId)`|
 |`Alert(String name, String alerterId, int alertTypeId)`|
 |`Alert(String name, Integer deviceStatusId, int alertTypeId)`|
 |`Alert(String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId)`|
-|`Alert(int id, String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId)`|
+|`Alert(int id, String name, Timestamp timestamp, String alerterId, int deviceId, Integer deviceStatusId, int alertTypeId)`|
 ###### Methods
 This class supports:
 - `get<field>()`

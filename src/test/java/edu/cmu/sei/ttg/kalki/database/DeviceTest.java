@@ -125,6 +125,5 @@ public class DeviceTest extends AUsesDatabase {
         // insert alert for device_status/alert_type
         alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
         alertIoT.insert();
-
     }
 }
