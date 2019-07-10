@@ -737,8 +737,8 @@ public class Postgres {
             }
             else {
                 if(deviceId == 0) {
-                    PreparedStatement findDeviceId = dbConn.prepareStatement("SELECT device_id FROM alert_type WHERE id = ?;");
-                    findDeviceId.setInt(1, alert.getAlertTypeId());
+                    PreparedStatement findDeviceId = dbConn.prepareStatement("SELECT device_id FROM device_status WHERE id = ?;");
+                    findDeviceId.setInt(1, alert.getDeviceStatusId());
                     rs = findDeviceId.executeQuery();
                     rs.next();
 
