@@ -176,6 +176,8 @@ Device device = Postgres.findDevice(deviceId);
 |`insertOrUpdateDevice(Device device)` |`Integer`      | 
 |`updateDevice(Device device)`         |`Integer`      |
 |`deleteDevice(int id)`                |`Boolean`      |
+|`resetSecurityState(int id)`          |`DeviceSecurityState`      |
+
 
 #### DeviceSecurityState
 ###### Schema:
@@ -443,6 +445,7 @@ This class supports:
     - ex: setName("Name")
 - `insert()`
 - `insertOrUpdate()`
+- `resetSecurityState()`
 - `toString()`
 - `lastNSamples(int N)`
     - returns `<List<DeviceStatus>>`

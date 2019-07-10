@@ -26,7 +26,6 @@ public class AlertTest extends AUsesDatabase {
     private static UmboxImage umboxImage;
     private static UmboxInstance umboxInstance;
     private static AlertType alertType;
-    private static AlertType alertTypeReset;
     private static DeviceStatus deviceStatus;
     private static Alert alertIoT;
     private static Alert alertUmBox;
@@ -34,17 +33,6 @@ public class AlertTest extends AUsesDatabase {
     /*
         Alert Action Tests
      */
-
-    @Test
-    public void testInsertStateReset() {
-        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
-        assertEquals(0, foundAlerts.size());
-
-        Postgres.insertStateReset(deviceTwo.getId());
-
-        foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
-        assertEquals(1, foundAlerts.size());
-    }
 
     @Test
     public void testFindAlert() {
@@ -145,9 +133,5 @@ public class AlertTest extends AUsesDatabase {
         // insert alert for alerter_id/alert_type
         alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
         alertUmBox.insert();
-
-        //insert state reset alert type
-        alertTypeReset = new AlertType("state-reset", "state reset", "Dashboard");
-        alertTypeReset.insert();
     }
 }

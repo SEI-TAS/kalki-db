@@ -572,34 +572,6 @@ public class Postgres {
      */
 
     /**
-     * inserts a state reset alert for the given device id
-     */
-    public static void insertStateReset(int deviceId) {
-        logger.info("Inserting a state reset alert for device id: " +deviceId);
-        PreparedStatement st = null;
-        ResultSet rs;
-
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        }
-        try {
-            st = dbConn.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;");
-            st.setString(1, "state-reset");
-            rs = st.executeQuery();
-
-            if(rs.next()) {
-                String name = rs.getString("name");
-                int alertTypeId = rs.getInt("id");
-
-                Alert alert = new Alert(name, deviceId, alertTypeId);
-                alert.insert();
-            }
-        } catch (SQLException e) {
-            logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
-    /**
      * Finds an Alert from the databse with the given id
      *
      * @param id The id of the desired Alert
@@ -2018,6 +1990,52 @@ public class Postgres {
             }
             return false;
         }
+    }
+
+    /**
+     * inserts a state reset alert for the given device id
+     */
+    public static DeviceSecurityState resetSecurityState(int deviceId) {
+        logger.info("Inserting a state reset alert for device id: " +deviceId);
+        PreparedStatement st = null;
+        ResultSet rs;
+
+        Device device = findDevice(deviceId);
+        DeviceSecurityState state = null;
+
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+            st.setString(1, "Normal");
+            rs = st.executeQuery();
+
+            if(rs.next()) {
+                int stateId = rs.getInt("id");
+
+                state = new DeviceSecurityState(deviceId, stateId);
+                state.insert();
+
+                device.setCurrentState(state);
+                device.insertOrUpdate();
+            }
+
+            st = dbConn.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;");
+            st.setString(1, "state-reset");
+            rs = st.executeQuery();
+
+            if(rs.next()) {
+                String name = rs.getString("name");
+                int alertTypeId = rs.getInt("id");
+
+                Alert alert = new Alert(name, deviceId, alertTypeId);
+                alert.insert();
+            }
+        } catch (SQLException e) {
+            logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return state;
     }
 
     /*

@@ -18,6 +18,7 @@ import edu.cmu.sei.ttg.kalki.models.*;
 import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class DeviceTest extends AUsesDatabase {
+    private static SecurityState normalState;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static Group group;
@@ -26,6 +27,7 @@ public class DeviceTest extends AUsesDatabase {
     private static UmboxImage umboxImage;
     private static UmboxInstance umboxInstance;
     private static AlertType alertType;
+    private static AlertType alertTypeReset;
     private static DeviceStatus deviceStatus;
     private static Alert alertIoT;
     private static Alert alertUmBox;
@@ -92,7 +94,23 @@ public class DeviceTest extends AUsesDatabase {
         assertEquals(null, Postgres.findDevice(deviceTwo.getId()));
     }
 
+    @Test
+    public void testResetSecurityState() {
+        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
+        assertEquals(0, foundAlerts.size());
+
+        DeviceSecurityState newState = deviceTwo.resetSecurityState();
+
+        foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
+        assertEquals(1, foundAlerts.size());
+        assertEquals(deviceTwo.getCurrentState().toString(), newState.toString());
+    }
+
     public void insertData() {
+        //insert normal securityState
+        normalState = new SecurityState("Normal");
+        normalState.insert();
+
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
@@ -125,5 +143,9 @@ public class DeviceTest extends AUsesDatabase {
         // insert alert for device_status/alert_type
         alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
         alertIoT.insert();
+
+        //insert state reset alert type
+        alertTypeReset = new AlertType("state-reset", "state reset", "Dashboard");
+        alertTypeReset.insert();
     }
 }
