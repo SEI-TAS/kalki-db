@@ -1453,24 +1453,16 @@ public class Postgres {
     public static List<DeviceCommandLookup> findCommandLookupsByDevice(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        int deviceTypeId = -1;
         List<DeviceCommandLookup> lookupList = new ArrayList<DeviceCommandLookup>();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT device.type_id FROM device WHERE id = ?;");
-            st.setInt(1, deviceId);
-            rs = st.executeQuery();
-            if (!rs.next()) {
-                return null;
-            }
-            deviceTypeId = rs.getInt("type_id");
 
-            st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, command c " +
-                    "WHERE c.device_type_id = ? AND cl.command_id = c.id;");
-            st.setInt(1, deviceTypeId);
+            st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, command c, device d " +
+                    "WHERE d.id = ? AND c.device_type_id = d.type_id AND cl.command_id = c.id;");
+            st.setInt(1,deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
                 lookupList.add(rsToCommandLookup(rs));
