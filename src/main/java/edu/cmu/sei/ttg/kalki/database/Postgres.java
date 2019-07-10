@@ -1448,6 +1448,35 @@ public class Postgres {
     }
 
     /**
+     * Finds all command lookups based on the given device id
+     */
+    public static List<DeviceCommandLookup> findCommandLookupsByDevice(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<DeviceCommandLookup> lookupList = new ArrayList<DeviceCommandLookup>();
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+
+            st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, command c, device d " +
+                    "WHERE d.id = ? AND c.device_type_id = d.type_id AND cl.command_id = c.id;");
+            st.setInt(1,deviceId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                lookupList.add(rsToCommandLookup(rs));
+            }
+            rs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        return lookupList;
+    }
+
+    /**
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
@@ -2907,6 +2936,42 @@ public class Postgres {
     }
 
     /**
+     * Find the respective tags for given device id
+     *
+     * @param deviceId The device id the tags are for
+     * @return A list of tags or null
+     */
+    public static List<Tag> findTagsByDevice(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            st = dbConn.prepareStatement("SELECT tag.* FROM tag, device_tag " +
+                    "WHERE tag.id = device_tag.tag_id AND device_tag.device_id = ?");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+
+            List<Tag> tags = new ArrayList<Tag>();
+            while (rs.next()) {
+                tags.add(rsToTag(rs));
+            }
+            return tags;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error finding tags by device_id: " + deviceId + ": " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) rs.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (st != null) st.close();
+            } catch (Exception e) {
+            }
+        }
+        return null;
+    }
+
+    /**
      * Find the respective tag ids for given device id
      *
      * @param deviceId The device id the tags are for
@@ -3647,6 +3712,35 @@ public class Postgres {
 
         return rsToUmboxLookup(rs);
     }
+
+    /**
+     * Finds all umbox lookups based on the given device id
+     */
+    public static List<UmboxLookup> findUmboxLookupsByDevice(int deviceId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<UmboxLookup> lookupList = new ArrayList<UmboxLookup>();
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d " +
+                    "WHERE ul.device_type_id = d.type_id AND d.id = ?;");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                lookupList.add(rsToUmboxLookup(rs));
+            }
+            rs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        return lookupList;
+    }
+
 
     /**
      * Finds all umboxLookup entries

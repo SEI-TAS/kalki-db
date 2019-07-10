@@ -125,12 +125,12 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
 |`findCommand(int id)`           |`DeviceCommand`|
-|`findAllCommands()`|`<List<DeviceCommand>>`|
-|`findCommandsByDevice(Device device)` |`<List<DeviceCommand>>`|
-|`insertCommand(DeviceCommand command)`|`<Integer>`|
-|`insertOrUpdateCommand(DeviceCommand command)`|`<Integer>`|
-|`updateCommand(DeviceCommand command)`|`<Integer>`|
-|`deleteCommand(int id)`|`<Boolean>`|
+|`findAllCommands()`|`List<DeviceCommand>`|
+|`findCommandsByDevice(Device device)` |`List<DeviceCommand>`|
+|`insertCommand(DeviceCommand command)`|`Integer`|
+|`insertOrUpdateCommand(DeviceCommand command)`|`Integer`|
+|`updateCommand(DeviceCommand command)`|`Integer`|
+|`deleteCommand(int id)`|`Boolean`|
 
 #### CommandLookup
 ###### Schema:
@@ -143,11 +143,12 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition                   |Return Type|
 |:-------------------------------------|:--------|
 |`findCommandLookup(int id)`           |`DeviceCommandLookup`|
-|`findAllCommandLookups()`             |`<List<DeviceCommandLookup>>`|
+|`findCommandLookupsByDevice(int deviceId)`    |`List<DeviceCommandLookup>`|
+|`findAllCommandLookups()`             |`List<DeviceCommandLookup>`|
 |`insertCommandLookup(DeviceCommandLookup commandLookup)`|`int`|
-|`insertOrUpdateCommandLookup(DeviceCommandLookup commandLookup)`|`<Integer>`|
-|`updateCommandLookup(DeviceCommandLookup commandLookup)`|`<Integer>`|
-|`deleteCommandLookup(int id)`|`<Boolean>`|
+|`insertOrUpdateCommandLookup(DeviceCommandLookup commandLookup)`|`Integer`|
+|`updateCommandLookup(DeviceCommandLookup commandLookup)`|`Integer`|
+|`deleteCommandLookup(int id)`|`Boolean`|
 
 #### Device
 ###### Schema:
@@ -325,6 +326,7 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxLookup(int id)`  |`UmboxLookup`|
+|`findUmboxLookupsByDevice(int deviceId)`  |`List<UmboxLookup>`|
 |`findAllUmboxLookups()`  |`List<UmboxLookup>`|
 |`insertUmboxLookup(UmboxLookup ul)`  |`Integer`|
 |`updateUmboxLookup(UmboxLookup ul)`  |`Integer`|

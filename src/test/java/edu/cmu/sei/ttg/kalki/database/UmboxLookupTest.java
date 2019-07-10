@@ -19,6 +19,7 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class UmboxLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
+    private static SecurityState securityStateTwo;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static Group group;
@@ -26,6 +27,7 @@ public class UmboxLookupTest extends AUsesDatabase {
     private static Device deviceTwo;
     private static UmboxImage umboxImage;
     private static UmboxLookup umboxLookup;
+    private static UmboxLookup umboxLookupTwo;
 
     /*
         test umbox lookup actions
@@ -37,8 +39,17 @@ public class UmboxLookupTest extends AUsesDatabase {
     }
 
     @Test
+    public void testFindUmboxLookupsByDevice() {
+        ArrayList<UmboxLookup> foundLookups =
+                new ArrayList<UmboxLookup>(Postgres.findUmboxLookupsByDevice(device.getId()));
+
+        assertEquals(1, foundLookups.size());
+        assertEquals(umboxLookup.toString(), foundLookups.get(0).toString());
+    }
+
+    @Test
     public void testFindAllUmboxLookups() {
-        assertEquals(1, Postgres.findAllUmboxLookups().size());
+        assertEquals(2, Postgres.findAllUmboxLookups().size());
     }
 
     @Test
@@ -72,6 +83,10 @@ public class UmboxLookupTest extends AUsesDatabase {
         securityState = new SecurityState("Normal");
         securityState.insert();
 
+        // insert security state(s)
+        securityStateTwo = new SecurityState("Suspicious");
+        securityStateTwo.insert();
+
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
@@ -97,5 +112,8 @@ public class UmboxLookupTest extends AUsesDatabase {
         // insert umbox_lookup (should be handle by umbox_image)
         umboxLookup = new UmboxLookup(-1, securityState.getId(), deviceType.getId(), umboxImage.getId(), 1);
         umboxLookup.insertOrUpdate();
+
+        umboxLookupTwo = new UmboxLookup(-1, securityStateTwo.getId(), deviceTypeTwo.getId(), umboxImage.getId(), 1);
+        umboxLookupTwo.insertOrUpdate();
     }
 }
