@@ -1,6 +1,7 @@
 package edu.cmu.sei.ttg.kalki.database;
 
 import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.ttg.kalki.listeners.*;
 import org.postgresql.util.HStoreConverter;
 
 import java.sql.*;
@@ -3938,4 +3939,67 @@ public class Postgres {
     public static Boolean deleteUmboxLookup(int id) {
         return deleteById("umbox_lookup", id);
     }
+
+    /*
+        Methods used for giving the dashboard new updates
+    */
+    private static Queue<Integer> newStateIds = new LinkedList<>();
+    private static Queue<Integer> newAlertIds = new LinkedList<>();
+
+    /**
+     * adds a given state id to the queue of new state ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newStateId(int newId) {
+        newStateIds.add(newId);
+        logger.info("adding new state id");
+    }
+
+    /**
+     * adds a given alert id to the queue of new alert ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newAlertId(int newId) {
+        newAlertIds.add(newId);
+        logger.info("adding new alert id");
+    }
+
+    /**
+     * will wait until there is an alert in the queue to return
+     *
+     * @return the next new alert to be given to the dashboard in the queue
+     */
+    public static Alert getNewAlert(boolean startListener) {
+        if(startListener) {
+            InsertListener.startUpListener("alertHistoryNotify", new AlertHandler());
+        }
+
+        Integer newId = newAlertIds.poll();
+
+        if(newId != null) {
+            return Postgres.findAlert(newId);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * will wait until there is a state in the queue to return
+     *
+     * @return the next new device security state to be given to the dashboard in the queue
+     */
+    public static DeviceSecurityState getNewState(boolean startListener) {
+        if(startListener) {
+            InsertListener.startUpListener("deviceSecurityStateNotify", new StateHandler());
+        }
+
+        Integer newId = newStateIds.poll();
+
+        if(newId != null) {
+            return Postgres.findDeviceSecurityState(newId);
+        } else {
+            return null;
+        }
+    }
+
 }
