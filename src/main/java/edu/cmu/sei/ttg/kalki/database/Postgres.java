@@ -3935,8 +3935,28 @@ public class Postgres {
     /*
         Methods used for giving the dashboard new updates
     */
-    private static Queue<Integer> newStateIds = new LinkedList<>();
-    private static Queue<Integer> newAlertIds = new LinkedList<>();
+    private static List<Integer> newStateIds = new ArrayList<>();
+    private static List<Integer> newAlertIds = new ArrayList<>();
+
+    /**
+     * Start up a notification listener.  This will clear all current handlers and
+     * current list of newIds
+     */
+    public static void startListener() {
+        InsertListener.startListening();
+        InsertListener.clearHandlers();
+
+        InsertListener.addHandler("alerthistoryinsert", new AlertHandler());
+        InsertListener.addHandler("devicesecuritystateinsert", new StateHandler());
+
+        newStateIds.clear();
+        newAlertIds.clear();
+    }
+
+    public static void stopListener() {
+        InsertListener.stopListening();
+    }
+
 
     /**
      * adds a given state id to the queue of new state ids to be given to the dashboard
@@ -3944,7 +3964,6 @@ public class Postgres {
      */
     public static void newStateId(int newId) {
         newStateIds.add(newId);
-        logger.info("adding new state id");
     }
 
     /**
@@ -3953,7 +3972,6 @@ public class Postgres {
      */
     public static void newAlertId(int newId) {
         newAlertIds.add(newId);
-        logger.info("adding new alert id");
     }
 
     /**
@@ -3961,15 +3979,15 @@ public class Postgres {
      *
      * @return the next new alert to be given to the dashboard in the queue
      */
-    public static Alert getNewAlert(boolean startListener) {
-        if(startListener) {
-            InsertListener.startUpListener("alertHistoryNotify", new AlertHandler());
-        }
-
-        Integer newId = newAlertIds.poll();
-
-        if(newId != null) {
-            return Postgres.findAlert(newId);
+    public static List<Alert> getNewAlerts() {
+        if(newAlertIds.size() != 0) {
+            List<Alert> newAlerts = new ArrayList<>();
+            for(int alertId: newAlertIds) {
+                Alert newAlert = Postgres.findAlert(alertId);
+                newAlerts.add(newAlert);
+            }
+            newAlertIds.clear();
+            return newAlerts;
         } else {
             return null;
         }
@@ -3980,15 +3998,15 @@ public class Postgres {
      *
      * @return the next new device security state to be given to the dashboard in the queue
      */
-    public static DeviceSecurityState getNewState(boolean startListener) {
-        if(startListener) {
-            InsertListener.startUpListener("deviceSecurityStateNotify", new StateHandler());
-        }
-
-        Integer newId = newStateIds.poll();
-
-        if(newId != null) {
-            return Postgres.findDeviceSecurityState(newId);
+    public static List<DeviceSecurityState> getNewStates() {
+        if(newStateIds.size() != 0) {
+            List<DeviceSecurityState> newStates = new ArrayList<>();
+            for(int stateId: newStateIds) {
+                DeviceSecurityState newState = Postgres.findDeviceSecurityState(stateId);
+                newStates.add(newState);
+            }
+            newStateIds.clear();
+            return newStates;
         } else {
             return null;
         }
