@@ -178,6 +178,11 @@ public class Device {
         return this.id;
     }
 
+    public DeviceSecurityState resetSecurityState() {
+        this.currentState = Postgres.resetSecurityState(this.id);
+        return this.currentState;
+    }
+
     public String toString() {
         try {
             return ow.writeValueAsString(this);

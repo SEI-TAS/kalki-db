@@ -649,18 +649,7 @@ public class Postgres {
         List<Alert> alertHistory = new ArrayList<Alert>();
 
         try {
-            //retrieve all IoT device alerts
-            st = dbConn.prepareStatement("SELECT alert.* FROM alert, device_status " +
-                    "WHERE alert.device_status_id = device_status.id AND device_status.device_id = ?;");
-            st.setInt(1, deviceId);
-            rs = st.executeQuery();
-            while (rs.next()) {
-                alertHistory.add(rsToAlert(rs));
-            }
-
-            //retrieve all UmBox alerts
-            st = dbConn.prepareStatement("SELECT alert.* FROM alert, umbox_instance " +
-                    "WHERE alert.alerter_id = umbox_instance.alerter_id AND umbox_instance.device_id = ?;");
+            st = dbConn.prepareStatement("SELECT * FROM alert WHERE device_id = ?;");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -703,7 +692,8 @@ public class Postgres {
             String alerterId = rs.getString("alerter_id");
             int deviceStatusId = rs.getInt("device_status_id");
             int alertTypeId = rs.getInt("alert_type_id");
-            alert = new Alert(id, name, timestamp, alerterId, deviceStatusId, alertTypeId);
+            int deviceId = rs.getInt("device_id");
+            alert = new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId);
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Alert: " + e.getClass().getName() + ": " + e.getMessage());
@@ -726,20 +716,42 @@ public class Postgres {
         }
         try {
             PreparedStatement insertAlert;
+            ResultSet rs;
+            int deviceId = alert.getDeviceId();
             if(alert.getDeviceStatusId() == 0) {
-                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id) VALUES (?,?,?,?);");
+                if(deviceId == 0) {
+                    PreparedStatement findDeviceId = dbConn.prepareStatement("SELECT device_id FROM umbox_instance WHERE alerter_id = ?;");
+                    findDeviceId.setString(1, alert.getAlerterId());
+                    rs = findDeviceId.executeQuery();
+                    rs.next();
+
+                    deviceId = rs.getInt("device_id");
+                    alert.setDeviceId(deviceId);
+                }
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, device_id, alerter_id) VALUES (?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
                 insertAlert.setInt(3, alert.getAlertTypeId());
-                insertAlert.setString(4, alert.getAlerterId());
+                insertAlert.setInt(4, deviceId);
+                insertAlert.setString(5, alert.getAlerterId());
             }
             else {
-                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_status_id) VALUES (?,?,?,?,?);");
+                if(deviceId == 0) {
+                    PreparedStatement findDeviceId = dbConn.prepareStatement("SELECT device_id FROM device_status WHERE id = ?;");
+                    findDeviceId.setInt(1, alert.getDeviceStatusId());
+                    rs = findDeviceId.executeQuery();
+                    rs.next();
+
+                    deviceId = rs.getInt("device_id");
+                    alert.setDeviceId(deviceId);
+                }
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_id, device_status_id) VALUES (?,?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
                 insertAlert.setInt(3, alert.getAlertTypeId());
                 insertAlert.setString(4, alert.getAlerterId());
-                insertAlert.setInt(5, alert.getDeviceStatusId());
+                insertAlert.setInt(5, deviceId);
+                insertAlert.setInt(6, alert.getDeviceStatusId());
             }
 
             insertAlert.executeUpdate();
@@ -764,16 +776,30 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         } else {
             try {
-                PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
-                        "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, alert_type_id = ?" +
-                        "WHERE id = ?");
-                update.setString(1, alert.getName());
-                update.setTimestamp(2, alert.getTimestamp());
-                update.setString(3, alert.getAlerterId());
-                update.setInt(4, alert.getDeviceStatusId());
-                update.setInt(5, alert.getAlertTypeId());
-                update.setInt(6, alert.getId());
-                update.executeUpdate();
+                if (alert.getDeviceStatusId() == 0) {
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
+                            "SET name = ?, timestamp = ?, alerter_id = ?, device_id = ?, alert_type_id = ?" +
+                            "WHERE id = ?");
+                    update.setString(1, alert.getName());
+                    update.setTimestamp(2, alert.getTimestamp());
+                    update.setString(3, alert.getAlerterId());
+                    update.setInt(4, alert.getDeviceId());
+                    update.setInt(5, alert.getAlertTypeId());
+                    update.setInt(6, alert.getId());
+                    update.executeUpdate();
+                } else {
+                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
+                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, device_id = ?, alert_type_id = ?" +
+                            "WHERE id = ?");
+                    update.setString(1, alert.getName());
+                    update.setTimestamp(2, alert.getTimestamp());
+                    update.setString(3, alert.getAlerterId());
+                    update.setInt(4, alert.getDeviceStatusId());
+                    update.setInt(5, alert.getDeviceId());
+                    update.setInt(6, alert.getAlertTypeId());
+                    update.setInt(7, alert.getId());
+                    update.executeUpdate();
+                }
 
                 return alert.getId();
             } catch (Exception e) {
@@ -1713,13 +1739,9 @@ public class Postgres {
             return null;
         }
         try {
-
-            if (alert.getDeviceStatusId() != null) {
-                st = dbConn.prepareStatement("SELECT * FROM device WHERE id = (SELECT device_id FROM device_status WHERE id = ?)");
-                st.setInt(1, alert.getDeviceStatusId());
-            } else if (alert.getAlerterId() != null) {
-                st = dbConn.prepareStatement("SELECT * FROM device WHERE id = (SELECT device_id FROM umbox_instance WHERE alerter_id = ?)");
-                st.setString(1, alert.getAlerterId());
+            if (alert.getDeviceId() != null) {
+                st = dbConn.prepareStatement("SELECT * FROM device WHERE id = ?");
+                st.setInt(1, alert.getDeviceId());
             } else {
                 logger.severe("Error: alert has no associated DeviceStatus OR UmboxInstance!");
                 return null;
@@ -1960,6 +1982,52 @@ public class Postgres {
             }
             return false;
         }
+    }
+
+    /**
+     * inserts a state reset alert for the given device id
+     */
+    public static DeviceSecurityState resetSecurityState(int deviceId) {
+        logger.info("Inserting a state reset alert for device id: " +deviceId);
+        PreparedStatement st = null;
+        ResultSet rs;
+
+        Device device = findDevice(deviceId);
+        DeviceSecurityState state = null;
+
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+            st.setString(1, "Normal");
+            rs = st.executeQuery();
+
+            if(rs.next()) {
+                int stateId = rs.getInt("id");
+
+                state = new DeviceSecurityState(deviceId, stateId);
+                state.insert();
+
+                device.setCurrentState(state);
+                device.insertOrUpdate();
+            }
+
+            st = dbConn.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;");
+            st.setString(1, "state-reset");
+            rs = st.executeQuery();
+
+            if(rs.next()) {
+                String name = rs.getString("name");
+                int alertTypeId = rs.getInt("id");
+
+                Alert alert = new Alert(name, deviceId, alertTypeId);
+                alert.insert();
+            }
+        } catch (SQLException e) {
+            logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return state;
     }
 
     /*

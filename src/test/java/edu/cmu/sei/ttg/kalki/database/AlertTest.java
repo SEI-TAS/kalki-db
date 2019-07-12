@@ -68,6 +68,13 @@ public class AlertTest extends AUsesDatabase {
         newAlert.insert();
 
         assertEquals(newAlert.toString(), Postgres.findAlert(3).toString());
+
+        newAlert = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
+        assertEquals(null, Postgres.findAlert(4));
+
+        newAlert.insert();
+
+        assertEquals(newAlert.toString(), Postgres.findAlert(4).toString());
     }
 
     @Test

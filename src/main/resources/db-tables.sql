@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS alert(
     name               varchar(255) NOT NULL,
     timestamp          timestamp NOT NULL DEFAULT now(),
     alert_type_id      int REFERENCES alert_type(id),
+    device_id          int REFERENCES device(id),
     alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id),
     device_status_id   int REFERENCES device_status(id)
 );
