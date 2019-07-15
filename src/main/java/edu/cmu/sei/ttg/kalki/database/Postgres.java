@@ -3935,9 +3935,9 @@ public class Postgres {
     /*
         Methods used for giving the dashboard new updates
     */
-    private static List<Integer> newStateIds = new ArrayList<>();
-    private static List<Integer> newAlertIds = new ArrayList<>();
-    private static List<Integer> newStatusIds = new ArrayList<>();
+    private static List<Integer> newStateIds = Collections.synchronizedList(new ArrayList<Integer>());
+    private static List<Integer> newAlertIds = Collections.synchronizedList(new ArrayList<Integer>());
+    private static List<Integer> newStatusIds = Collections.synchronizedList(new ArrayList<Integer>());
 
     /**
      * Start up a notification listener.  This will clear all current handlers and
@@ -3992,11 +3992,14 @@ public class Postgres {
     public static List<Alert> getNewAlerts() {
         if(newAlertIds.size() != 0) {
             List<Alert> newAlerts = new ArrayList<>();
-            for(int alertId: newAlertIds) {
-                Alert newAlert = Postgres.findAlert(alertId);
-                newAlerts.add(newAlert);
+            synchronized (newAlertIds) {
+                for(int alertId: newAlertIds) {
+                    Alert newAlert = Postgres.findAlert(alertId);
+                    newAlerts.add(newAlert);
+                }
+                newAlertIds.clear();
             }
-            newAlertIds.clear();
+
             return newAlerts;
         } else {
             return null;
@@ -4011,11 +4014,14 @@ public class Postgres {
     public static List<DeviceSecurityState> getNewStates() {
         if(newStateIds.size() != 0) {
             List<DeviceSecurityState> newStates = new ArrayList<>();
-            for(int stateId: newStateIds) {
-                DeviceSecurityState newState = Postgres.findDeviceSecurityState(stateId);
-                newStates.add(newState);
+            synchronized (newStateIds) {
+                for(int stateId: newStateIds) {
+                    DeviceSecurityState newState = Postgres.findDeviceSecurityState(stateId);
+                    newStates.add(newState);
+                }
+                newStateIds.clear();
             }
-            newStateIds.clear();
+
             return newStates;
         } else {
             return null;
@@ -4030,11 +4036,14 @@ public class Postgres {
     public static List<DeviceStatus> getNewStatuses() {
         if(newStatusIds.size() != 0) {
             List<DeviceStatus> newStatuses = new ArrayList<>();
-            for(int statusId: newStatusIds) {
-                DeviceStatus newStatus = Postgres.findDeviceStatus(statusId);
-                newStatuses.add(newStatus);
+            synchronized (newStatusIds) {
+                for(int statusId: newStatusIds) {
+                    DeviceStatus newStatus = Postgres.findDeviceStatus(statusId);
+                    newStatuses.add(newStatus);
+                }
+                newStatusIds.clear();
             }
-            newStatusIds.clear();
+
             return newStatuses;
         } else {
             return null;
