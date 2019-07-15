@@ -3937,6 +3937,7 @@ public class Postgres {
     */
     private static List<Integer> newStateIds = new ArrayList<>();
     private static List<Integer> newAlertIds = new ArrayList<>();
+    private static List<Integer> newStatusIds = new ArrayList<>();
 
     /**
      * Start up a notification listener.  This will clear all current handlers and
@@ -3948,26 +3949,19 @@ public class Postgres {
 
         InsertListener.addHandler("alerthistoryinsert", new AlertHandler());
         InsertListener.addHandler("devicesecuritystateinsert", new StateHandler());
+        InsertListener.addHandler("devicestatusinsert", new StatusHandler());
 
-        newStateIds.clear();
         newAlertIds.clear();
+        newStateIds.clear();
+        newStatusIds.clear();
     }
 
     public static void stopListener() {
         InsertListener.stopListening();
     }
 
-
     /**
-     * adds a given state id to the queue of new state ids to be given to the dashboard
-     * @param newId
-     */
-    public static void newStateId(int newId) {
-        newStateIds.add(newId);
-    }
-
-    /**
-     * adds a given alert id to the queue of new alert ids to be given to the dashboard
+     * adds a given alert id to the list of new alert ids to be given to the dashboard
      * @param newId
      */
     public static void newAlertId(int newId) {
@@ -3975,7 +3969,23 @@ public class Postgres {
     }
 
     /**
-     * will wait until there is an alert in the queue to return
+     * adds a given state id to the list of new state ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newStateId(int newId) {
+        newStateIds.add(newId);
+    }
+
+    /**
+     * adds a given status id to the list of new status ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newStatusId(int newId) {
+        newStatusIds.add(newId);
+    }
+
+    /**
+     * return the latest alerts unless there are no alerts and then returns null
      *
      * @return the next new alert to be given to the dashboard in the queue
      */
@@ -3994,7 +4004,7 @@ public class Postgres {
     }
 
     /**
-     * will wait until there is a state in the queue to return
+     * return the latest states unless there are no states and then returns null
      *
      * @return the next new device security state to be given to the dashboard in the queue
      */
@@ -4012,4 +4022,22 @@ public class Postgres {
         }
     }
 
+    /**
+     * return the latest statuses unless there are no statuses and then returns null
+     *
+     * @return the next new device security state to be given to the dashboard in the queue
+     */
+    public static List<DeviceStatus> getNewStatuses() {
+        if(newStatusIds.size() != 0) {
+            List<DeviceStatus> newStatuses = new ArrayList<>();
+            for(int statusId: newStatusIds) {
+                DeviceStatus newStatus = Postgres.findDeviceStatus(statusId);
+                newStatuses.add(newStatus);
+            }
+            newStatusIds.clear();
+            return newStatuses;
+        } else {
+            return null;
+        }
+    }
 }
