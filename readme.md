@@ -751,8 +751,9 @@ Once you start listening, you can retrieve all of the newest insertions per tabl
 |------------------------:|:----------------------------|
 |Postgres.getNewAlerts()  | `List<Alert>`               | 
 |Postgres.getNewStates()  | `List<DeviceSecurityState>` |
+|Postgres.getNewStatuses()| `List<DeviceStatus>`        |
 
-Each of these methods will return the all of the insertions for its given table since the last time the method was called,
+Each of these methods will return all of the insertions for its given table since the last time the method was called,
 or if there are no insertions it will return null.
 
 
