@@ -31,7 +31,14 @@ public class InsertListener extends TimerTask
     }
 
     public static void stopListening() {
-        timer.cancel();
+        for(String triggerName : handlerMap.keySet()) {
+            Postgres.executeCommand("UNLISTEN " + triggerName);
+        }
+
+        if(timer != null) {
+            timer.cancel();
+        }
+
         isListening = false;
     }
 

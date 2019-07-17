@@ -44,29 +44,26 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
         DeviceSecurityState foundState = Postgres.findDeviceSecurityStateByDevice(device.getId());
         assertEquals(deviceSecurityState.getId(), foundState.getId());
         assertEquals(deviceSecurityState.getStateId(), foundState.getStateId());
-
-        foundState = Postgres.findDeviceSecurityStateByDevice(deviceTwo.getId());
-        assertEquals(null, foundState);
     }
 
     @Test
     public void testFindDeviceSecurityStates() {
         ArrayList<DeviceSecurityState> foundStates =
                 new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(device.getId()));
-        assertEquals(1, foundStates.size());
+        assertEquals(2, foundStates.size()); //the default normal state plus the new state
 
         foundStates = new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(deviceTwo.getId()));
-        assertEquals(0, foundStates.size());
+        assertEquals(1, foundStates.size());  //the default normal state
     }
 
     @Test
     public void testInsertDeviceSecurityState() {
-        assertEquals(1, Postgres.findDeviceSecurityStates(device.getId()).size());
+        assertEquals(2, Postgres.findDeviceSecurityStates(device.getId()).size());
 
         DeviceSecurityState newState = new DeviceSecurityState(device.getId(), securityState.getId());
         newState.insert();
 
-        assertEquals(2, Postgres.findDeviceSecurityStates(device.getId()).size());
+        assertEquals(3, Postgres.findDeviceSecurityStates(device.getId()).size());
     }
 
     @Test
@@ -83,7 +80,7 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
 
     public void insertData() {
         // insert security state(s)
-        securityState = new SecurityState("Normal");
+        securityState = new SecurityState("testState");
         securityState.insert();
 
         // insert device_type

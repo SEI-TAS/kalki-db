@@ -286,7 +286,7 @@ public class Postgres {
         createHstoreExtension();
         // DB Structure
         initDB("db-tables.sql");
-        initDB("db-triggers.sql");
+        initDB("db-security-states.sql");
     }
 
     /**
@@ -1851,11 +1851,11 @@ public class Postgres {
      * @param device Device to be inserted.
      * @return auto incremented id
      */
-    public static Integer insertDevice(Device device) {
+    public static Device insertDevice(Device device) {
         logger.info("Inserting device: " + device);
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
+            return null;
         }
         try {
             PreparedStatement update = dbConn.prepareStatement
@@ -1873,9 +1873,39 @@ public class Postgres {
             update.setString(5, device.getIp());
             update.setInt(6, device.getStatusHistorySize());
             update.setInt(7, device.getSamplingRate());
-
             update.executeUpdate();
+
             int serialNum = getLatestId("device");
+            device.setId(serialNum);
+
+            DeviceSecurityState currentState = device.getCurrentState();
+            Integer stateId = null;
+
+            //give the device a normal security state if it is not specified
+            if(currentState == null) {
+
+                //get the id of normal security state
+                PreparedStatement st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+                st.setString(1, "Normal");
+                ResultSet rs = st.executeQuery();
+
+                if(rs.next()) {
+                    stateId = rs.getInt("id");
+
+                    DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), stateId);
+                    normalDeviceState.insert();
+
+                    device.setCurrentState(normalDeviceState);
+                    device.insertOrUpdate();
+                }
+                else {
+                    throw new NoSuchElementException("No normal security state has been added to the database");
+                }
+            }
+            else {
+                stateId = currentState.getId();
+            }
+
             //Insert tags into device_tag
             List<Integer> tagIds = device.getTagIds();
             if (tagIds != null) {
@@ -1883,12 +1913,13 @@ public class Postgres {
                     executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", serialNum, tagId));
                 }
             }
-            return serialNum;
+
+            return device;
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error inserting Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -1898,7 +1929,7 @@ public class Postgres {
      *
      * @param device Device to be inserted or updated.
      */
-    public static Integer insertOrUpdateDevice(Device device) {
+    public static Device insertOrUpdateDevice(Device device) {
         Device d = findDevice(device.getId());
         if (d == null) {
             return insertDevice(device);
@@ -1913,7 +1944,7 @@ public class Postgres {
      * @param device Device holding new parameters to be saved in the database.
      * @return the id of the updated device
      */
-    public static Integer updateDevice(Device device) {
+    public static Device updateDevice(Device device) {
         logger.info(String.format("Updating Device with id = %d with values: %s", device.getId(), device));
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
@@ -1953,13 +1984,13 @@ public class Postgres {
                         executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
                     }
                 }
-                return device.getId();
+                return device;
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
             }
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -1974,6 +2005,8 @@ public class Postgres {
         try {
             // Delete associated tags
             executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", id));
+            //delete device security state
+            executeCommand(String.format("DELETE FROM device_security_state WHERE device_id = %d", id));
             deleteById("device", id);
             return true;
         } finally {
