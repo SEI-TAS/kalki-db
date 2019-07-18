@@ -842,6 +842,35 @@ public class Postgres {
     }
 
     /**
+     * Finds the newest AlertCondition from the databse associated with the given alertType
+     *
+     * @param alertTypeId The id of the alertType used to find the alertCondition
+     * @return AlertCondition or null
+     */
+    public static AlertCondition findAlertConditionByAlertType(int alertTypeId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        AlertCondition foundCondition = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM alert_condition WHERE alert_type_id = ? ORDER BY id DESC LIMIT 1");
+            st.setInt(1, alertTypeId);
+            rs = st.executeQuery();
+            if (rs.next()) {
+                foundCondition = rsToAlertCondition(rs);
+            }
+            rs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error finding alert condition by alert type: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return foundCondition;
+    }
+
+    /**
      * Finds all AlertConditions in the database
      *
      * @return a list of AlertCondition
@@ -990,55 +1019,6 @@ public class Postgres {
             logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return -1;
-    }
-
-    /**
-     * Updates provided AlertCondition
-     *
-     * @param condition AlertCondition holding new values to be saved in the database.
-     * @return the id of the updated Alert on success. -1 on failure
-     */
-    public static Integer updateAlertCondition(AlertCondition condition) {
-        logger.info(String.format("Updating AlertCondition with id = %d with values: %s", condition.getId(), condition));
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            try {
-                PreparedStatement update = dbConn.prepareStatement("UPDATE alert_condition " +
-                        "SET variables = ?, device_id = ?, alert_type_id = ?" +
-                        "WHERE id = ?");
-                update.setObject(1, condition.getVariables());
-                update.setInt(2, condition.getDeviceId());
-                update.setInt(3, condition.getAlertTypeId());
-                update.setInt(4, condition.getId());
-                update.executeUpdate();
-
-                return condition.getId();
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating AlertCondition: " + e.getClass().toString() + ": " + e.getMessage());
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * First, attempts to find the AlertCondition in the database.
-     * If successful, updates the existing AlertCondition with the given AlertCondition's parameters. Otherwise,
-     * inserts the given AlertCondition.
-     *
-     * @param condition AlertCondition to be inserted or updated.
-     */
-    public static Integer insertOrUpdateAlertCondition(AlertCondition condition) {
-        AlertCondition c = findAlertCondition(condition.getId());
-        if (c == null) {
-            if (condition.getDeviceTypeId() != null)
-                return insertAlertConditionByDeviceType(condition);
-            else
-                return insertAlertCondition(condition);
-        } else {
-            return updateAlertCondition(condition);
-        }
     }
 
     /**

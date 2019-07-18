@@ -80,17 +80,13 @@ public class AlertCondition {
     }
 
     public Integer insert() {
-        if (deviceId != null) {
+        if (deviceTypeId == null) {
             this.id = Postgres.insertAlertCondition(this);
             return this.id;
         } else {
-            return Postgres.insertAlertConditionByDeviceType(this);
+            Postgres.insertAlertConditionByDeviceType(this);
+            return 1;
         }
-    }
-
-    public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateAlertCondition(this);
-        return this.id;
     }
 
     public String toString() {

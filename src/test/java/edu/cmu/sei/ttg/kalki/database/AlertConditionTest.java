@@ -24,6 +24,7 @@ public class AlertConditionTest extends AUsesDatabase {
     private static Group group;
     private static Device device;
     private static Device deviceTwo;
+    private static Device deviceThree;
     private static AlertType alertType;
 
     /*
@@ -36,16 +37,21 @@ public class AlertConditionTest extends AUsesDatabase {
     }
 
     @Test
-    public void testFindAlertConditionsByDevice() {
-        List<AlertCondition> acList = Postgres.findAlertConditionsByDevice(device.getId());
-        for (AlertCondition ac : acList) {
-            assertEquals(alertCondition.toString(), ac.toString());
-        }
+    public void testFindAlertConditionByAlertType() {
+        AlertCondition ac = Postgres.findAlertConditionByAlertType(alertType.getId());
+        assertEquals(alertConditionTwo.toString(), ac.toString());
+    }
 
-        List<AlertCondition> acList2 = Postgres.findAlertConditionsByDevice(deviceTwo.getId());
-        for (AlertCondition ac2 : acList2) {
-            assertEquals(alertConditionTwo.toString(), ac2.toString());
-        }
+    @Test
+    public void testFindAlertConditionsByDevice() {
+        List<AlertCondition> acList = new ArrayList<AlertCondition>(Postgres.findAlertConditionsByDevice(device.getId()));
+
+        assertEquals(1, acList.size());
+        assertEquals(alertCondition.toString(), acList.get(0).toString());
+
+        List<AlertCondition> acList2 = new ArrayList<AlertCondition>(Postgres.findAlertConditionsByDevice(deviceTwo.getId()));
+        assertEquals(1, acList.size());
+        assertEquals(alertConditionTwo.toString(), acList2.get(0).toString());
     }
 
     @Test
@@ -56,49 +62,26 @@ public class AlertConditionTest extends AUsesDatabase {
     }
 
     @Test
-    public void testUpdateAlertCondition() {
-        alertCondition.getVariables().put("test2", "test2");
-        Postgres.updateAlertCondition(alertCondition);
-
-        AlertCondition updatedCondition = Postgres.findAlertCondition(alertCondition.getId());
-        assertEquals(alertCondition.toString(), updatedCondition.toString());
-    }
-
-    @Test
-    public void testInsertOrUpdateAlertCondition() {
+    public void testInsertAlertCondition() {
         assertEquals(2, Postgres.findAllAlertConditions().size());
 
         alertCondition.getVariables().put("testKey1", "testValue1");
-        alertCondition.insertOrUpdate();
-
-        assertEquals(2, Postgres.findAllAlertConditions().size());
-
-        AlertCondition newAlertCondition = new AlertCondition(null, device.getId(), alertType.getId());
-        int newId = newAlertCondition.insertOrUpdate();
+        alertCondition.insert();
 
         assertEquals(3, Postgres.findAllAlertConditions().size());
-        assertEquals(newAlertCondition.toString(), Postgres.findAlertCondition(newId).toString());
-    }
 
-    @Test
-    public void testInsertAlertConditionByDeviceType() {
-        Postgres.insertAlertConditionByDeviceType(alertCondition); //device type is null
+        alertCondition.setDeviceTypeId(deviceTypeTwo.getId());
+        alertCondition.insert();    //since the deviceType is set, it should insert two alertConditions
 
-        assertEquals(2, Postgres.findAllAlertConditions().size());
-
-        alertCondition.setDeviceTypeId(deviceType.getId());
-
-        Postgres.insertAlertConditionByDeviceType(alertCondition);
-
-        assertEquals(3, Postgres.findAllAlertConditions().size());
+        assertEquals(5, Postgres.findAllAlertConditions().size());
     }
 
     public void insertData() {
         // insert device_type
-        deviceType = new DeviceType(0, "Udoo Neo");
+        deviceType = new DeviceType(0, "test device type");
         deviceType.insert();
 
-        deviceTypeTwo = new DeviceType(0, "test device type");
+        deviceTypeTwo = new DeviceType(0, "test device type two");
         deviceTypeTwo.insert();
 
         // insert Group
@@ -111,6 +94,9 @@ public class AlertConditionTest extends AUsesDatabase {
 
         deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1);
         deviceTwo.insert();
+
+        deviceThree = new Device("Device 3", "this is too a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1);
+        deviceThree.insert();
 
         // insert alert_type unts-temperature
         alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
