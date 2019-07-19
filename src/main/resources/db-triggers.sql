@@ -1,9 +1,31 @@
+/*
+CREATE OR REPLACE FUNCTION backFillAlertConditions(deviceTypeId INTEGER, deviceId INTEGER)
+    RETURNS VOID AS $$
+        DECLARE
+            ac RECORD;
+            query TEXT;
+        BEGIN
+            INSERT INTO alert_condition(device_id, alert_type_id) values(deviceId, 1);
+            query := 'SELECT DISTINCT ON (ac.alert_type_id) ac.* from alert_condition ac, device d, device_type dt,' ||
+                     'WHERE dt.id = ' || deviceTypeId || ' AND dt.id = d.device_type_id AND d.id = ac.device_id';
+            FOR ac IN EXECUTE query
+                LOOP
+                    INSERT INTO alert_condition(variables, device_id, alert_type_id) values(ac.variables, deviceId, ac.alert_type_id);
+                END LOOP;
+        END;
+    $$ LANGUAGE plpgsql;
+ */
+
 CREATE OR REPLACE FUNCTION deviceNotify()
     RETURNS TRIGGER AS $$
         DECLARE
             payload TEXT;
         BEGIN
             payload := NEW.id;
+
+            /* back fill alert conditions for the device */
+        /*PERFORM backFillAlertConditions(NEW.device_type_id, NEW.id);*/
+
         PERFORM pg_notify('deviceinsert', payload);
             RETURN NEW;
         END;
