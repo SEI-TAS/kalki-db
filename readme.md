@@ -90,12 +90,11 @@ Device device = Postgres.findDevice(deviceId);
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
 |`findAlertCondition(int id) `                       |`AlertCondition`      |
+|`findAlertConditionByAlertType(int alertTypeId) `   |`AlertCondition`      |
 |`findAlertConditionsByDevice(int deviceId)`         |`List<AlertCondition>`|
 |`findAllAlertConditions()`                          |`List<AlertCondition>`|
 |`insertAlertCondition(AlertCondition condition`     |`Integer`           |
 |`insertAlertConditionByDeviceType(AlertCondition cond) `|`Integer`       |
-|`updateAlertCondition(AlertCondition condition)`    |`Integer`           |
-|`insertOrUpdateAlertCondition(AlertCondition condition)`| `Integer`      |
 |`deleteAlertCondition(int id)`                      |`Boolean`           |
 
 #### AlertType
@@ -391,7 +390,6 @@ This class supports:
 - `set<field>(<field type> value)`
     - ex: setName("Name")
 - `insert()`
-- `insertOrUpdate()`
 - `toString()`
 #### AlertType
 ###### Schema:
