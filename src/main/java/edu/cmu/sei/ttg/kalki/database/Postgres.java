@@ -1,6 +1,7 @@
 package edu.cmu.sei.ttg.kalki.database;
 
 import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.ttg.kalki.listeners.*;
 import org.postgresql.util.HStoreConverter;
 
 import java.sql.*;
@@ -285,7 +286,7 @@ public class Postgres {
         createHstoreExtension();
         // DB Structure
         initDB("db-tables.sql");
-        initDB("db-triggers.sql");
+        initDB("db-security-states.sql");
     }
 
     /**
@@ -1850,11 +1851,11 @@ public class Postgres {
      * @param device Device to be inserted.
      * @return auto incremented id
      */
-    public static Integer insertDevice(Device device) {
+    public static Device insertDevice(Device device) {
         logger.info("Inserting device: " + device);
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
+            return null;
         }
         try {
             PreparedStatement update = dbConn.prepareStatement
@@ -1872,9 +1873,39 @@ public class Postgres {
             update.setString(5, device.getIp());
             update.setInt(6, device.getStatusHistorySize());
             update.setInt(7, device.getSamplingRate());
-
             update.executeUpdate();
+
             int serialNum = getLatestId("device");
+            device.setId(serialNum);
+
+            DeviceSecurityState currentState = device.getCurrentState();
+            Integer stateId = null;
+
+            //give the device a normal security state if it is not specified
+            if(currentState == null) {
+
+                //get the id of normal security state
+                PreparedStatement st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+                st.setString(1, "Normal");
+                ResultSet rs = st.executeQuery();
+
+                if(rs.next()) {
+                    stateId = rs.getInt("id");
+
+                    DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), stateId);
+                    normalDeviceState.insert();
+
+                    device.setCurrentState(normalDeviceState);
+                    device.insertOrUpdate();
+                }
+                else {
+                    throw new NoSuchElementException("No normal security state has been added to the database");
+                }
+            }
+            else {
+                stateId = currentState.getId();
+            }
+
             //Insert tags into device_tag
             List<Integer> tagIds = device.getTagIds();
             if (tagIds != null) {
@@ -1882,12 +1913,13 @@ public class Postgres {
                     executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", serialNum, tagId));
                 }
             }
-            return serialNum;
+
+            return device;
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error inserting Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -1897,7 +1929,7 @@ public class Postgres {
      *
      * @param device Device to be inserted or updated.
      */
-    public static Integer insertOrUpdateDevice(Device device) {
+    public static Device insertOrUpdateDevice(Device device) {
         Device d = findDevice(device.getId());
         if (d == null) {
             return insertDevice(device);
@@ -1912,7 +1944,7 @@ public class Postgres {
      * @param device Device holding new parameters to be saved in the database.
      * @return the id of the updated device
      */
-    public static Integer updateDevice(Device device) {
+    public static Device updateDevice(Device device) {
         logger.info(String.format("Updating Device with id = %d with values: %s", device.getId(), device));
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
@@ -1952,13 +1984,13 @@ public class Postgres {
                         executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
                     }
                 }
-                return device.getId();
+                return device;
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
             }
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -1973,6 +2005,8 @@ public class Postgres {
         try {
             // Delete associated tags
             executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", id));
+            //delete device security state
+            executeCommand(String.format("DELETE FROM device_security_state WHERE device_id = %d", id));
             deleteById("device", id);
             return true;
         } finally {
@@ -3929,5 +3963,123 @@ public class Postgres {
      */
     public static Boolean deleteUmboxLookup(int id) {
         return deleteById("umbox_lookup", id);
+    }
+
+    /*
+        Methods used for giving the dashboard new updates
+    */
+    private static List<Integer> newStateIds = Collections.synchronizedList(new ArrayList<Integer>());
+    private static List<Integer> newAlertIds = Collections.synchronizedList(new ArrayList<Integer>());
+    private static List<Integer> newStatusIds = Collections.synchronizedList(new ArrayList<Integer>());
+
+    /**
+     * Start up a notification listener.  This will clear all current handlers and
+     * current list of newIds
+     */
+    public static void startListener() {
+        InsertListener.startListening();
+        InsertListener.clearHandlers();
+
+        InsertListener.addHandler("alerthistoryinsert", new AlertHandler());
+        InsertListener.addHandler("devicesecuritystateinsert", new StateHandler());
+        InsertListener.addHandler("devicestatusinsert", new StatusHandler());
+
+        newAlertIds.clear();
+        newStateIds.clear();
+        newStatusIds.clear();
+    }
+
+    public static void stopListener() {
+        InsertListener.stopListening();
+    }
+
+    /**
+     * adds a given alert id to the list of new alert ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newAlertId(int newId) {
+        newAlertIds.add(newId);
+    }
+
+    /**
+     * adds a given state id to the list of new state ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newStateId(int newId) {
+        newStateIds.add(newId);
+    }
+
+    /**
+     * adds a given status id to the list of new status ids to be given to the dashboard
+     * @param newId
+     */
+    public static void newStatusId(int newId) {
+        newStatusIds.add(newId);
+    }
+
+    /**
+     * return the latest alerts unless there are no alerts and then returns null
+     *
+     * @return the next new alert to be given to the dashboard in the queue
+     */
+    public static List<Alert> getNewAlerts() {
+        if(newAlertIds.size() != 0) {
+            List<Alert> newAlerts = new ArrayList<>();
+            synchronized (newAlertIds) {
+                for(int alertId: newAlertIds) {
+                    Alert newAlert = Postgres.findAlert(alertId);
+                    newAlerts.add(newAlert);
+                }
+                newAlertIds.clear();
+            }
+
+            return newAlerts;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * return the latest states unless there are no states and then returns null
+     *
+     * @return the next new device security state to be given to the dashboard in the queue
+     */
+    public static List<DeviceSecurityState> getNewStates() {
+        if(newStateIds.size() != 0) {
+            List<DeviceSecurityState> newStates = new ArrayList<>();
+            synchronized (newStateIds) {
+                for(int stateId: newStateIds) {
+                    DeviceSecurityState newState = Postgres.findDeviceSecurityState(stateId);
+                    newStates.add(newState);
+                }
+                newStateIds.clear();
+            }
+
+            return newStates;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * return the latest statuses unless there are no statuses and then returns null
+     *
+     * @return the next new device security state to be given to the dashboard in the queue
+     */
+    public static List<DeviceStatus> getNewStatuses() {
+        if(newStatusIds.size() != 0) {
+            List<DeviceStatus> newStatuses = new ArrayList<>();
+            synchronized (newStatusIds) {
+                for(int statusId: newStatusIds) {
+                    DeviceStatus newStatus = Postgres.findDeviceStatus(statusId);
+                    newStatuses.add(newStatus);
+                }
+                newStatusIds.clear();
+            }
+
+            return newStatuses;
+        } else {
+            return null;
+        }
     }
 }

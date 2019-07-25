@@ -32,26 +32,26 @@ public class SecurityStateTest extends AUsesDatabase {
     @Test
     public void testFindAllSecurityStates() {
         ArrayList<SecurityState> foundSecurityStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
-        assertEquals(1, foundSecurityStates.size());
+        assertEquals(4, foundSecurityStates.size());    //including normal, suspicious, and attack
     }
 
     @Test
     public void testInsertOrUpdateSecurityState() {
         ArrayList<SecurityState> foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
-        assertEquals(1, foundStates.size());
+        assertEquals(4, foundStates.size());    //including normal, suspicious, and attack
 
         securityState.setName("changed security state");
         securityState.insertOrUpdate();
 
         foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
-        assertEquals(1, foundStates.size());
+        assertEquals(4, foundStates.size());    //including normal, suspicious, and attack
         assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
 
         SecurityState newSecurityState = new SecurityState("new security state");
         int newId = newSecurityState.insertOrUpdate();
 
         foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
-        assertEquals(2, foundStates.size());
+        assertEquals(5, foundStates.size());    //including normal, suspicious, and attack
         assertEquals(newSecurityState.toString(), Postgres.findSecurityState(newSecurityState.getId()).toString());
     }
 

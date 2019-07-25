@@ -169,12 +169,16 @@ public class Device {
     }
 
     public Integer insert(){
-        this.id = Postgres.insertDevice(this);
+        Device data = Postgres.insertDevice(this);
+        setCurrentState(data.getCurrentState());
+        setId(data.getId());
         return this.id;
     }
 
     public Integer insertOrUpdate(){
-        this.id = Postgres.insertOrUpdateDevice(this);
+        Device data = Postgres.insertOrUpdateDevice(this);
+        setCurrentState(data.getCurrentState());
+        setId(data.getId());
         return this.id;
     }
 

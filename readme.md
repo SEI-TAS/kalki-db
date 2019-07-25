@@ -4,6 +4,8 @@
 * [Models & Actions](#models-&-actions)
     * [Postgres Tables](#postgres-tables)
     * [Java Objects](#java-objects)
+    * [Insert Notifications](#insert-notifications)
+
 ## Usage
 First, clone this repo.
 
@@ -719,4 +721,41 @@ This class supports:
 - `insert()`
 - `insertOrUpdate()`
 - `toString()`
+
+### Insert Notifications
+
+When you run the setupDatabase() method, triggers are created that generate postgres notifications.  
+These triggers generate notifications on the following conditions.
+
+##### Notification Conditions:
+|Table Name            |Action      |Notification Name           |
+|---------------------:|:-----------|:-------------------------- |
+|alert                 |INSERT      |`alertinsert`               |
+|device_security_state |INSERT      |`devicesecuritystateinsert` |
+|device_status         |INSERT      |`devicestatusinsert`        |
+|device                |INSERT      |`deviceinsert`              |
+
+Without taking any additional steps, the notifications will be generated with nothing listening.
+You can start listening to these notifications which will add the necessary handlers to a notification 
+listener and check for new notifications once every second.  To start listening to notifications, call
+```
+Postgres.startListener();
+```
+You can also stop listening by calling
+```
+Postgres.stopListener();
+```
+Once you start listening, you can retrieve all of the newest insertions per table by calling one of the following methods
+##### Notification Content Retrieval Methods:
+|Method                   |Return Type                  |
+|------------------------:|:----------------------------|
+|Postgres.getNewAlerts()  | `List<Alert>`               | 
+|Postgres.getNewStates()  | `List<DeviceSecurityState>` |
+|Postgres.getNewStatuses()| `List<DeviceStatus>`        |
+
+Each of these methods will return all of the insertions for its given table since the last time the method was called,
+or if there are no insertions it will return null.
+
+
+
 
