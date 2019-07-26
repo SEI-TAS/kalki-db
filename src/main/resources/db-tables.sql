@@ -111,11 +111,13 @@ CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
     variables          hstore,
     device_id          int NOT NULL REFERENCES device(id),
-    alert_type_id      int NOT NULL REFERENCES alert_type(id)
+    alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id)
 );
 
 CREATE TABLE IF NOT EXISTS alert_type_lookup(
+    id                 serial PRIMARY KEY,
+    variables          hstore,
     alert_type_id      int REFERENCES alert_type(id),
     device_type_id     int REFERENCES device_type(id),
-    PRIMARY KEY(alert_type_id, device_type_id)
+    UNIQUE(alert_type_id, device_type_id)
 );
