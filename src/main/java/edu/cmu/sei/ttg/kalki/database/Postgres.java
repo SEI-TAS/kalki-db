@@ -1013,13 +1013,13 @@ public class Postgres {
     }
 
     /**
-     * Insert row(s) into the AlertCondition table
+     * Insert row(s) into the AlertCondition table based on the given Device's type
      *
-     * @param cond The AlertCondition to be added
-     * @return id of new AlertCondition on success. -1 on error
+     * @param id the Id of the device
+     * @return 1 on success. -1 on error
      */
-    public static Integer insertAlertConditionByDeviceType(AlertCondition cond) {
-        logger.info("Inserting alert condition for device type: " + cond.getDeviceTypeId());
+    public static Integer insertAlertConditionForDevice(int id) {
+        logger.info("Inserting alert conditions for device type: " + cond.getDeviceTypeId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
@@ -1027,14 +1027,48 @@ public class Postgres {
         try {
             if (cond.getDeviceTypeId() == null)
                 return -1;
+            Device d = findDevice(id);
+            List<AlertTypeLookup> atlList = findAlertTypesByDeviceType(d.getDeviceType().getId());
+            PreparedStatement insertAlertCondition = null;
+            for(AlertTypeLookup atl: atlList){
+                insertAlertCondition = dbConn.prepareStatment("INSERT INTO alert_condition(device_id, variables, alert_type_lookup_id) VALUES (?,?,?);");
+                insertAlertCondition.setInt(d.getId());
+                insertAlertCondition.setObject(atl.getVariables());
+                insertAlertCondition.setInt(atl.getId());
+                insertAlertCondition.executeUpdate();
+            }
 
-            List<Device> deviceList = findDevicesByType(cond.getDeviceTypeId());
+            return 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * Insert row(s) into the AlertCondition table for devices in type specified on the AlertTypeLookup
+     *
+     * @param cond The AlertCondition to be added
+     * @return id of new AlertCondition on success. -1 on error
+     */
+    public static Integer updateAlertConditionsForDeviceType(AlertTypeLookup alertTypeLookup) {
+        logger.info("Inserting alert conditions for device type: " + alertTypeLookup.getDeviceTypeId());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+        try {
+            if (alertTypeLookup.getDeviceTypeId() == null)
+                return -1;
+
+            List<Device> deviceList = findDevicesByType(alertTypeLookup.getDeviceTypeId());
 
             for (Device d : deviceList) {
                 PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?);");
-                insertAlertCondition.setObject(1, cond.getVariables());
+                insertAlertCondition.setObject(1, alertType.getVariables());
                 insertAlertCondition.setInt(2, d.getId());
-                insertAlertCondition.setInt(3, cond.getAlertTypeLookupId());
+                insertAlertCondition.setInt(3, alertType.getAlertTypeLookupId());
                 insertAlertCondition.executeUpdate();
             }
 
