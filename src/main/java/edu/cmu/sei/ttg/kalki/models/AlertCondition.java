@@ -85,7 +85,7 @@ public class AlertCondition {
         this.variables = variables;
     }
 
-    public Integer insert() {
+    public Integer inserOrUpdate() {
         if (deviceTypeId == null) {
             this.id = Postgres.insertAlertCondition(this);
             return this.id;

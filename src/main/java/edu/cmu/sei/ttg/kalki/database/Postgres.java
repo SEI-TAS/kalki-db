@@ -1266,6 +1266,120 @@ public class Postgres {
     }
 
     /*
+     *      AlertTypeLookup specific actions
+     */
+
+    /**
+     * Returns the row from alert_type_lookup with the given id
+     * @param id of the row
+     */
+    public static findAlertTypeLookupById(int id) {
+        ResultSet rs = findById(id, "alert_type_lookup");
+        if (rs == null) {
+            return null;
+        } else {
+            return rsToAlertTypeLookup(rs);
+        }
+    }
+
+    /**
+     * Returns all rows from the alert_type_lookup table
+     * @return A list of AlertTypeLookups
+     */
+    public static List<AlertTypeLookup> findAllAlertTypeLookups() {
+        ResultSet rs = getAllFromTable("alert_type_lookup");
+        List<AlertTypeLookup> atlList = new ArrayList<AlertTypeLookup>();
+        try {
+            while (rs.next()) {
+                atlList.add(rsToAlertTypeLookup(rs));
+            }
+            rs.close();
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all device commands.");
+        }
+        return atlList;
+    }
+
+    private static AlertTypeLookup rsToAlertTypeLookup(ResultSet rs){
+        AlertTypeLookup atl = null;
+        try {
+            int id = rs.getInt("id");
+            int alertTypeId = rs.getInt("alert_type_id");
+            int deviceTypeId = rs.getInt("device_type_id");
+            Map<String, String> variables = null;
+            if (rs.getString("variables") != null) {
+                variables = HStoreConverter.fromString(rs.getString("variables"));
+            }
+            atl = new AlertTypeLookup(id, alertTypeId, deviceTypeId, variables);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error converting rs to AlertType: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return atl;
+    }
+
+    /**
+     * Inserts the given AlertTypeLookup into the alert_type_lookup table
+     * @param atl
+     * @return The id of the new AlertTypeLookup. -1 on failure
+     */
+    public static int insertAlertTypeLookup(AlertTypeLookup atl){
+        logger.info("Inserting AlertTypeLookup: " + atl.toString());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+        try {
+            PreparedStatement insertAtl = dbConn.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?);");
+            insertAtl.setInt(1, atl.getAlertTypeId());
+            insertAtl.setInt(2, atl.getDeviceTypeId());
+            insertAtl.setObject(3, atl.getVariables());
+            insertAtl.executeUpdate();
+            return getLatestId("alert_type_lookup");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * Updates the row for the given AlertTypeLookup
+     * @param atl The object with new values for the row
+     * @return The id of the AlertTypeLookup. -1 on failure
+     */
+    public static AlertTypeLookup updateAlertTypeLookup(AlertTypeLookup atl){
+        logger.info("Updating AlertTypeLookup; atlId: " +atl.getId());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            PreparedStatement updateAtl = dbConn.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ?, variables = ? WHERE id = ?");
+            updateAtl.setInt(1, atl.getAlertTypeId());
+            updateAtl.setInt(2, atl.getDeviceTypeId());
+            updateAtl.setObject(3, atl.getVariables());
+            updateAtl.executeUpdate();
+
+            return atl.getId();
+        } catch (SQLException e) {
+            logger.severe("Error updating AlertTypeLookup: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Deletes an AlertTypeLookup by its id.
+     *
+     * @param id id of the AlertTypeLookup to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static Boolean deleteAlertTypeLookup(int id) {
+        logger.info(String.format("Deleting alert_type_lookup with id = %d", id));
+        return deleteById("alert_type_lookup", id);
+    }
+
+    /*
      *      Command specific actions
      */
 
