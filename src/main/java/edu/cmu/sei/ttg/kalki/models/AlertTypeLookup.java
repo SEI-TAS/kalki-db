@@ -2,6 +2,7 @@ package edu.cmu.sei.ttg.kalki.models;
 
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
+import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -60,11 +61,13 @@ public class AlertTypeLookup {
     }
 
     public int insert() {
-        this.id = Postgres.insertAlertTypeLookup(this);
+        setId(Postgres.insertAlertTypeLookup(this));
+        return getId();
     }
 
     public int insertOrUpdate() {
-
+        setId(Postgres.insertOrUpdateAlertTypeLookup(this));
+        return getId();
     }
 
     public String toString() {
