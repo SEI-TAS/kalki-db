@@ -85,7 +85,7 @@ public class AlertCondition {
         this.variables = variables;
     }
 
-    public Integer inserOrUpdate() {
+    public Integer insertOrUpdate() {
         setId(Postgres.insertAlertCondition(this));
         return getId();
     }
