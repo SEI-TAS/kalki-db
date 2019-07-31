@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS device(
     ip_address             varchar(255),
     status_history_size    int NOT NULL,
     sampling_rate          int NOT NULL,
-    current_state_id       int REFERENCES device_security_state(id),
+    current_state_id       int,
     last_alert_id          int
 );
 
@@ -107,17 +107,16 @@ CREATE TABLE IF NOT EXISTS alert(
     device_status_id   int REFERENCES device_status(id)
 );
 
+CREATE TABLE IF NOT EXISTS alert_type_lookup(
+    id                 serial PRIMARY KEY,
+    variables          hstore,
+    alert_type_id      int REFERENCES alert_type(id),
+    device_type_id     int REFERENCES device_type(id)
+);
+
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
     variables          hstore,
     device_id          int NOT NULL REFERENCES device(id),
     alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id)
-);
-
-CREATE TABLE IF NOT EXISTS alert_type_lookup(
-    id                 serial PRIMARY KEY,
-    variables          hstore,
-    alert_type_id      int REFERENCES alert_type(id),
-    device_type_id     int REFERENCES device_type(id),
-    UNIQUE(alert_type_id, device_type_id)
 );

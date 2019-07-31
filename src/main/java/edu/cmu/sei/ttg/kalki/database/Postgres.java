@@ -271,7 +271,7 @@ public class Postgres {
         initDB("db-alert-types.sql");
         initDB("db-device-types.sql");
         initDB("db-security-states.sql");
-        initDB("db-command-lookups.sql");
+//        initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
     }
@@ -341,7 +341,7 @@ public class Postgres {
      * @param tableName name of the table to be dropped
      */
     public static void dropTable(String tableName) {
-        executeCommand("DROP TABLE IF EXISTS " + tableName);
+        executeCommand("DROP TABLE IF EXISTS " + tableName + " CASCADE");
     }
 
 
@@ -845,6 +845,7 @@ public class Postgres {
                     "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
                     "WHERE ac.id=? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id");
             st.setInt(1, id);
+            rs = st.executeQuery();
             if (rs.next()) {
                 alertCondition = rsToAlertCondition(rs);
             }
@@ -906,6 +907,7 @@ public class Postgres {
             st = dbConn.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
                                          "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
                                          "WHERE ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id");
+            rs = st.executeQuery();
             while (rs.next()) {
                 alertConditionList.add(rsToAlertCondition(rs));
             }
@@ -932,8 +934,8 @@ public class Postgres {
         }
         List<AlertCondition> conditionList = new ArrayList<AlertCondition>();
         try {
-            st = dbConn.prepareStatement("SELECT DISTINCT ON (ac.alert_type_lookup_id), ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.alert_type_lookup_id, ac.variables " +
-                                         "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl" +
+            st = dbConn.prepareStatement("SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
+                                         "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl " +
                                          "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
@@ -941,10 +943,11 @@ public class Postgres {
                 conditionList.add(rsToAlertCondition(rs));
             }
         } catch (SQLException e) {
-            logger.severe("Sql exception getting all alert conditions: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
+            logger.severe("Sql exception getting all alert conditions: ");
             e.printStackTrace();
-            logger.severe("Error getting alert conditions: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e1) {
+            logger.severe("Error getting alert conditions: ");
+            e1.printStackTrace();
         } finally {
             try {
                 if (rs != null) {
@@ -982,8 +985,8 @@ public class Postgres {
             }
             cond = new AlertCondition(id, deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
         } catch (Exception e) {
+            logger.severe("Error converting rs to Alert:");
             e.printStackTrace();
-            logger.severe("Error converting rs to Alert: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return cond;
     }
@@ -1026,24 +1029,18 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
-        try {
-            Device d = findDevice(id);
-            List<AlertTypeLookup> atlList = findAlertTypeLookupsByDeviceType(d.getType().getId());
-            PreparedStatement insertAlertCondition = null;
-            for(AlertTypeLookup atl: atlList){
-                insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(device_id, variables, alert_type_lookup_id) VALUES (?,?,?);");
-                insertAlertCondition.setInt(1, d.getId());
-                insertAlertCondition.setObject(2, atl.getVariables());
-                insertAlertCondition.setInt(3, atl.getId());
-                insertAlertCondition.executeUpdate();
-            }
 
-            return 1;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
+        Device d = findDevice(id);
+        List<AlertTypeLookup> atlList = findAlertTypeLookupsByDeviceType(d.getType().getId());
+        PreparedStatement insertAlertCondition = null;
+        for(AlertTypeLookup atl: atlList){
+            AlertCondition ac = new AlertCondition(id, atl.getId(), atl.getVariables());
+            ac.insertOrUpdate();
+            if(ac.getId()<0) //insert failed
+                return -1;
         }
-        return -1;
+
+        return 1;
     }
 
     /**
@@ -1418,6 +1415,7 @@ public class Postgres {
             updateAtl.setInt(1, atl.getAlertTypeId());
             updateAtl.setInt(2, atl.getDeviceTypeId());
             updateAtl.setObject(3, atl.getVariables());
+            updateAtl.setInt(4, atl.getId());
             updateAtl.executeUpdate();
 
             return atl.getId();
@@ -2077,7 +2075,6 @@ public class Postgres {
 
             //give the device a normal security state if it is not specified
             if(currentState == null) {
-
                 //get the id of normal security state
                 PreparedStatement st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
                 st.setString(1, "Normal");
@@ -2097,6 +2094,7 @@ public class Postgres {
                 }
             }
             else {
+                logger.info("current state isnt null");
                 stateId = currentState.getId();
             }
 
