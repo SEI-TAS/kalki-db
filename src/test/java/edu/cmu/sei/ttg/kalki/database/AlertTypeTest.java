@@ -53,18 +53,6 @@ public class AlertTypeTest extends AUsesDatabase {
         assertEquals(1, alertTypeList.size());
         assertEquals(alertType.toString(), alertTypeList.get(0).toString());
     }
-// moving to AlertTypeLookupTest
-//    @Test
-//    public void testFindAlertTypesByDeviceType() {
-//        List<AlertType> atList =
-//                new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(deviceType.getId()));
-//
-//        assertEquals(1, atList.size());
-//        assertEquals(alertType.toString(), atList.get(0).toString());
-//
-//        atList = new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(deviceTypeTwo.getId()));
-//        assertEquals(0, atList.size());
-//    }
 
     @Test
     public void testUpdateAlertType() {
