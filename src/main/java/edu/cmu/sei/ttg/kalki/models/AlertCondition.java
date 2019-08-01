@@ -10,33 +10,33 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class AlertCondition {
     private int id;
-    private Map<String, String> variables;
     private Integer deviceId;
-    private Integer deviceTypeId;
-    private int alertTypeId;
+    private String deviceName;
+    private Integer alertTypeLookupId;
+    private String alertTypeName;
+    private Map<String, String> variables;
+
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public AlertCondition() {
     }
 
-    public AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId) {
-        this.variables = variables;
+    public AlertCondition(Integer deviceId, Integer alertTypeLookupId, Map<String, String> variables) {
         this.deviceId = deviceId;
-        this.alertTypeId = alertTypeId;
-        this.deviceTypeId = null;
+        this.alertTypeLookupId = alertTypeLookupId;
+        this.variables = variables;
     }
 
-    public AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId, Integer deviceTypeId) {
-        this(variables, deviceId, alertTypeId);
-        this.deviceTypeId = deviceTypeId;
+    public AlertCondition(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
+        this(deviceId, alertTypeLookupId, variables);
+        this.deviceName = deviceName;
+        this.alertTypeName = alertTypeName;
     }
 
-    public AlertCondition(int id, Map<String, String> variables, Integer deviceId, int alertTypeId) {
+    public AlertCondition(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
+        this(deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
         this.id = id;
-        this.variables = variables;
-        this.deviceId = deviceId;
-        this.alertTypeId = alertTypeId;
     }
 
     public int getId() {
@@ -47,14 +47,6 @@ public class AlertCondition {
         this.id = id;
     }
 
-    public Map<String, String> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(Map<String, String> variables) {
-        this.variables = variables;
-    }
-
     public Integer getDeviceId() {
         return deviceId;
     }
@@ -63,30 +55,39 @@ public class AlertCondition {
         this.deviceId = deviceId;
     }
 
-    public Integer getDeviceTypeId() {
-        return deviceTypeId;
+    public String getDeviceName() { return this.deviceName; }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
     }
 
-    public void setDeviceTypeId(Integer deviceTypeId) {
-        this.deviceTypeId = deviceTypeId;
+    public Integer getAlertTypeLookupId() {
+        return alertTypeLookupId;
     }
 
-    public int getAlertTypeId() {
-        return alertTypeId;
+    public void setAlertTypeLookupId(Integer alertTypeLookupId) {
+        this.alertTypeLookupId = alertTypeLookupId;
     }
 
-    public void setAlertTypeId(int alertTypeId) {
-        this.alertTypeId = alertTypeId;
+    public String getAlertTypeName() {
+        return alertTypeName;
     }
 
-    public Integer insert() {
-        if (deviceTypeId == null) {
-            this.id = Postgres.insertAlertCondition(this);
-            return this.id;
-        } else {
-            Postgres.insertAlertConditionByDeviceType(this);
-            return 1;
-        }
+    public void setAlertTypeName(String alertTypeName) {
+        this.alertTypeName = alertTypeName;
+    }
+
+    public Map<String, String> getVariables() {
+        return variables;
+    }
+
+    public void setVariables(Map<String, String> variables) {
+        this.variables = variables;
+    }
+
+    public Integer insertOrUpdate() {
+        setId(Postgres.insertAlertCondition(this));
+        return getId();
     }
 
     public String toString() {

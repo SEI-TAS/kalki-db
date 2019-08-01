@@ -85,16 +85,16 @@ Device device = Postgres.findDevice(deviceId);
 |id              |int      |  
 |variables       |hstore   |
 |device_id       |int NOT NULL |
-|alert_type_id   |int NOT NULL |  
+|alert_type_lookup_id   |int NOT NULL |  
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
 |`findAlertCondition(int id) `                       |`AlertCondition`      |
-|`findAlertConditionByAlertType(int alertTypeId) `   |`AlertCondition`      |
 |`findAlertConditionsByDevice(int deviceId)`         |`List<AlertCondition>`|
 |`findAllAlertConditions()`                          |`List<AlertCondition>`|
-|`insertAlertCondition(AlertCondition condition`     |`Integer`           |
-|`insertAlertConditionByDeviceType(AlertCondition cond) `|`Integer`       |
+|`insertAlertCondition(AlertCondition condition)`    |`Integer`           |
+|`insertAlertConditionForDevice(int id) `            |`Integer`       |
+|`updateAlertConditionsForDeviceType(AlertTypeLookup alertTypeLookup)`|`Integer`|
 |`deleteAlertCondition(int id)`                      |`Boolean`           |
 
 #### AlertType
@@ -114,7 +114,26 @@ Device device = Postgres.findDevice(deviceId);
 |`insertAlertType(AlertType type)`              |`Integer`|
 |`updateAlertType(AlertType type)`              |`Integer`|
 |`insertOrUpdate(AlertType type)`               |`Integer`|
-|`deleteAlertType(int id)`                      |`CompletionStage<Boolean>`|
+|`deleteAlertType(int id)`                      |`Boolean`|
+
+#### AlertTypeLookup
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|variables       |hstore   |
+|device_type_id  |int      |
+|alert_type_id   |int      |
+###### Actions:  
+|Function Definition                                 |Return Type|
+|:----------------------------------------------|:--------|
+|`findAlertTypeLookup(int id) `                 |`AlertTypeLookup`      |
+|`findAlertTypeLookupsByDeviceType(int typeId)  `  |`List<AlertTypeLookup>`|
+|`findAllAlertTypeLookups()` |`List<AlertTypeLookup>`|
+|`insertAlertTypeLookup(AlertTypeLookup atl)`              |`int`|
+|`updateAlertTypeLookup(AlertTypeLookup atl)`              |`int`|
+|`insertOrUpdateAlertTypeLookup(AlertTypeLookup alertTypeLookup)`|`int`|
+|`deleteAlertTypeLookup(int id)`                      |`Boolean`|
 
 #### Command
 ###### Schema:
@@ -375,14 +394,16 @@ This class supports:
 |id              |int      |  
 |variables       |Map<String, String>|
 |deviceId        |int   |
-|alertTypeId     |int   |
+|deviceName      |String|
+|alertTypeLookupId  |int   |
+|alertTypeName   |String|
 ###### Constructors:  
 |Definition|
 |:-----------------------------------------------|
 |`AlertCondition()`|
-|`AlertCondition(Map<String, String> variables, int deviceId, int alertTypeId)`|
-|`AlertCondition(Map<String, String> variables, Integer deviceId, int alertTypeId, Integer deviceTypeId)`|
-|`AlertCondition(int id, Map<String, String> variables, int deviceId, int alertTypeId)`|
+|`AlertCondition(Integer deviceId, Integer alertTypeLookupId, Map<String, String> variables)`|
+|`AlertCondition(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables)`|
+|`AlertCondition(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables)`|
 ###### Methods
 This class supports:
 - `get<field>()`
@@ -390,6 +411,7 @@ This class supports:
 - `set<field>(<field type> value)`
     - ex: setName("Name")
 - `insert()`
+- `insertOrUpdate()`
 - `toString()`
 #### AlertType
 ###### Schema:
@@ -405,6 +427,29 @@ This class supports:
 |`AlertType()`|
 |`AlertType(String name, String description, String source)`|
 |`AlertType(int id, String name, String description, String source)`|
+###### Methods
+This class supports:
+- `get<field>()`
+    - ex: getName()
+- `set<field>(<field type> value)`
+    - ex: setName("Name")
+- `insert()`
+- `insertOrUpdate()`
+- `toString()`
+#### AlertTypeLookup
+###### Schema:
+|Property        |Type     |
+|---------------:|:--------|
+|id              |int      |  
+|alertTypeId     |int      |
+|deviceTypeId    |int      |
+|variables       |Map<String, String>|
+###### Constructors:  
+|Definition|
+|:-----------------------------------------------|
+|`AlertTypeLookup()`|
+|`AlertTypeLookup(int alertTypeId, int deviceTypeId, Map<String, String> variables)`|
+|`AlertTypeLookup(int id, int alertTypeId, int deviceTypeId, Map<String, String> variables)`|
 ###### Methods
 This class supports:
 - `get<field>()`

@@ -271,7 +271,7 @@ public class Postgres {
         initDB("db-alert-types.sql");
         initDB("db-device-types.sql");
         initDB("db-security-states.sql");
-        initDB("db-command-lookups.sql");
+//        initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
     }
@@ -341,7 +341,7 @@ public class Postgres {
      * @param tableName name of the table to be dropped
      */
     public static void dropTable(String tableName) {
-        executeCommand("DROP TABLE IF EXISTS " + tableName);
+        executeCommand("DROP TABLE IF EXISTS " + tableName + " CASCADE");
     }
 
 
@@ -833,42 +833,62 @@ public class Postgres {
      * @return An AlertCondition with desired id
      */
     public static AlertCondition findAlertCondition(int id) {
-        ResultSet rs = findById(id, "alert_condition");
-        if (rs == null) {
-            return null;
-        } else {
-            return rsToAlertCondition(rs);
-        }
-    }
-
-    /**
-     * Finds the newest AlertCondition from the databse associated with the given alertType
-     *
-     * @param alertTypeId The id of the alertType used to find the alertCondition
-     * @return AlertCondition or null
-     */
-    public static AlertCondition findAlertConditionByAlertType(int alertTypeId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        AlertCondition foundCondition = null;
+        AlertCondition alertCondition = new AlertCondition();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT * FROM alert_condition WHERE alert_type_id = ? ORDER BY id DESC LIMIT 1");
-            st.setInt(1, alertTypeId);
+            st = dbConn.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
+                    "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
+                    "WHERE ac.id=? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id");
+            st.setInt(1, id);
             rs = st.executeQuery();
             if (rs.next()) {
-                foundCondition = rsToAlertCondition(rs);
+                alertCondition = rsToAlertCondition(rs);
             }
             rs.close();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error finding alert condition by alert type: " + e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Error getting all AlertConditions: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return foundCondition;
+        return alertCondition;
     }
+
+    //REPLACED WITH findAlertTypeById(int id)
+
+//    /**
+//     * Finds the newest AlertCondition from the databse associated with the given alertType
+//     *
+//     * @param alertTypeId The id of the alertType used to find the alertCondition
+//     * @return AlertCondition or null
+//     */
+//    public static AlertCondition findAlertConditionByAlertType(int alertTypeId) {
+//        PreparedStatement st = null;
+//        ResultSet rs = null;
+//        AlertCondition foundCondition = null;
+//        if (dbConn == null) {
+//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+//            return null;
+//        }
+//        try {
+//            st = dbConn.prepareStatement("SELECT ac.id, ac.device_id, ac.variables, atl.alert_type_id FROM alert_condition AS ac, alert_type_lookup AS atl " +
+//                                         "WHERE atl.alert_type_id = ? AND ac.alert_type_lookup_id=atl.id " +
+//                                         "ORDER BY ac.id DESC LIMIT 1");
+//            st.setInt(1, alertTypeId);
+//            rs = st.executeQuery();
+//            if (rs.next()) {
+//                foundCondition = rsToAlertCondition(rs);
+//            }
+//            rs.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.severe("Error finding alert condition by alert type: " + e.getClass().getName() + ": " + e.getMessage());
+//        }
+//        return foundCondition;
+//    }
 
     /**
      * Finds all AlertConditions in the database
@@ -876,13 +896,18 @@ public class Postgres {
      * @return a list of AlertCondition
      */
     public static List<AlertCondition> findAllAlertConditions() {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<AlertCondition> alertConditionList = new ArrayList<AlertCondition>();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
-        List<AlertCondition> alertConditionList = new ArrayList<AlertCondition>();
         try {
-            ResultSet rs = getAllFromTable("alert_condition");
+            st = dbConn.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
+                                         "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
+                                         "WHERE ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id");
+            rs = st.executeQuery();
             while (rs.next()) {
                 alertConditionList.add(rsToAlertCondition(rs));
             }
@@ -895,10 +920,10 @@ public class Postgres {
     }
 
     /**
-     * Finds all AlertConditions from the database for the given device_id
+     * Finds most recent AlertConditions from the database for the given device_id
      *
      * @param deviceId an id of a device
-     * @return a list of all AlertConditions in the database related to the given device
+     * @return a list of all most recent AlertConditions in the database related to the given device
      */
     public static List<AlertCondition> findAlertConditionsByDevice(int deviceId) {
         PreparedStatement st = null;
@@ -909,17 +934,20 @@ public class Postgres {
         }
         List<AlertCondition> conditionList = new ArrayList<AlertCondition>();
         try {
-            st = dbConn.prepareStatement("SELECT * FROM alert_condition WHERE device_id = ?");
+            st = dbConn.prepareStatement("SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
+                                         "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl " +
+                                         "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
                 conditionList.add(rsToAlertCondition(rs));
             }
         } catch (SQLException e) {
-            logger.severe("Sql exception getting all alert conditions: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
+            logger.severe("Sql exception getting all alert conditions: ");
             e.printStackTrace();
-            logger.severe("Error getting alert conditions: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e1) {
+            logger.severe("Error getting alert conditions: ");
+            e1.printStackTrace();
         } finally {
             try {
                 if (rs != null) {
@@ -948,15 +976,17 @@ public class Postgres {
         try {
             int id = rs.getInt("id");
             int deviceId = rs.getInt("device_id");
-            int alertTypeId = rs.getInt("alert_type_id");
+            String deviceName = rs.getString("device_name");
+            int alertTypeLookupId = rs.getInt("alert_type_lookup_id");
+            String alertTypeName = rs.getString("alert_type_name");
             Map<String, String> variables = null;
             if (rs.getString("variables") != null) {
                 variables = HStoreConverter.fromString(rs.getString("variables"));
             }
-            cond = new AlertCondition(id, variables, deviceId, alertTypeId);
+            cond = new AlertCondition(id, deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
         } catch (Exception e) {
+            logger.severe("Error converting rs to Alert:");
             e.printStackTrace();
-            logger.severe("Error converting rs to Alert: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return cond;
     }
@@ -974,10 +1004,10 @@ public class Postgres {
             return -1;
         }
         try {
-            PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_id) VALUES (?,?,?);");
+            PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?);");
             insertAlertCondition.setObject(1, cond.getVariables());
             insertAlertCondition.setInt(2, cond.getDeviceId());
-            insertAlertCondition.setInt(3, cond.getAlertTypeId());
+            insertAlertCondition.setInt(3, cond.getAlertTypeLookupId());
             insertAlertCondition.executeUpdate();
             return getLatestId("alert_condition");
         } catch (SQLException e) {
@@ -988,28 +1018,52 @@ public class Postgres {
     }
 
     /**
-     * Insert row(s) into the AlertCondition table
+     * Insert row(s) into the AlertCondition table based on the given Device's type
+     *
+     * @param id the Id of the device
+     * @return 1 on success. -1 on error
+     */
+    public static Integer insertAlertConditionForDevice(int id) {
+        logger.info("Inserting alert conditions for device: " + id);
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        Device d = findDevice(id);
+        List<AlertTypeLookup> atlList = findAlertTypeLookupsByDeviceType(d.getType().getId());
+        PreparedStatement insertAlertCondition = null;
+        for(AlertTypeLookup atl: atlList){
+            AlertCondition ac = new AlertCondition(id, atl.getId(), atl.getVariables());
+            ac.insertOrUpdate();
+            if(ac.getId()<0) //insert failed
+                return -1;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Insert row(s) into the AlertCondition table for devices in type specified on the AlertTypeLookup
      *
      * @param cond The AlertCondition to be added
      * @return id of new AlertCondition on success. -1 on error
      */
-    public static Integer insertAlertConditionByDeviceType(AlertCondition cond) {
-        logger.info("Inserting alert condition for device type: " + cond.getDeviceTypeId());
+    public static Integer updateAlertConditionsForDeviceType(AlertTypeLookup alertTypeLookup) {
+        logger.info("Inserting alert conditions for device type: " + alertTypeLookup.getDeviceTypeId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
         try {
-            if (cond.getDeviceTypeId() == null)
-                return -1;
 
-            List<Device> deviceList = findDevicesByType(cond.getDeviceTypeId());
+            List<Device> deviceList = findDevicesByType(alertTypeLookup.getDeviceTypeId());
 
             for (Device d : deviceList) {
-                PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_id) VALUES (?,?,?);");
-                insertAlertCondition.setObject(1, cond.getVariables());
+                PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?);");
+                insertAlertCondition.setObject(1, alertTypeLookup.getVariables());
                 insertAlertCondition.setInt(2, d.getId());
-                insertAlertCondition.setInt(3, cond.getAlertTypeId());
+                insertAlertCondition.setInt(3, alertTypeLookup.getId());
                 insertAlertCondition.executeUpdate();
             }
 
@@ -1238,6 +1292,164 @@ public class Postgres {
             }
         }
         return false;
+    }
+
+    /*
+     *      AlertTypeLookup specific actions
+     */
+
+    /**
+     * Returns the row from alert_type_lookup with the given id
+     * @param id of the row
+     */
+    public static AlertTypeLookup findAlertTypeLookup(int id) {
+        ResultSet rs = findById(id, "alert_type_lookup");
+        if (rs == null) {
+            return null;
+        } else {
+            return rsToAlertTypeLookup(rs);
+        }
+    }
+
+    /**
+     * Returns all rows from alert_type_lookup for the given device_type
+     * @param typeId The device_type id
+     */
+    public static List<AlertTypeLookup> findAlertTypeLookupsByDeviceType(int typeId){
+        ResultSet rs = null;
+        PreparedStatement st = null;
+        List<AlertTypeLookup> atlList = new ArrayList<AlertTypeLookup>();
+        if(dbConn == null){
+            logger.severe("Tyring to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try{
+            st = dbConn.prepareStatement("Select * from alert_type_lookup WHERE device_type_id=?");
+            st.setInt(1, typeId);
+            rs = st.executeQuery();
+            while(rs.next()){
+                atlList.add(rsToAlertTypeLookup(rs));
+            }
+            st.close();
+            rs.close();
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all alert_type_lookups for the device type: "+typeId);
+            e.printStackTrace();
+        }
+        return atlList;
+    }
+
+    /**
+     * Returns all rows from the alert_type_lookup table
+     * @return A list of AlertTypeLookups
+     */
+    public static List<AlertTypeLookup> findAllAlertTypeLookups() {
+        ResultSet rs = getAllFromTable("alert_type_lookup");
+        List<AlertTypeLookup> atlList = new ArrayList<AlertTypeLookup>();
+        try {
+            while (rs.next()) {
+                atlList.add(rsToAlertTypeLookup(rs));
+            }
+            rs.close();
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all alert_type_lookups.");
+        }
+        return atlList;
+    }
+
+    private static AlertTypeLookup rsToAlertTypeLookup(ResultSet rs){
+        AlertTypeLookup atl = null;
+        try {
+            int id = rs.getInt("id");
+            int alertTypeId = rs.getInt("alert_type_id");
+            int deviceTypeId = rs.getInt("device_type_id");
+            Map<String, String> variables = null;
+            if (rs.getString("variables") != null) {
+                variables = HStoreConverter.fromString(rs.getString("variables"));
+            }
+            atl = new AlertTypeLookup(id, alertTypeId, deviceTypeId, variables);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error converting rs to AlertType: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return atl;
+    }
+
+    /**
+     * Inserts the given AlertTypeLookup into the alert_type_lookup table
+     * @param atl
+     * @return The id of the new AlertTypeLookup. -1 on failure
+     */
+    public static int insertAlertTypeLookup(AlertTypeLookup atl){
+        logger.info("Inserting AlertTypeLookup: " + atl.toString());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+        try {
+            PreparedStatement insertAtl = dbConn.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?);");
+            insertAtl.setInt(1, atl.getAlertTypeId());
+            insertAtl.setInt(2, atl.getDeviceTypeId());
+            insertAtl.setObject(3, atl.getVariables());
+            insertAtl.executeUpdate();
+            return getLatestId("alert_type_lookup");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error inserting AlertTypeLookup: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * Updates the row for the given AlertTypeLookup
+     * @param atl The object with new values for the row
+     * @return The id of the AlertTypeLookup. -1 on failure
+     */
+    public static int updateAlertTypeLookup(AlertTypeLookup atl){
+        logger.info("Updating AlertTypeLookup; atlId: " +atl.getId());
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            PreparedStatement updateAtl = dbConn.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ?, variables = ? WHERE id = ?");
+            updateAtl.setInt(1, atl.getAlertTypeId());
+            updateAtl.setInt(2, atl.getDeviceTypeId());
+            updateAtl.setObject(3, atl.getVariables());
+            updateAtl.setInt(4, atl.getId());
+            updateAtl.executeUpdate();
+
+            return atl.getId();
+        } catch (SQLException e) {
+            logger.severe("Error updating AlertTypeLookup: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Checks if row exists in alert_type_lookup for the given AlertTypeLookup
+     * If there is now row, insert it. Otherwise update the row
+     * @param alertTypeLookup
+     * @return
+     */
+    public static int insertOrUpdateAlertTypeLookup(AlertTypeLookup alertTypeLookup) {
+        AlertTypeLookup atl = findAlertTypeLookup(alertTypeLookup.getId());
+        if(atl == null){
+            return insertAlertTypeLookup(alertTypeLookup);
+        } else {
+            return updateAlertTypeLookup(alertTypeLookup);
+        }
+
+    }
+    /**
+     * Deletes an AlertTypeLookup by its id.
+     *
+     * @param id id of the AlertTypeLookup to delete.
+     * @return true if the deletion succeeded, false otherwise.
+     */
+    public static Boolean deleteAlertTypeLookup(int id) {
+        logger.info(String.format("Deleting alert_type_lookup with id = %d", id));
+        return deleteById("alert_type_lookup", id);
     }
 
     /*
@@ -1863,7 +2075,6 @@ public class Postgres {
 
             //give the device a normal security state if it is not specified
             if(currentState == null) {
-
                 //get the id of normal security state
                 PreparedStatement st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
                 st.setString(1, "Normal");
@@ -1883,6 +2094,7 @@ public class Postgres {
                 }
             }
             else {
+                logger.info("current state isnt null");
                 stateId = currentState.getId();
             }
 
