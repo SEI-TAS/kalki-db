@@ -20,7 +20,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
     private HashMap<String, String> hmap;
 
     @Test
-    public void testFindAlertTypeLookupById() {
+    public void testFindAlertTypeLookupBy() {
         AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
         alertTypeLookup.insert();
 
@@ -65,7 +65,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
         alertTypeLookup.setAlertTypeId(alertType1.getId());
         Postgres.updateAlertTypeLookup(alertTypeLookup);
-        assertEquals(alertTypeLookup.toString(), Postgres.findAlertTypeLookupById(alertTypeLookup.getId()).toString());
+        assertEquals(alertTypeLookup.toString(), Postgres.findAlertTypeLookup(alertTypeLookup.getId()).toString());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
         alertTypeLookup.setAlertTypeId(alertType1.getId());
         alertTypeLookup.insertOrUpdate();
-        assertEquals(alertTypeLookup.toString(), Postgres.findAlertTypeLookupById(alertTypeLookup.getId()).toString());
+        assertEquals(alertTypeLookup.toString(), Postgres.findAlertTypeLookup(alertTypeLookup.getId()).toString());
         assertEquals(1, Postgres.findAllAlertTypeLookups().size());
     }
 

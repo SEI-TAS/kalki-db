@@ -1302,7 +1302,7 @@ public class Postgres {
      * Returns the row from alert_type_lookup with the given id
      * @param id of the row
      */
-    public static AlertTypeLookup findAlertTypeLookupById(int id) {
+    public static AlertTypeLookup findAlertTypeLookup(int id) {
         ResultSet rs = findById(id, "alert_type_lookup");
         if (rs == null) {
             return null;
@@ -1433,7 +1433,7 @@ public class Postgres {
      * @return
      */
     public static int insertOrUpdateAlertTypeLookup(AlertTypeLookup alertTypeLookup) {
-        AlertTypeLookup atl = findAlertTypeLookupById(alertTypeLookup.getId());
+        AlertTypeLookup atl = findAlertTypeLookup(alertTypeLookup.getId());
         if(atl == null){
             return insertAlertTypeLookup(alertTypeLookup);
         } else {
