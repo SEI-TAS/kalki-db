@@ -1,6 +1,7 @@
 package edu.cmu.sei.ttg.kalki.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,15 @@ public class DeviceTest extends AUsesDatabase {
         Test Device Actions
      */
 
+    @Test
+    public void testInsertDevice() {
+        Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000);
+        test.insert();
+
+        Device insertTest = Postgres.findDevice(test.getId());
+        assertNotNull(insertTest.getCurrentState());
+        assertNotEquals(0, Postgres.findAlertConditionsByDevice(insertTest.getId()).size());
+    }
     @Test
     public void testFindDevice() {
         assertEquals(device.getDescription(), Postgres.findDevice(device.getId()).getDescription());
@@ -147,5 +157,8 @@ public class DeviceTest extends AUsesDatabase {
         //insert state reset alert type
         alertTypeReset = new AlertType("state-reset", "state reset", "Dashboard");
         alertTypeReset.insert();
+
+        AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId(), null);
+        atl.insert();
     }
 }

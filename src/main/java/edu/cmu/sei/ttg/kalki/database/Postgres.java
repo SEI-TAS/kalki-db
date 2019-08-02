@@ -2093,6 +2093,8 @@ public class Postgres {
             int serialNum = getLatestId("device");
             device.setId(serialNum);
 
+            Postgres.insertAlertConditionForDevice(device.getId());
+
             DeviceSecurityState currentState = device.getCurrentState();
             Integer stateId = null;
 
