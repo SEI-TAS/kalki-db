@@ -17,6 +17,7 @@ public class Postgres {
     private static final String DEFAULT_ROOT_USER = "kalkiuser";
     private static final String BASE_DB = "postgres";
     private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
+    private static final int TABLE_COUNT=17;
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
 
@@ -56,6 +57,7 @@ public class Postgres {
         if (postgresInstance == null) {
             logger.info("Initializing database");
             postgresInstance = new Postgres(ip, port, dbName, dbUser, dbPassword);
+            postgresInstance.setupDatabase();
         } else {
             logger.info("Database already initialized");
         }
@@ -261,6 +263,10 @@ public class Postgres {
      * Creates necessary extensions, databases, and tables
      */
     public static void setupDatabase() {
+        if(getTableCount() == 17) {//tables have been initialized
+            logger.info("Database has been setup by another component");
+            return;
+        }
         logger.info("Setting up database.");
         createHstoreExtension();
         // DB Structure
@@ -304,6 +310,22 @@ public class Postgres {
         logger.info("Resetting Database.");
         dropTables();
         setupDatabase();
+    }
+
+    private static int getTableCount() {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            st = dbConn.prepareStatement("SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public'");
+            rs = st.executeQuery();
+            if(rs.next()){
+                return rs.getInt("count");
+            }
+        } catch (SQLException e){
+            logger.severe("There was an getting the current table count: ");
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     /**
