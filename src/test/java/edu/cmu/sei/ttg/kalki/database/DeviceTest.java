@@ -42,9 +42,9 @@ public class DeviceTest extends AUsesDatabase {
         Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000);
         test.insert();
 
-        Device insertTest = Postgres.findDevice(test.getId());
-        assertNotNull(insertTest.getCurrentState());
-        assertNotEquals(0, Postgres.findAlertConditionsByDevice(insertTest.getId()).size());
+        assertNotNull(test.getCurrentState());
+        assertNotEquals(0, Postgres.findAlertTypeLookupsByDeviceType(test.getType().getId()));
+        assertNotEquals(0, Postgres.findAlertConditionsByDevice(test.getId()).size());
     }
     @Test
     public void testFindDevice() {

@@ -279,8 +279,9 @@ public class Postgres {
         initDB("db-security-states.sql");
 //        initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
-        initDB("db-devices.sql");
         initDB("db-alert-type-lookups.sql");
+        initDB("db-devices.sql");
+
     }
 
     /**
@@ -293,6 +294,7 @@ public class Postgres {
         createHstoreExtension();
         // DB Structure
         initDB("db-tables.sql");
+        initDB("db-triggers.sql");
         initDB("db-security-states.sql");
     }
 
@@ -2093,22 +2095,20 @@ public class Postgres {
             int serialNum = getLatestId("device");
             device.setId(serialNum);
 
-            Postgres.insertAlertConditionForDevice(device.getId());
-
             DeviceSecurityState currentState = device.getCurrentState();
             Integer stateId = null;
 
             //give the device a normal security state if it is not specified
             if(currentState == null) {
                 //get the id of normal security state
-                PreparedStatement st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+                PreparedStatement st = dbConn.prepareStatement("SELECT * FROM security_state WHERE name = ?;");
                 st.setString(1, "Normal");
                 ResultSet rs = st.executeQuery();
 
                 if(rs.next()) {
-                    stateId = rs.getInt("id");
+                    SecurityState securityState = rsToSecurityState(rs);
 
-                    DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), stateId);
+                    DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), securityState.getId(), securityState.getName());
                     normalDeviceState.insert();
 
                     device.setCurrentState(normalDeviceState);
