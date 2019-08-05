@@ -50,20 +50,17 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
     public void testFindDeviceSecurityStates() {
         ArrayList<DeviceSecurityState> foundStates =
                 new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(device.getId()));
-        assertEquals(2, foundStates.size()); //the default normal state plus the new state
-
-        foundStates = new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(deviceTwo.getId()));
-        assertEquals(1, foundStates.size());  //the default normal state
+        assertEquals(1, foundStates.size()); //the default normal state plus the new state
     }
 
     @Test
     public void testInsertDeviceSecurityState() {
-        assertEquals(2, Postgres.findDeviceSecurityStates(device.getId()).size());
+        assertEquals(1, Postgres.findDeviceSecurityStates(device.getId()).size());
 
         DeviceSecurityState newState = new DeviceSecurityState(device.getId(), securityState.getId());
         newState.insert();
 
-        assertEquals(3, Postgres.findDeviceSecurityStates(device.getId()).size());
+        assertEquals(2, Postgres.findDeviceSecurityStates(device.getId()).size());
     }
 
     @Test

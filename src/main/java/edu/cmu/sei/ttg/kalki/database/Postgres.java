@@ -17,6 +17,7 @@ public class Postgres {
     private static final String DEFAULT_ROOT_USER = "kalkiuser";
     private static final String BASE_DB = "postgres";
     private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
+    private static final int TABLE_COUNT=17;
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
 
@@ -56,6 +57,7 @@ public class Postgres {
         if (postgresInstance == null) {
             logger.info("Initializing database");
             postgresInstance = new Postgres(ip, port, dbName, dbUser, dbPassword);
+            postgresInstance.setupDatabase();
         } else {
             logger.info("Database already initialized");
         }
@@ -261,6 +263,10 @@ public class Postgres {
      * Creates necessary extensions, databases, and tables
      */
     public static void setupDatabase() {
+        if(getTableCount() == 17) {//tables have been initialized
+            logger.info("Database has been setup by another component");
+            return;
+        }
         logger.info("Setting up database.");
         createHstoreExtension();
         // DB Structure
@@ -274,6 +280,8 @@ public class Postgres {
 //        initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
+        initDB("db-devices.sql");
+
     }
 
     /**
@@ -286,6 +294,7 @@ public class Postgres {
         createHstoreExtension();
         // DB Structure
         initDB("db-tables.sql");
+        initDB("db-triggers.sql");
         initDB("db-security-states.sql");
     }
 
@@ -304,6 +313,22 @@ public class Postgres {
         logger.info("Resetting Database.");
         dropTables();
         setupDatabase();
+    }
+
+    private static int getTableCount() {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            st = dbConn.prepareStatement("SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public'");
+            rs = st.executeQuery();
+            if(rs.next()){
+                return rs.getInt("count");
+            }
+        } catch (SQLException e){
+            logger.severe("There was an getting the current table count: ");
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     /**
@@ -2076,14 +2101,14 @@ public class Postgres {
             //give the device a normal security state if it is not specified
             if(currentState == null) {
                 //get the id of normal security state
-                PreparedStatement st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+                PreparedStatement st = dbConn.prepareStatement("SELECT * FROM security_state WHERE name = ?;");
                 st.setString(1, "Normal");
                 ResultSet rs = st.executeQuery();
 
                 if(rs.next()) {
-                    stateId = rs.getInt("id");
+                    SecurityState securityState = rsToSecurityState(rs);
 
-                    DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), stateId);
+                    DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), securityState.getId(), securityState.getName());
                     normalDeviceState.insert();
 
                     device.setCurrentState(normalDeviceState);
