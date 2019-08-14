@@ -4,7 +4,6 @@ CREATE OR REPLACE FUNCTION backFillAlertConditions(deviceTypeId INTEGER, deviceI
             ac RECORD;
             query TEXT;
         BEGIN
-            raise notice 'in backFillAlertConditions';
             query := 'SELECT * FROM alert_type_lookup WHERE device_type_id = ' || deviceTypeId;
             FOR ac IN EXECUTE query
                 LOOP
@@ -18,7 +17,6 @@ CREATE OR REPLACE FUNCTION deviceNotify ()
         DECLARE
             payload TEXT;
         BEGIN
-            raise notice 'in deviceNotify';
             payload := NEW.id;
         PERFORM backFillAlertConditions(NEW.type_id, NEW.id);
         PERFORM pg_notify('deviceinsert', payload);
@@ -31,6 +29,23 @@ DROP TRIGGER IF EXISTS deviceNotify ON device;
 CREATE TRIGGER deviceNotify
     AFTER INSERT ON device
     FOR EACH ROW EXECUTE PROCEDURE deviceNotify();
+
+CREATE OR REPLACE FUNCTION deviceUpdateNotify ()
+    RETURNS TRIGGER AS $$
+        DECLARE
+            payload TEXT;
+        BEGIN
+            payload := NEW.id;
+            PERFORM pg_notify('deviceupdate', payload);
+            RETURN NEW;
+        END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS deviceUpdateNotify ON device;
+
+CREATE TRIGGER deviceUpdateNotify
+    AFTER UPDATE ON device
+    FOR EACH ROW EXECUTE PROCEDURE deviceUpdateNotify();
 
 CREATE OR REPLACE FUNCTION  deviceStatusNotify ()
     RETURNS TRIGGER AS $$
