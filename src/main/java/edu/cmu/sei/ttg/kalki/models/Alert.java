@@ -20,11 +20,6 @@ public class Alert {
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-
-    public Alert() {
-
-    }
-
     public Alert(String name, int deviceId, int alertTypeId){
         this.name = name;
         this.alerterId = null;
