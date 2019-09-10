@@ -740,6 +740,7 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
+
         try {
             PreparedStatement insertAlert;
             ResultSet rs;
@@ -749,11 +750,18 @@ public class Postgres {
                     PreparedStatement findDeviceId = dbConn.prepareStatement("SELECT device_id FROM umbox_instance WHERE alerter_id = ?;");
                     findDeviceId.setString(1, alert.getAlerterId());
                     rs = findDeviceId.executeQuery();
-                    rs.next();
 
-                    deviceId = rs.getInt("device_id");
-                    alert.setDeviceId(deviceId);
+                    if(rs.next())
+                    {
+                        deviceId = rs.getInt("device_id");
+                        alert.setDeviceId(deviceId);
+                    }
+                    else
+                    {
+                        throw new SQLException("Device ID not found for umbox_instance with alerter_id " + alert.getAlerterId());
+                    }
                 }
+
                 insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, device_id, alerter_id) VALUES (?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
@@ -766,10 +774,16 @@ public class Postgres {
                     PreparedStatement findDeviceId = dbConn.prepareStatement("SELECT device_id FROM device_status WHERE id = ?;");
                     findDeviceId.setInt(1, alert.getDeviceStatusId());
                     rs = findDeviceId.executeQuery();
-                    rs.next();
 
-                    deviceId = rs.getInt("device_id");
-                    alert.setDeviceId(deviceId);
+                    if(rs.next())
+                    {
+                        deviceId = rs.getInt("device_id");
+                        alert.setDeviceId(deviceId);
+                    }
+                    else
+                    {
+                        throw new SQLException("Device ID not found for device_status with id " + alert.getDeviceStatusId());
+                    }
                 }
                 insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_id, device_status_id) VALUES (?,?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
