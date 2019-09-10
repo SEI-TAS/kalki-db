@@ -25,7 +25,7 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-magnetometer-online-high'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),'');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-temperature'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                                '"temp_input"=>"21.5"');
+                                                                                '"temp_input_lower"=>"20.0", "temp_input_upper"=>"20.0"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-temperature-avg'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
                                                                                 '"average"=>"50"');
