@@ -20,16 +20,6 @@ public class Alert {
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public Alert(String name, int deviceId, int alertTypeId){
-        this.name = name;
-        this.alerterId = null;
-        this.alertTypeId = alertTypeId;
-        this.deviceId = deviceId;
-        this.deviceStatusId = 0;
-        long millis = System.currentTimeMillis();
-        this.timestamp = new Timestamp(millis);
-    }
-
     public Alert(String name, String alerterId, int alertTypeId){
         this.name = name;
         this.alerterId = alerterId;
