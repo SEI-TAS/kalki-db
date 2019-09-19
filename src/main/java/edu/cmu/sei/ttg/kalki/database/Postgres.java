@@ -2433,7 +2433,7 @@ public class Postgres {
             st = dbConn.prepareStatement("SELECT * FROM device_status WHERE id < ? AND device_id = ? ORDER BY id DESC LIMIT ?");
             st.setInt(1, startingId);
             st.setInt(2, deviceId);
-            st.setInt(2, numStatuses);
+            st.setInt(3, numStatuses);
             rs = st.executeQuery();
 
             List<DeviceStatus> deviceStatusList = new ArrayList<DeviceStatus>();
