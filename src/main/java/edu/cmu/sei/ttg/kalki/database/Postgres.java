@@ -2430,8 +2430,9 @@ public class Postgres {
         }
         try {
             logger.info("Finding "+numStatuses+" previous statuses from id: "+startingId);
-            st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id < ? ORDER BY id DESC LIMIT ?");
-            st.setInt(1, (startingId));
+            st = dbConn.prepareStatement("SELECT * FROM device_status WHERE id < ? AND device_id = ? ORDER BY id DESC LIMIT ?");
+            st.setInt(1, startingId);
+            st.setInt(2, deviceId)
             st.setInt(2, numStatuses);
             rs = st.executeQuery();
 
