@@ -2289,13 +2289,13 @@ public class Postgres {
             st.setString(1, "state-reset");
             rs = st.executeQuery();
 
-            if(rs.next()) {
+//            if(rs.next()) {
                 String name = rs.getString("name");
                 int alertTypeId = rs.getInt("id");
 
                 Alert alert = new Alert(name, deviceId, alertTypeId);
                 alert.insert();
-            }
+//            }
         } catch (SQLException e) {
             logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2410,6 +2410,49 @@ public class Postgres {
                 }
             } catch (Exception e) {
             }
+        }
+        return null;
+    }
+
+    /**
+     * Finds numStatuses worth of device statuses where their id < startingId
+     * @param deviceId
+     * @param numStatuses
+     * @param startingId
+     * @return list of device statuses
+     */
+    public static List<DeviceStatus> findSubsetNDeviceStatuses(int deviceId, int numStatuses, int startingId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            logger.info("Finding "+numStatuses+" previous statuses from id: "+startingId);
+            st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id < ? ORDER BY id DESC LIMIT ?");
+            st.setInt(1, (startingId));
+            st.setInt(2, numStatuses);
+            rs = st.executeQuery();
+
+            List<DeviceStatus> deviceStatusList = new ArrayList<DeviceStatus>();
+            while(rs.next()){
+                deviceStatusList.add(rsToDeviceStatus(rs));
+            }
+            return deviceStatusList;
+        } catch(SQLException e) {
+            logger.severe("SQL Exception getting subset of device statuses: "+e.getClass().getName()+": "+e.getMessage());
+        } catch(Exception e){
+            logger.severe("Error getting subset of device statuses: "+e.getClass().getName()+": "+e.getMessage());
+        } finally {
+            try{
+                if(rs!=null)
+                    rs.close();
+            } catch (Exception e) {logger.severe("Error closing result set: "+e.getMessage());}
+            try{
+                if(st!=null)
+                    st.close();
+            }catch (Exception e) {logger.severe("Error closing prepared statement: "+e.getMessage());}
         }
         return null;
     }
