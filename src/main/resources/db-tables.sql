@@ -120,3 +120,12 @@ CREATE TABLE IF NOT EXISTS alert_condition(
     device_id          int NOT NULL REFERENCES device(id),
     alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id)
 );
+
+CREATE TABLE IF NOT EXISTS stage_log(
+    id                   serial PRIMARY KEY,
+    device_sec_state_id  int NOT NULL REFERENCES device_security_state(id),
+    timestamp            timestamp NOT NULL DEFAULT now(),
+    action               varchar(255) NOT NULL,
+    stage                varchar(255) NOT NULL,
+    info                 varchar(255)
+);
