@@ -8,6 +8,8 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id) SELECT at.id, dt.id
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id) SELECT at.id, dt.id FROM alert_type AS at, device_type AS dt WHERE at.name = 'state-reset';
 
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name = 'unts-abnormal-traffic'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'));
+
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES((SELECT id FROM alert_type WHERE name = 'unts-acceleration'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
                                                                                '"accelerometerX"=>"0.01","accelerometerY"=>"0.0766","accelerometerZ"=>"1.126","modulus"=>"1.12864"');
 

@@ -26,6 +26,8 @@ INSERT INTO alert_type(name, description, source) values('unts-temperature-avg',
 
 INSERT INTO alert_type(name, description, source) values('unts-temperature-online', 'unts.temp >/< ONLINE ± D', 'Iot Interface');
 
+INSERT INTO alert_type(name, description, source) values('unts-abnormal-traffic', 'There is network traffic coming from the device that differs from standard responses.', 'umbox');
+
 INSERT INTO alert_type(name, description, source) values('dlc-motion-sense', 'DLC.motion && PHLE.on/off = off', 'Iot Interface');
 
 INSERT INTO alert_type(name, description, source) values('phle-time-off', 'PHLE.on/off = off && PHLE.time-last-change > T minutes', 'Iot Interface');
