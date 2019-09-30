@@ -286,6 +286,24 @@ Device device = Postgres.findDevice(deviceId);
 |`updateSecurityState(SecurityState state)` |`Integer`            |
 |`deleteSecurityState(int id)`              |`Boolean`            |
 
+#### StageLog
+###### Schema:
+|Property  |Type  |
+|---------:|:------|
+|id        |int    |  
+|device_sec_state_id|int NOT NULL|
+|timestamp | timestamp DEFAULT now()|
+|action    | String NOT NULL|
+|stage     | String NOT NULL|
+|info      | String |
+###### Actions:
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findStageLog(int id)`              |`StageLog`      |
+|`findAllStageLogs()`                |`List<StageLog>`      |
+|`findAllStageLogsForDevice(int deviceId)`|`List<StageLog>`      |
+|`insertStageLog(StageLog stageLog)`|`int`|
+
 #### Tag
 ###### Schema:
 |Property   |Type   |
@@ -667,6 +685,32 @@ This class supports:
  - ex: setName("Name")
 - `insert()`
 - `insertOrUpdate()`
+- `toString()`
+
+#### StageLog
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|deviceSecurityStateId |int       |
+|timestamp |Timestamp       |
+|action    |String    |
+|stage     |String    |
+|info      |String    |
+###### Constructors:
+|Definition |  
+|:---|
+|`StageLog()`|
+|`StageLog(int devSecStateId, String action, String stage)`|
+|`StageLog(int devSecStateId, String action, String stage, String info)`|
+|`StageLog(int id, int deviceSecurityStateId, Timestamp timestamp, String action, String stage, String info)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
 - `toString()`
 
 #### Tag

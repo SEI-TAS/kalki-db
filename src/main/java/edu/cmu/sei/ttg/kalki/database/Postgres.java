@@ -682,7 +682,7 @@ public class Postgres {
         List<Alert> alertHistory = new ArrayList<Alert>();
 
         try {
-            st = dbConn.prepareStatement("SELECT * FROM alert WHERE device_id = ?;");
+            st = dbConn.prepareStatement("SELECT * FROM alert WHERE device_id = ?");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -2271,7 +2271,7 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         }
         try {
-            st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?;");
+            st = dbConn.prepareStatement("SELECT id FROM security_state WHERE name = ?");
             st.setString(1, "Normal");
             rs = st.executeQuery();
 
@@ -2289,13 +2289,13 @@ public class Postgres {
             st.setString(1, "state-reset");
             rs = st.executeQuery();
 
-//            if(rs.next()) {
+            if(rs.next()) {
                 String name = rs.getString("name");
                 int alertTypeId = rs.getInt("id");
 
                 Alert alert = new Alert(name, deviceId, alertTypeId);
                 alert.insert();
-//            }
+            }
         } catch (SQLException e) {
             logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -4245,6 +4245,131 @@ public class Postgres {
      */
     public static Boolean deleteUmboxLookup(int id) {
         return deleteById("umbox_lookup", id);
+    }
+
+    /*
+        StageLog specific actions
+     */
+
+    /**
+     * Finds the row in stage_log for the given id
+     * @param id
+     * @return StageLog representing row with given id
+     */
+    public static StageLog findStageLog(int id) {
+        logger.info("Finding StageLog with id = " + id);
+        ResultSet rs = findById(id, "stage_log");
+        return rsToStageLog(rs);
+    }
+
+    /**
+     * Returns all rows in the stage_log table
+     * @return a List of all StageLogs
+     */
+    public static List<StageLog> findAllStageLogs(){
+        logger.info("Finding all StageLogs");
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<StageLog> stageLogList = new ArrayList<>();
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM stage_log");
+            rs = st.executeQuery();
+            while (rs.next()) {
+                stageLogList.add(rsToStageLog(rs));
+            }
+        } catch (Exception e) {
+            logger.severe("Exception finding all StageLogs " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return stageLogList;
+    }
+
+    /**
+     * Returns all rows in the stage_log related to the given device
+     * @param deviceId
+     * @return a List of StageLogs related to the given device id
+     */
+    public static List<StageLog> findAllStageLogsForDevice(int deviceId) {
+        logger.info("Finding all StageLogs for device with id: "+deviceId);
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<StageLog> stageLogList = new ArrayList<>();
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT sl.id, sl.device_sec_state_id, sl.timestamp, sl.action, sl.stage, sl.info " +
+                    "FROM stage_log sl, device_security_state dss " +
+                    "WHERE dss.device_id=? AND sl.device_sec_state_id=dss.id");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while(rs.next()){
+                stageLogList.add(rsToStageLog(rs));
+            }
+        } catch (Exception e){
+            logger.severe("Exception finding all StageLogs for device "+deviceId+" "+e.getClass().getName()+": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return stageLogList;
+    }
+
+    /**
+     * Converts a result set to a StageLog object
+     * @param rs
+     * @return
+     */
+    public static StageLog rsToStageLog(ResultSet rs) {
+        int id = -1;
+        int deviceSecurityStateId = -1;
+        Timestamp timestamp = null;
+        String action = "";
+        String stage = "";
+        String info = "";
+        try {
+            id = rs.getInt("id");
+            deviceSecurityStateId = rs.getInt("device_sec_state_id");
+            timestamp = rs.getTimestamp("timestamp");
+            action = rs.getString("action");
+            stage = rs.getString("stage");
+            info = rs.getString("info");
+
+            return new StageLog(id, deviceSecurityStateId, timestamp, action, stage, info);
+        } catch (Exception e){
+            logger.severe("Error converting ResultSet to StageLog: "+e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Inserts the given StageLog into the stage_log table
+     * @param stageLog
+     * @return
+     */
+    public static int insertStageLog(StageLog stageLog){
+        logger.info("Inserting new stage log: "+stageLog.toString());
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        int latestId = -1;
+        try{
+            st = dbConn.prepareStatement("INSERT INTO stage_log (device_sec_state_id, action, stage, info) VALUES(?,?,?,?)");
+            st.setInt(1, stageLog.getDeviceSecurityStateId());
+            st.setString(2, stageLog.getAction());
+            st.setString(3, stageLog.getStage());
+            st.setString(4, stageLog.getInfo());
+            st.executeUpdate();
+
+            latestId = getLatestId("stage_log");
+        } catch (Exception e){
+            logger.severe("Error insert StageLog into db: "+e.getClass().getName()+": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return latestId;
     }
 
     /*
