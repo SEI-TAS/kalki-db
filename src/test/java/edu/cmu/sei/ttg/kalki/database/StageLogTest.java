@@ -30,7 +30,7 @@ public class StageLogTest extends AUsesDatabase {
 
     @Test
     public void testFindStageLog() {
-        StageLog log = new StageLog(deviceSecurityState.getId(), "Action", "Stage", "Info");
+        StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.INCREASE_SAMPLE_RATE, StageLog.Stage.TRIGGER, "Info");
         log.insert();
 
         StageLog log1 = Postgres.findStageLog(log.getId());
@@ -40,7 +40,7 @@ public class StageLogTest extends AUsesDatabase {
 
     @Test
     public void testFindAllStageLogs() {
-        StageLog log = new StageLog(deviceSecurityState.getId(), "Action1", "Stage", "Info");
+        StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.SEND_COMMAND, StageLog.Stage.REACT, "Info");
         log.insert();
 
         List<StageLog> stageLogList = Postgres.findAllStageLogs();
@@ -49,7 +49,7 @@ public class StageLogTest extends AUsesDatabase {
 
     @Test
     public void testFindAllStageLogsForDevice() {
-        StageLog log = new StageLog(deviceSecurityState.getId(), "Action2", "Stage", "Info");
+        StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.DEPLOY_UMBOX, StageLog.Stage.FINISH, "Info");
         log.insert();
 
         List<StageLog> stageLogList = Postgres.findAllStageLogsForDevice(device.getId());
@@ -59,7 +59,6 @@ public class StageLogTest extends AUsesDatabase {
     public void insertData() {
         deviceType = new DeviceType(-1, "Test Device Type");
         deviceType.insert();
-
 
 
         securityState = new SecurityState(-1, "Normal");

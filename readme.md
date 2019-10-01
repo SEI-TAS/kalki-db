@@ -712,6 +712,8 @@ This class supports:
 |action    |String    |
 |stage     |String    |
 |info      |String    |
+|Action    |Enum      |
+|Stage     |Enum      |
 ###### Constructors:
 |Definition |  
 |:---|
@@ -727,6 +729,16 @@ This class supports:
  - ex: setName("Name")
 - `insert()`
 - `toString()`
+###### Enum Values:
+- Action:
+    - `INCREASE_SAMPLE_RATE`
+    - `SEND_COMMAND`
+    - `DEPLOY_UMBOX`
+    - `OTHER`
+- Stage:
+    - `TRIGGER`
+    - `REACT`
+    - `FINISH`
 
 #### Tag
 ###### Schema:

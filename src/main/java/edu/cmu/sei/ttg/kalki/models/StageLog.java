@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+
 public class StageLog {
     private int id;
     private int deviceSecurityStateId;
@@ -19,23 +20,26 @@ public class StageLog {
 
     public StageLog(){}
 
-    public StageLog(int devSecStateId, String action, String stage) {
+    public StageLog(int devSecStateId, Action action, Stage stage) {
         this.deviceSecurityStateId = devSecStateId;
-        this.action = action;
-        this.stage = stage;
+        this.action = action.convert();
+        this.stage = stage.convert();
         this.timestamp = null;
         this.info = "";
     }
 
-    public StageLog(int devSecStateId, String action, String stage, String info) {
+    public StageLog(int devSecStateId, Action action, Stage stage, String info) {
         this(devSecStateId, action, stage);
         this.info = info;
     }
 
     public StageLog(int id, int deviceSecurityStateId, Timestamp timestamp, String action, String stage, String info) {
-        this(deviceSecurityStateId, action, stage, info);
         this.id = id;
+        this.deviceSecurityStateId = deviceSecurityStateId;
         this.timestamp = timestamp;
+        this.action = action;
+        this.stage = stage;
+        this.info = info;
     }
 
     public void setId(int id) {
@@ -99,6 +103,51 @@ public class StageLog {
         }
         catch (JsonProcessingException e) {
             return "Bad Alert";
+        }
+    }
+
+    public enum Action {
+        INCREASE_SAMPLE_RATE,
+        SEND_COMMAND,
+        DEPLOY_UMBOX,
+        OTHER;
+
+        private Action(){}
+
+        public String convert(){
+            switch (this){
+                case INCREASE_SAMPLE_RATE:
+                    return "Increase sampling rate";
+                case DEPLOY_UMBOX:
+                    return "Deploy umbox";
+                case SEND_COMMAND:
+                    return "Send command";
+                case OTHER:
+                    return "Other action";
+                default:
+                    return "Unsupported action";
+            }
+        }
+    }
+
+    public enum Stage {
+        TRIGGER,
+        REACT,
+        FINISH;
+
+        private Stage(){}
+
+        public String convert() {
+            switch (this){
+                case TRIGGER:
+                    return "Trigger";
+                case REACT:
+                    return "React";
+                case FINISH:
+                    return "Finish";
+                default:
+                    return "Unsupported stage";
+            }
         }
     }
 }
