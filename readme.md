@@ -369,6 +369,23 @@ Device device = Postgres.findDevice(deviceId);
 |`updateUmboxInstance(UmboxInstance u)` |`Integer`|
 |`deleteUmboxInstance(int id)`          |`Boolean`|
 
+#### UmboxLog
+###### Schema:
+|Property  |Type  |
+|---------:|:------|
+|id        |int    |  
+|alerter_id| String NOT NULL|
+|details   | String NOT NULL|
+|timestamp | timestamp DEFAULT now()|
+###### Actions:
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findUmboxLog(int id)`              |`UmboxLog`      |
+|`findAllUmboxLogs()`                |`List<UmboxLog>`      |
+|`findAllUmboxLogsForAlerterId(int alerterId)`|`List<UmboxLog>`      |
+|`insertUmboxLog(UmboxLog umboxLog)`|`int`|
+
+
 #### UmboxLookup
 ###### Schema:
 |Property        |Type      |
@@ -803,6 +820,29 @@ This class supports:
 |`UmboxInstance(String alerterId, int umboxImageId, int deviceId)`|
 |`UmboxInstance(String alerterId, int umboxImageId, int deviceId, Timestamp timestamp)`|
 |`UmboxInstance(int id, String alerterId, int umboxImageId, int deviceId, Timestamp timestamp)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `toString()`
+
+#### UmboxLog
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|alerter_id |String       |
+|timestamp |Timestamp       |
+|details    |String    |
+###### Constructors:
+|Definition |  
+|:---|
+|`UmboxLog()`|
+|`UmboxLog(String alerter_id, String details)`|
+|`UmboxLog(int id, String alerter_id, String details, Timestamp timestamp)`|
 ###### Methods:
 This class supports:
 - `get<field>()`

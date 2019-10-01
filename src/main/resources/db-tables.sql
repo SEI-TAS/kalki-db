@@ -129,3 +129,10 @@ CREATE TABLE IF NOT EXISTS stage_log(
     stage                varchar(255) NOT NULL,
     info                 varchar(255)
 );
+
+CREATE TABLE IF NOT EXISTS umbox_log(
+    id                  serial PRIMARY KEY,
+    alerter_id          varchar(255) REFERENCES umbox_instance(alerter_id),
+    details             varchar(255),
+    timestamp           timestamp NOT NULL DEFAULT now()
+);

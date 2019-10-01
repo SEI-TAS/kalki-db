@@ -4248,6 +4248,120 @@ public class Postgres {
     }
 
     /*
+        UmboxLog specific actions
+     */
+
+    /**
+     * Finds the row in umbox_log table with given id
+     * @param id
+     * @return UmboxLog object representing row; Null if an exception is thrown
+     */
+    public static UmboxLog findUmboxLog(int id){
+        logger.info("Finding UmboxLog with id = "+id);
+        ResultSet rs = findById(id, "umbox_log");
+        return rsToUmboxLog(rs);
+    }
+
+    /**
+     * Returns all rows from the umbox_log table
+     * @return List of UmboxLogs in the umbox_log table
+     */
+    public static List<UmboxLog> findAllUmboxLogs() {
+        logger.info("Finding all UmboxLogs");
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<UmboxLog> umboxLogList = new ArrayList<>();
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM umbox_log");
+            rs = st.executeQuery();
+            while(rs.next()){
+                umboxLogList.add(rsToUmboxLog(rs));
+            }
+        } catch (Exception e) {
+            logger.severe("Exception finding all UmboxLogs "+e.getClass().getName() + ": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return umboxLogList;
+    }
+
+    /**
+     * Finds rows in the umbox_log table with the given alerter_id
+     * @param alerter_id
+     * @return List of UmboxLogs with given alerter_id
+     */
+    public static List<UmboxLog> findAllUmboxLogsForAlerterId(String alerter_id) {
+        logger.info("Finding UmboxLogs with alerter_id: "+alerter_id);
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<UmboxLog> umboxLogList = new ArrayList<>();
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT * FROM umbox_log WHERE alerter_id = ?");
+            st.setString(1, alerter_id);
+            rs = st.executeQuery();
+            while(rs.next()){
+                umboxLogList.add(rsToUmboxLog(rs));
+            }
+        } catch (Exception e) {
+            logger.severe("Exception finding UmboxLogs for alerter_id="+alerter_id+"; "+e.getClass().getName() + ": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return umboxLogList;
+    }
+
+    /**
+     * Converts a row from the umbox_log table to a UmboxLog object
+     * @param rs The ResultSet representing the row in the table
+     * @return the UmboxLog ojbect representation of the row; Null if an exception is thrown
+     */
+    public static UmboxLog rsToUmboxLog(ResultSet rs){
+        int id = -1;
+        String alerterId = "";
+        String details = "";
+        Timestamp timestamp = null;
+        try {
+            id = rs.getInt("id");
+            alerterId = rs.getString("alerter_id");
+            details = rs.getString("details");
+            timestamp = rs.getTimestamp("timestamp");
+            return new UmboxLog(id, alerterId, details, timestamp);
+        } catch (Exception e){
+            logger.severe("Error converting ResultSet to UmboxLog: "+e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Inserts the given UmboxLog into the umbox_log table
+     * @param umboxLog
+     * @return the id of the inserted row
+     */
+    public static int insertUmboxLog(UmboxLog umboxLog){
+        logger.info("Inserting new UmboxLog: "+umboxLog.toString());
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        int latestId = -1;
+        try{
+            st = dbConn.prepareStatement("INSERT INTO umbox_log (alerter_id, details) VALUES(?,?)");
+            st.setString(1, umboxLog.getAlerterId());
+            st.setString(2, umboxLog.getDetails());
+            st.executeUpdate();
+            latestId = getLatestId("umbox_log");
+        } catch (Exception e){
+            logger.severe("Error insert UmboxLog into db: "+e.getClass().getName()+": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return latestId;
+    }
+    /*
         StageLog specific actions
      */
 
