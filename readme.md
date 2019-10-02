@@ -737,6 +737,7 @@ This class supports:
 |`StageLog()`|
 |`StageLog(int devSecStateId, String action, String stage)`|
 |`StageLog(int devSecStateId, String action, String stage, String info)`|
+|`StageLog(int devSecStateId, Action action, Stage stage, String info)`|
 |`StageLog(int id, int deviceSecurityStateId, Timestamp timestamp, String action, String stage, String info)`|
 ###### Methods:
 This class supports:

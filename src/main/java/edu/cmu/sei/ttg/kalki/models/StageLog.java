@@ -33,6 +33,13 @@ public class StageLog {
         this.info = info;
     }
 
+    public StageLog(int devSecStateId, String action, String stage, String info) {
+        this.deviceSecurityStateId = devSecStateId;
+        this.action = action;
+        this.stage = stage;
+        this.info = info;
+    }
+
     public StageLog(int id, int deviceSecurityStateId, Timestamp timestamp, String action, String stage, String info) {
         this.id = id;
         this.deviceSecurityStateId = deviceSecurityStateId;
