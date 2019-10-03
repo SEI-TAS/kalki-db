@@ -44,8 +44,6 @@ public class UmboxLogTest extends AUsesDatabase {
         UmboxLog log = new UmboxLog(umboxInstance.getAlerterId(), "The details");
         log.insert();
 
-        System.out.println("\n"+log.toString()+"\n");
-
         List<UmboxLog> UmboxLogList = Postgres.findAllUmboxLogs();
         assertNotEquals(0, UmboxLogList.size());
     }

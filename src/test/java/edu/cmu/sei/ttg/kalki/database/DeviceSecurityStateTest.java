@@ -99,9 +99,6 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
         deviceTwo.insert();
 
         // insert device_security_state
-        deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());
-        deviceSecurityState.insert();
-
-        device.setCurrentState(deviceSecurityState);
+        deviceSecurityState = device.getCurrentState();
     }
 }

@@ -29,6 +29,7 @@ public class DeviceSecurityState {
 
     public DeviceSecurityState(int deviceId, int stateId, String name) {
         this.deviceId = deviceId;
+        this.stateId = stateId;
         this.name = name;
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);

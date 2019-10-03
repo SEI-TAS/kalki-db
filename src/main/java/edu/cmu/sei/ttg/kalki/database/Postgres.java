@@ -1566,9 +1566,11 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.state_id = ? AND c.id = cl.command_id");
+            int previousStateId = findPreviousDeviceSecurityStateId(device);
+            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.current_state_id = ? AND cl.previous_state_id = ? AND c.id = cl.command_id");
             st.setInt(1, device.getType().getId());
             st.setInt(2, device.getCurrentState().getStateId());
+            st.setInt(3, previousStateId);
             rs = st.executeQuery();
 
             List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
@@ -1725,8 +1727,8 @@ public class Postgres {
         }
         try {
 
-            st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, command c, device d " +
-                    "WHERE d.id = ? AND c.device_type_id = d.type_id AND cl.command_id = c.id;");
+            st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, device d, command c " +
+                    "WHERE d.id = ? AND c.device_type_id = d.type_id AND c.id=cl.command_id");
             st.setInt(1,deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -1765,15 +1767,12 @@ public class Postgres {
      * @return The command.
      */
     private static DeviceCommandLookup rsToCommandLookup(ResultSet rs) {
-        DeviceCommandLookup commandLookup = null;
-        Integer stateId = null;
-        Integer id = null;
-        Integer commandId = null;
         try {
-            id = rs.getInt("id");
-            stateId = rs.getInt("state_id");
-            commandId = rs.getInt("command_id");
-            commandLookup = new DeviceCommandLookup(id, stateId, commandId);
+            int id = rs.getInt("id");
+            int currentStateId = rs.getInt("current_state_id");
+            int previousStateId = rs.getInt("previous_state_id");
+            int commandId = rs.getInt("command_id");
+            DeviceCommandLookup commandLookup = new DeviceCommandLookup(id, commandId, currentStateId, previousStateId);
             return commandLookup;
         } catch (Exception e) {
             e.printStackTrace();
@@ -1788,7 +1787,8 @@ public class Postgres {
      * @return -1 on failure, 1 on success
      */
     public static int insertCommandLookup(DeviceCommandLookup commandLookup) {
-        logger.info("Inserting command lookup; stateId: " + commandLookup.getStateId() + " commandId: "
+        logger.info("Inserting command lookup; currentSateId: " + commandLookup.getCurrentStateId() +
+                "previousStateId: "+commandLookup.getPreviousStateId()+" commandId: "
                 + commandLookup.getCommandId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
@@ -1796,9 +1796,10 @@ public class Postgres {
         }
         try {
             PreparedStatement insertCommandLookup =
-                    dbConn.prepareStatement("INSERT INTO command_lookup(state_id, command_id) VALUES (?,?);");
-            insertCommandLookup.setInt(1, commandLookup.getStateId());
-            insertCommandLookup.setInt(2, commandLookup.getCommandId());
+                    dbConn.prepareStatement("INSERT INTO command_lookup(current_state_id, previous_state_id, command_id) VALUES (?,?,?)");
+            insertCommandLookup.setInt(1, commandLookup.getCurrentStateId());
+            insertCommandLookup.setInt(2, commandLookup.getPreviousStateId());
+            insertCommandLookup.setInt(3, commandLookup.getCommandId());
             insertCommandLookup.executeUpdate();
 
             return getLatestId("command_lookup");
@@ -1831,16 +1832,17 @@ public class Postgres {
      */
 
     public static Integer updateCommandLookup(DeviceCommandLookup commandLookup) {
-        logger.info("Updating command lookup; stateId: " + commandLookup.getStateId() +
-                " commandId: " +commandLookup.getCommandId());
+        logger.info("Updating command lookup; currentSateId: " + commandLookup.getCurrentStateId() +
+                "previousStateId: "+commandLookup.getPreviousStateId()+" commandId: " +commandLookup.getCommandId());
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         }
         try {
-            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET state_id = ?, command_id = ? WHERE id = ?");
-            updatecommand.setInt(1, commandLookup.getStateId());
-            updatecommand.setInt(2, commandLookup.getCommandId());
-            updatecommand.setInt(3, commandLookup.getId());
+            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET current_state_id = ?, previous_state_id = ?,command_id = ? WHERE id = ?");
+            updatecommand.setInt(1, commandLookup.getCurrentStateId());
+            updatecommand.setInt(2, commandLookup.getPreviousStateId());
+            updatecommand.setInt(3, commandLookup.getCommandId());
+            updatecommand.setInt(4, commandLookup.getId());
             updatecommand.executeUpdate();
 
             return commandLookup.getId();
@@ -3010,6 +3012,39 @@ public class Postgres {
             }
         }
         return ss;
+    }
+
+    public static int findPreviousDeviceSecurityStateId(Device device) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if(dbConn == null)  {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            st = dbConn.prepareStatement("SELECT dss.state_id AS state_id " +
+                    "FROM device_security_state dss " +
+                    "WHERE dss.device_id=? AND dss.id < ? " +
+                    "ORDER BY dss.id DESC " +
+                    "LIMIT 1");
+            st.setInt(1, device.getId());
+            st.setInt(2, device.getCurrentState().getId());
+            rs = st.executeQuery();
+
+            if(rs.next()){
+                int id = rs.getInt("state_id");
+                return id;
+            } else {
+                logger.info("Only 1 device security state entered for device with id: "+device.getId());
+                return device.getCurrentState().getId();
+            }
+
+        } catch (Exception e) {
+            logger.severe("Error finding previous device security state for device: "+device.getId());
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     /**

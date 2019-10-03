@@ -56,15 +56,15 @@ public class CommandLookupTest extends AUsesDatabase {
     public void testInsertOrUpdateCommandLookup() {
         assertEquals(2, Postgres.findAllCommandLookups().size());
 
-        deviceCommandLookup.setStateId(securityStateTwo.getId());
+        deviceCommandLookup.setCurrentStateId(securityStateTwo.getId());
         deviceCommandLookup.insertOrUpdate();
 
-        assertEquals(deviceCommandLookup.getStateId(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).getStateId());
+        assertEquals(deviceCommandLookup.getCurrentStateId(),
+                Postgres.findCommandLookup(deviceCommandLookup.getId()).getCurrentStateId());
         assertEquals(2, Postgres.findAllCommandLookups().size());
 
         DeviceCommandLookup newLookup =
-                new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
+                new DeviceCommandLookup(deviceCommand.getId(), securityState.getId(), securityStateTwo.getId());
 
         int newId = newLookup.insertOrUpdate();
 
@@ -104,10 +104,10 @@ public class CommandLookupTest extends AUsesDatabase {
         deviceCommandTwo = new DeviceCommand("Test Command two", deviceTypeTwo.getId());
         deviceCommandTwo.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), securityState.getId(), securityStateTwo.getId());
         deviceCommandLookup.insert();
 
-        deviceCommandLookupTwo = new DeviceCommandLookup(securityStateTwo.getId(), deviceCommandTwo.getId());
+        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), securityState.getId(), securityStateTwo.getId());
         deviceCommandLookupTwo.insert();
 
         // insert device

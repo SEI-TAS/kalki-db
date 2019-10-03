@@ -173,7 +173,8 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |serial PRIMARY KEY|  
-|state_id        |int NOT NULL|
+|current_state_id        |int NOT NULL|
+|previous_state_id       |int NOT NULL|
 |command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
@@ -228,6 +229,7 @@ Device device = Postgres.findDevice(deviceId);
 |`findDeviceSecurityState(int id)`                        |`DeviceSecurityState`|
 |`findDeviceSecurityStateByDevice(int deviceId)`          |`DeviceSecurityState`|
 |`findDeviceSecurityStates(int deviceId)`                 |`List<DeviceSecurityState>`|
+|`findPreviousDeviceSecurityStateId(Device device)`       |`int`|
 |`insertDeviceSecurityState(DeviceState deviceState)`     |`Integer`           |
 |`deleteDeviceSecurityState(int id)`                      |`Boolean`           |
 
@@ -578,15 +580,16 @@ This class supports:
 |Property  |Type      |
 |------------:|:---------|
 |id           |int       |  
-|stateId      |Integer   | 
-|commandId    |Integer   |
+|currentStateId      |int   | 
+|previousStateId     |int |
+|commandId    |int   |
 
 ###### Constructors:
 |Definition |  
 |:---|
 |`DeviceCommandLookup()`|
-|`DeviceCommandLookup(Integer stateId, Integer commandId)`|
-|`DeviceCommandLookup(int id, Integer stateId, Integer commandId)`|
+|`DeviceCommandLookup(int commandId, int currentStateId, int previousStateId)`|'
+|`DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`

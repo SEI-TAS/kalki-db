@@ -19,12 +19,14 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class CommandTest extends AUsesDatabase {
     private static SecurityState securityState;
+    private static SecurityState securityStateTwo;
     private static Device device;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static DeviceCommand deviceCommand;
     private static DeviceCommandLookup deviceCommandLookup;
     private static DeviceSecurityState deviceSecurityState;
+    private static DeviceSecurityState deviceSecurityStateTwo;
 
     /*
         Command Action Tests
@@ -42,6 +44,9 @@ public class CommandTest extends AUsesDatabase {
 
     @Test
     public void testFindCommandsByDevice() {
+        device.setCurrentState(deviceSecurityStateTwo);
+        device.insertOrUpdate();
+
         ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsByDevice(device));
 
         assertEquals(1, foundCommands.size());
@@ -77,9 +82,8 @@ public class CommandTest extends AUsesDatabase {
     }
 
     public void insertData() {
-        // insert security state(s)
-        securityState = new SecurityState("Normal");
-        securityState.insert();
+        securityState = Postgres.findSecurityState(1);
+        securityStateTwo = Postgres.findSecurityState(2);
 
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
@@ -89,17 +93,16 @@ public class CommandTest extends AUsesDatabase {
         device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
         device.insert();
 
+        deviceSecurityState = device.getCurrentState();
+
+        deviceSecurityStateTwo = new DeviceSecurityState(device.getId(), 2);
+        deviceSecurityStateTwo.insert();
+
         // insert command
         deviceCommand = new DeviceCommand("Test Command", deviceType.getId());
         deviceCommand.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), securityStateTwo.getId(), securityState.getId());
         deviceCommandLookup.insert();
-
-        // insert device_security_state
-        deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());
-        deviceSecurityState.insert();
-
-        device.setCurrentState(deviceSecurityState);
     }
 }
