@@ -30,7 +30,7 @@ INSERT INTO alert_type(name, description, source) values('unts-abnormal-traffic'
 
 INSERT INTO alert_type(name, description, source) values('dlc-motion-sense', 'DLC.motion && PHLE.on/off = off', 'Iot Interface');
 
-INSERT INTO alert_type(name, description, source) values('phle-time-off', 'PHLE.on/off = off && PHLE.time-last-change > T minutes', 'Iot Interface');
+INSERT INTO alert_type(name, description, source) values('phle-time-on', 'PHLE.on/off = on && !DLC.motion_sense > T minutes', 'Iot Interface');
 
 INSERT INTO alert_type(name, description, source) values('phle-odd-one-out', 'PHLE.on/off = off && PHLE.on/off = ON (∀ PHLE in same group)', 'Iot Interface');
 
