@@ -37,8 +37,8 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'dlc-motion-sense'), (SELECT id FROM device_type WHERE name = 'DLink Camera'),
                                                                                 '"motion_detected"=>"true","isOn"=>"true"');
 
-INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-time-off'), (SELECT id FROM device_type WHERE name = 'Phillips Hue Light Emulator'),
-                                                                                '"isOn"=>"false","time-last-change"=>"480"');
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-time-on'), (SELECT id FROM device_type WHERE name = 'Phillips Hue Light Emulator'),
+                                                                                '"isOn"=>"false","time-last-change"=>"30"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-odd-one-out'), (SELECT id FROM device_type WHERE name = 'Phillips Hue Light Emulator'),
                                                                                 '"isOn"=>"false","group_isOn"=>"true"');

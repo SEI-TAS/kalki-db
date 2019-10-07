@@ -284,7 +284,7 @@ public class Postgres {
         initDB("db-alert-types.sql");
         initDB("db-device-types.sql");
         initDB("db-security-states.sql");
-//        initDB("db-command-lookups.sql");
+        initDB("db-command-lookups.sql");
         initDB("db-umbox-images.sql");
         initDB("db-alert-type-lookups.sql");
         initDB("db-devices.sql");
