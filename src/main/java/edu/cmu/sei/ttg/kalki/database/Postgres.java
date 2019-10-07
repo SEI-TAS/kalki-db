@@ -2068,16 +2068,16 @@ public class Postgres {
     private static Device rsToDevice(ResultSet rs) {
         Device device = null;
         try {
-            int id = rs.getInt(1);
-            String name = rs.getString(2);
-            String description = rs.getString(3);
-            int typeId = rs.getInt(4);
-            int groupId = rs.getInt(5);
-            String ip = rs.getString(6);
-            int statusHistorySize = rs.getInt(7);
-            int samplingRate = rs.getInt(8);
-
-            device = new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate);
+            int id = rs.getInt("id");
+            String name = rs.getString("name");
+            String description = rs.getString("description");
+            int typeId = rs.getInt("type_id");
+            int groupId = rs.getInt("group_id");
+            String ip = rs.getString("ip_address");
+            int statusHistorySize = rs.getInt("status_history_size");
+            int samplingRate = rs.getInt("sampling_rate");
+            int defaultSamplingRate = rs.getInt("default_sampling_rate");
+            device = new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Device: " + e.getClass().getName() + ": " + e.getMessage());
@@ -2100,7 +2100,7 @@ public class Postgres {
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                            "status_history_size, sampling_rate) values(?,?,?,?,?,?,?)");
+                            "status_history_size, sampling_rate, default_sampling_rate) values(?,?,?,?,?,?,?,?)");
             update.setString(1, device.getDescription());
             update.setString(2, device.getName());
             update.setInt(3, device.getType().getId());
@@ -2113,6 +2113,7 @@ public class Postgres {
             update.setString(5, device.getIp());
             update.setInt(6, device.getStatusHistorySize());
             update.setInt(7, device.getSamplingRate());
+            update.setInt(8, device.getDefaultSamplingRate());
             update.executeUpdate();
 
             int serialNum = getLatestId("device");

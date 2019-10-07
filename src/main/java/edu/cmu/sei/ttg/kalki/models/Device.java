@@ -17,6 +17,7 @@ public class Device {
     private String ip;
     private int statusHistorySize;
     private int samplingRate;
+    private int defaultSamplingRate;
     private List<Integer> tagIds;
     private DeviceSecurityState currentState;
     private Alert lastAlert;
@@ -34,6 +35,7 @@ public class Device {
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = samplingRate;
     }
 
     public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert){
@@ -64,7 +66,7 @@ public class Device {
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
-                  int statusHistorySize, int samplingRate) {
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate) {
         this.id = id;
         this.description = description;
         this.name = name;
@@ -77,6 +79,7 @@ public class Device {
         }
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = defaultSamplingRate;
         this.ip = ip;
     }
 
@@ -166,6 +169,14 @@ public class Device {
 
     public void setLastAlert(Alert lastAlert) {
         this.lastAlert = lastAlert;
+    }
+
+    public int getDefaultSamplingRate() {
+        return defaultSamplingRate;
+    }
+
+    public void setDefaultSamplingRate(int defaultSamplingRate) {
+        this.defaultSamplingRate = defaultSamplingRate;
     }
 
     public Integer insert(){

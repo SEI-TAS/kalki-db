@@ -199,6 +199,7 @@ Device device = Postgres.findDevice(deviceId);
 |ip_address            |String       |
 |status_history_size   |int NOT NULL |
 |sampling_rate         |int NOT NULL |
+|default_sampling_rate |int NOT NULL |
 |current_state_id      |int |
 |last_alert_id         |int |
 ###### Actions:  
@@ -523,6 +524,7 @@ This class supports:
 |ip                    |String       |
 |statusHistorySize     |int          |
 |samplingRate          |int          |
+|defaultSamplingRate   |int          |
 |tagIds                |List<Integer>|  
 |currentState          |DeviceSecurityState|
 |lastAlert             |Alert        |
@@ -533,7 +535,7 @@ This class supports:
 |`Device(String name, String description, DeviceType type, String ip, int statusHistorySize, int samplingRate)`|
 |`Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert)`|
 |`Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate)`|
-|`Device(int id, String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate)`|
+|`Device(int id, String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate, int defaultSamplingRate)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
