@@ -1553,6 +1553,55 @@ public class Postgres {
     }
 
     /**
+     * Finds commands for device based on the state of triggeringDevice
+     * @param device the device the commands are for
+     * @param triggeringDevice the device that changed state
+     * @return List of commands for device
+     */
+    public static List<DeviceCommand> findCommandsForGroup(Device device, Device triggeringDevice) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            int previousStateId = findPreviousDeviceSecurityStateId(triggeringDevice);
+            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.current_state_id = ? AND cl.previous_state_id = ? AND cl.device_type_id=? AND c.id = cl.command_id");
+            st.setInt(1, device.getType().getId());
+            st.setInt(2, triggeringDevice.getCurrentState().getStateId());
+            st.setInt(3, previousStateId);
+            st.setInt(4, triggeringDevice.getType().getId());
+            rs = st.executeQuery();
+
+            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
+            while (rs.next()) {
+                commands.add(rsToCommand(rs));
+            }
+            return commands;
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all commands for device: " + e.getClass().getName() + ": " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error getting device commands: " + e.getClass().getName() + ": " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception e) {
+            }
+            try {
+                if (st != null) {
+                    st.close();
+                }
+            } catch (Exception e) {
+            }
+        }
+        return null;
+    }
+
+    /**
      * Finds the commands for the device in its current state
      *
      * @param device The device in question
@@ -1771,8 +1820,9 @@ public class Postgres {
             int id = rs.getInt("id");
             int currentStateId = rs.getInt("current_state_id");
             int previousStateId = rs.getInt("previous_state_id");
+            int deviceTypeId = rs.getInt("device_type_id");
             int commandId = rs.getInt("command_id");
-            DeviceCommandLookup commandLookup = new DeviceCommandLookup(id, commandId, currentStateId, previousStateId);
+            DeviceCommandLookup commandLookup = new DeviceCommandLookup(id, commandId, currentStateId, previousStateId, deviceTypeId);
             return commandLookup;
         } catch (Exception e) {
             e.printStackTrace();
@@ -1796,10 +1846,11 @@ public class Postgres {
         }
         try {
             PreparedStatement insertCommandLookup =
-                    dbConn.prepareStatement("INSERT INTO command_lookup(current_state_id, previous_state_id, command_id) VALUES (?,?,?)");
+                    dbConn.prepareStatement("INSERT INTO command_lookup(current_state_id, previous_state_id, command_id, device_type_id) VALUES (?,?,?,?)");
             insertCommandLookup.setInt(1, commandLookup.getCurrentStateId());
             insertCommandLookup.setInt(2, commandLookup.getPreviousStateId());
             insertCommandLookup.setInt(3, commandLookup.getCommandId());
+            insertCommandLookup.setInt(4, commandLookup.getDeviceTypeId());
             insertCommandLookup.executeUpdate();
 
             return getLatestId("command_lookup");

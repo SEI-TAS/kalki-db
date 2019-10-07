@@ -11,22 +11,25 @@ public class DeviceCommandLookup {
     private int commandId;
     private int currentStateId;
     private int previousStateId;
+    private int deviceTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommandLookup() {
     }
 
-    public DeviceCommandLookup(int commandId, int currentStateId, int previousStateId) {
+    public DeviceCommandLookup(int commandId, int currentStateId, int previousStateId, int deviceTypeId) {
         this.currentStateId = currentStateId;
         this.previousStateId = previousStateId;
+        this.deviceTypeId = deviceTypeId;
         this.commandId = commandId;
     }
 
-    public DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId) {
+    public DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId, int deviceTypeId) {
         this.id = id;
         this.currentStateId = currentStateId;
         this.previousStateId = previousStateId;
+        this.deviceTypeId = deviceTypeId;
         this.commandId = commandId;
     }
 
@@ -60,6 +63,14 @@ public class DeviceCommandLookup {
 
     public int getPreviousStateId() {
         return previousStateId;
+    }
+
+    public int getDeviceTypeId() {
+        return deviceTypeId;
+    }
+
+    public void setDeviceTypeId(int deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
     }
 
     public int insert() {

@@ -175,6 +175,7 @@ Device device = Postgres.findDevice(deviceId);
 |id              |serial PRIMARY KEY|  
 |current_state_id        |int NOT NULL|
 |previous_state_id       |int NOT NULL|
+|device_type_id          |int NOT NULL|
 |command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|

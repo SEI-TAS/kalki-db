@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS command(
 CREATE TABLE IF NOT EXISTS command_lookup(
     id                 serial PRIMARY KEY,
     command_id         int NOT NULL REFERENCES command(id),
+    device_type_id     int NOT NULL REFERENCES device_type(id),
     current_state_id   int NOT NULL REFERENCES security_state(id),
     previous_state_id  int NOT NULL REFERENCES security_state(id),
     UNIQUE(current_state_id, previous_state_id, command_id)
