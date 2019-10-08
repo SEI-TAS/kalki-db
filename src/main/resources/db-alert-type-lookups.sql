@@ -44,10 +44,10 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name='brute-force'), (SELECT id FROM device_type WHERE name='Phillips Hue Light Emulator'));
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-low'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
-                                                                                '"currentmw"=>"17040"');
+                                                                                '"currentmw"=>"17040","state"=>"Normal"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-low-suspicious'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
-                                                                                '"currentmw"=>"17040","duration"=>"10"');
+                                                                                '"currentmw"=>"17040","duration"=>"10","state"=>"Suspicious"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-high'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
                                                                                 '"currentmw"=>"17050"');
