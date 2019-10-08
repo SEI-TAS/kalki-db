@@ -46,14 +46,11 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id F
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-low'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
                                                                                 '"currentmw"=>"17040"');
 
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-low-suspicious'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
+                                                                                '"currentmw"=>"17040","duration"=>"10"');
+
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-high'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
                                                                                 '"currentmw"=>"17050"');
-
-INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-same-group'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
-                                                                                '');
-
-INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-last-change'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
-                                                                                '"lastchange"=>"10","status"=>"on"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-time-on'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
                                                                                 '"today_on_time"=>"32400"');

@@ -34,11 +34,9 @@ INSERT INTO alert_type(name, description, source) values('phle-odd-one-out', 'PH
 
 INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low', 'wemo.currentmw > X', 'Iot Interface');
 
+INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low-suspicious', 'wemo.currentmw > X for Y minutes', 'Iot Interface');
+
 INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-high', 'wemo.currentmw > Y', 'Iot Interface');
-
-INSERT INTO alert_type(name, description, source) values('wemo-current-mw-same-group', 'wemo.currentmw </> avg(same type/group)±X', 'Iot Interface');
-
-INSERT INTO alert_type(name, description, source) values('wemo-last-change', 'wemo.lastchange > M-minutes && wemo.status == ON', 'Iot Interface');
 
 INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Iot Interface');
 

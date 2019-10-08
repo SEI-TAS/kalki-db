@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS command_lookup(
     device_type_id     int NOT NULL REFERENCES device_type(id),
     current_state_id   int NOT NULL REFERENCES security_state(id),
     previous_state_id  int NOT NULL REFERENCES security_state(id),
-    UNIQUE(current_state_id, previous_state_id, command_id)
+    UNIQUE(current_state_id, previous_state_id, device_type_id, command_id)
 );
 
 CREATE TABLE IF NOT EXISTS umbox_instance(
