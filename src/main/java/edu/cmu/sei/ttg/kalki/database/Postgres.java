@@ -334,7 +334,8 @@ public class Postgres {
                 return rs.getInt("count");
             }
         } catch (SQLException e){
-            logger.severe("There was an getting the current table count: "+e.getMessage());
+            logger.severe("There was an getting the current table count: ");
+            e.printStackTrace();
         }
         return -1;
     }
@@ -344,8 +345,39 @@ public class Postgres {
      */
     public static void dropTables() {
         logger.info("Dropping tables.");
-        executeCommand("DROP SCHEMA information_schema CASCADE");
+        List<String> tableNames = new ArrayList<String>();
+        tableNames.add("alert_type_lookup");
+        tableNames.add("alert_condition");
+        tableNames.add("alert");
+        tableNames.add("umbox_lookup");
+        tableNames.add("umbox_instance");
+        tableNames.add("command_lookup");
+        tableNames.add("command");
+        tableNames.add("device_tag");
+        tableNames.add("device_security_state");
+        tableNames.add("device_status");
+        tableNames.add("device");
+        tableNames.add("umbox_image");
+        tableNames.add("tag");
+        tableNames.add("security_state");
+        tableNames.add("device_group");
+        tableNames.add("device_type");
+        tableNames.add("alert_type");
+
+        for (String tableName : tableNames) {
+            dropTable(tableName);
+        }
     }
+
+    /**
+     * Drop a table from the database.
+     *
+     * @param tableName name of the table to be dropped
+     */
+    public static void dropTable(String tableName) {
+        executeCommand("DROP TABLE IF EXISTS " + tableName + " CASCADE");
+    }
+
 
     /**
      * Reads from the specified file to initialize db
