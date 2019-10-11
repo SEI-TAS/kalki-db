@@ -114,6 +114,7 @@ public class StageLog {
     }
 
     public enum Action {
+        INITIATE,
         INCREASE_SAMPLE_RATE,
         SEND_COMMAND,
         DEPLOY_UMBOX,
@@ -123,6 +124,8 @@ public class StageLog {
 
         public String convert(){
             switch (this){
+                case INITIATE:
+                    return "Initiating response";
                 case INCREASE_SAMPLE_RATE:
                     return "Increase sampling rate";
                 case DEPLOY_UMBOX:
@@ -138,6 +141,7 @@ public class StageLog {
     }
 
     public enum Stage {
+        STIMULUS,
         TRIGGER,
         REACT,
         FINISH;
@@ -146,6 +150,8 @@ public class StageLog {
 
         public String convert() {
             switch (this){
+                case STIMULUS:
+                    return "Stimulus";
                 case TRIGGER:
                     return "Trigger";
                 case REACT:
