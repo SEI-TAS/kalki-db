@@ -270,7 +270,9 @@ public class Postgres {
      * Creates necessary extensions, databases, and tables
      */
     public static void setupDatabase() {
-        if(getTableCount() == 17) {//tables have been initialized
+        int numTables = getTableCount();
+        logger.info("Current number of tables: " + numTables);
+        if(numTables == 17) {//tables have been initialized
             logger.info("Database has been setup by another component");
             return;
         }
