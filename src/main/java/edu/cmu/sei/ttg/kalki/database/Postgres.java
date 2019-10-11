@@ -272,7 +272,7 @@ public class Postgres {
     public static void setupDatabase() {
         int numTables = getTableCount();
         logger.info("Current number of tables: " + numTables);
-        if(numTables == 17) {//tables have been initialized
+        if(numTables != 0) {//tables have been initialized
             logger.info("Database has been setup by another component");
             return;
         }
