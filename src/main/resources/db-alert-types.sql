@@ -6,6 +6,8 @@ INSERT INTO alert_type(name, description, source) values('device-unavailable', '
 
 INSERT INTO alert_type(name, description, source) values('max-login-attempts', 'A user attempts to login > X times', 'umbox');
 
+INSERT INTO alert_type(name, description, source) values('abnormal-traffic', 'Device starts connections when it is not supposed to.', 'umbox');
+
 INSERT INTO alert_type(name, description, source) values('state-reset', 'Admin issues state reset through dashboard', 'Dashboard');
 
 INSERT INTO alert_type(name, description, source) values('unts-acceleration', 'unts.acceleration > Z && unts.avgAcceleration > Y', 'Iot Interface');
