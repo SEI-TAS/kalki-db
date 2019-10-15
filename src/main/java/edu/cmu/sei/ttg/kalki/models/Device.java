@@ -38,7 +38,7 @@ public class Device {
         this.defaultSamplingRate = samplingRate;
     }
 
-    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert){
+    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -46,11 +46,12 @@ public class Device {
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = defaultSamplingRate;
         this.currentState = currentState;
         this.lastAlert = lastAlert;
     }
 
-    public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate){
+    public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate, int defaultSamplingRate){
         this.name = name;
         this.description = description;
         try {
@@ -63,6 +64,7 @@ public class Device {
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = defaultSamplingRate;
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
