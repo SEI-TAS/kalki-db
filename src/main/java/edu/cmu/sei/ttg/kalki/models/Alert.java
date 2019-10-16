@@ -33,7 +33,7 @@ public class Alert {
     public Alert(int deviceId, String name, int alertTypeId) {
         this.name = name;
         this.alerterId = null;
-        this.deviceStatusId = null;
+        this.deviceStatusId = 0;
         this.deviceId = deviceId;
         this.alertTypeId = alertTypeId;
         long millis = System.currentTimeMillis();
