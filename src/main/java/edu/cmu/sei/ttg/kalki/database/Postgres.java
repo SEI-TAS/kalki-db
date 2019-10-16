@@ -2303,7 +2303,7 @@ public class Postgres {
                 String name = rs.getString("name");
                 int alertTypeId = rs.getInt("id");
 
-                Alert alert = new Alert(name, deviceId, alertTypeId);
+                Alert alert = new Alert(deviceId, name, alertTypeId);
                 alert.insert();
             }
         } catch (SQLException e) {

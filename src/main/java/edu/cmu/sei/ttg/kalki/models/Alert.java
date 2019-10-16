@@ -30,6 +30,16 @@ public class Alert {
         this.timestamp = new Timestamp(millis);
     }
 
+    public Alert(int deviceId, String name, int alertTypeId) {
+        this.name = name;
+        this.alerterId = null;
+        this.deviceStatusId = null;
+        this.deviceId = deviceId;
+        this.alertTypeId = alertTypeId;
+        long millis = System.currentTimeMillis();
+        this.timestamp = new Timestamp(millis);
+    }
+
     public Alert(String name, Integer deviceStatusId, int alertTypeId) {
         this.name = name;
         this.deviceStatusId = deviceStatusId;
