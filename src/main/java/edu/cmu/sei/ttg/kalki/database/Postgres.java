@@ -2011,37 +2011,12 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
-        try {
-            if (alert.getDeviceId() != null) {
-                return findDevice(alert.getDeviceId());
-            } else {
-                logger.severe("Error: alert has no associated DeviceStatus OR UmboxInstance!");
-                return null;
-            }
-            rs = st.executeQuery();
-            if (rs.next())
-                return rsToDevice(rs);
-
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error getting device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (Exception e) {
-            }
-            try {
-                if (st != null) {
-                    st.close();
-                }
-            } catch (Exception e) {
-            }
+        if (alert.getDeviceId() != null) {
+            return findDevice(alert.getDeviceId());
+        } else {
+            logger.severe("Error: alert has no associated DeviceStatus OR UmboxInstance!");
+            return null;
         }
-        return null;
     }
 
     /**
