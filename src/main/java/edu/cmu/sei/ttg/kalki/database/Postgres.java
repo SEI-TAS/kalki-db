@@ -1538,7 +1538,12 @@ public class Postgres {
             return null;
         }
         try {
+            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
+
             int previousStateId = findPreviousDeviceSecurityStateId(triggeringDevice);
+            if(previousStateId < 0){
+                return commands;
+            }
             st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.current_state_id = ? AND cl.previous_state_id = ? AND cl.device_type_id=? AND c.id = cl.command_id");
             st.setInt(1, device.getType().getId());
             st.setInt(2, triggeringDevice.getCurrentState().getStateId());
@@ -1546,7 +1551,6 @@ public class Postgres {
             st.setInt(4, triggeringDevice.getType().getId());
             rs = st.executeQuery();
 
-            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
             while (rs.next()) {
                 commands.add(rsToCommand(rs));
             }
@@ -1587,14 +1591,19 @@ public class Postgres {
             return null;
         }
         try {
+            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
+
             int previousStateId = findPreviousDeviceSecurityStateId(device);
+            if(previousStateId < 0){
+                return commands;
+            }
+
             st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.current_state_id = ? AND cl.previous_state_id = ? AND c.id = cl.command_id");
             st.setInt(1, device.getType().getId());
             st.setInt(2, device.getCurrentState().getStateId());
             st.setInt(3, previousStateId);
             rs = st.executeQuery();
 
-            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
             while (rs.next()) {
                 commands.add(rsToCommand(rs));
             }
@@ -3044,7 +3053,7 @@ public class Postgres {
                 return id;
             } else {
                 logger.info("Only 1 device security state entered for device with id: "+device.getId());
-                return device.getCurrentState().getId();
+                return -1;
             }
 
         } catch (Exception e) {
