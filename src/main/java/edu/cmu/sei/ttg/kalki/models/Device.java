@@ -195,9 +195,8 @@ public class Device {
         return this.id;
     }
 
-    public DeviceSecurityState resetSecurityState() {
-        this.currentState = Postgres.resetSecurityState(this.id);
-        return this.currentState;
+    public void resetSecurityState() {
+        Postgres.resetSecurityState(this.id);
     }
 
     public String toString() {
