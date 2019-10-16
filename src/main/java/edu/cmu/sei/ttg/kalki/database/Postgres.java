@@ -2013,8 +2013,7 @@ public class Postgres {
         }
         try {
             if (alert.getDeviceId() != null) {
-                st = dbConn.prepareStatement("SELECT * FROM device WHERE id = ?");
-                st.setInt(1, alert.getDeviceId());
+                return findDevice(alert.getDeviceId());
             } else {
                 logger.severe("Error: alert has no associated DeviceStatus OR UmboxInstance!");
                 return null;
