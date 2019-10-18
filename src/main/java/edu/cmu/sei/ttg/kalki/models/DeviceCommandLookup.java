@@ -8,22 +8,28 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class DeviceCommandLookup {
     private int id;
-    private Integer stateId;
-    private Integer commandId;
+    private int commandId;
+    private int currentStateId;
+    private int previousStateId;
+    private int deviceTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommandLookup() {
     }
 
-    public DeviceCommandLookup(Integer stateId, Integer commandId) {
-        this.stateId = stateId;
+    public DeviceCommandLookup(int commandId, int currentStateId, int previousStateId, int deviceTypeId) {
+        this.currentStateId = currentStateId;
+        this.previousStateId = previousStateId;
+        this.deviceTypeId = deviceTypeId;
         this.commandId = commandId;
     }
 
-    public DeviceCommandLookup(int id, Integer stateId, Integer commandId) {
+    public DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId, int deviceTypeId) {
         this.id = id;
-        this.stateId = stateId;
+        this.currentStateId = currentStateId;
+        this.previousStateId = previousStateId;
+        this.deviceTypeId = deviceTypeId;
         this.commandId = commandId;
     }
 
@@ -35,28 +41,44 @@ public class DeviceCommandLookup {
         this.id = id;
     }
 
-    public void setStateId(Integer stateId) {
-        this.stateId = stateId;
-    }
-
-    public Integer getStateId() {
-        return stateId;
-    }
-
-    public void setCommandId(Integer commandId) {
+    public void setCommandId(int commandId) {
         this.commandId = commandId;
     }
 
-    public Integer getCommandId() {
+    public int getCommandId() {
         return commandId;
     }
 
-    public Integer insert() {
+    public void setCurrentStateId(int currentStateId) {
+        this.currentStateId = currentStateId;
+    }
+
+    public int getCurrentStateId() {
+        return currentStateId;
+    }
+
+    public void setPreviousStateId(int previousStateId) {
+        this.previousStateId = previousStateId;
+    }
+
+    public int getPreviousStateId() {
+        return previousStateId;
+    }
+
+    public int getDeviceTypeId() {
+        return deviceTypeId;
+    }
+
+    public void setDeviceTypeId(int deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
+    }
+
+    public int insert() {
         this.id = Postgres.insertCommandLookup(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = Postgres.insertOrUpdateCommandLookup(this);
         return this.id;
     }

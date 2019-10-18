@@ -1,9 +1,9 @@
 package edu.cmu.sei.ttg.kalki.database;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -44,19 +44,13 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
         DeviceSecurityState foundState = Postgres.findDeviceSecurityStateByDevice(device.getId());
         assertEquals(deviceSecurityState.getId(), foundState.getId());
         assertEquals(deviceSecurityState.getStateId(), foundState.getStateId());
-
-        foundState = Postgres.findDeviceSecurityStateByDevice(deviceTwo.getId());
-        assertEquals(null, foundState);
     }
 
     @Test
     public void testFindDeviceSecurityStates() {
         ArrayList<DeviceSecurityState> foundStates =
                 new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(device.getId()));
-        assertEquals(1, foundStates.size());
-
-        foundStates = new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(deviceTwo.getId()));
-        assertEquals(0, foundStates.size());
+        assertEquals(1, foundStates.size()); //the default normal state plus the new state
     }
 
     @Test
@@ -83,7 +77,7 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
 
     public void insertData() {
         // insert security state(s)
-        securityState = new SecurityState("Normal");
+        securityState = new SecurityState("testState");
         securityState.insert();
 
         // insert device_type
@@ -105,9 +99,6 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
         deviceTwo.insert();
 
         // insert device_security_state
-        deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());
-        deviceSecurityState.insert();
-
-        device.setCurrentState(deviceSecurityState);
+        deviceSecurityState = device.getCurrentState();
     }
 }

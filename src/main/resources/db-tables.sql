@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS device(
     ip_address             varchar(255),
     status_history_size    int NOT NULL,
     sampling_rate          int NOT NULL,
+    default_sampling_rate  int NOT NULL,
     current_state_id       int,
     last_alert_id          int
 );
@@ -74,9 +75,11 @@ CREATE TABLE IF NOT EXISTS command(
 
 CREATE TABLE IF NOT EXISTS command_lookup(
     id                 serial PRIMARY KEY,
-    state_id           int NOT NULL REFERENCES security_state(id),
     command_id         int NOT NULL REFERENCES command(id),
-    UNIQUE(state_id, command_id)
+    device_type_id     int NOT NULL REFERENCES device_type(id),
+    current_state_id   int NOT NULL REFERENCES security_state(id),
+    previous_state_id  int NOT NULL REFERENCES security_state(id),
+    UNIQUE(current_state_id, previous_state_id, device_type_id, command_id)
 );
 
 CREATE TABLE IF NOT EXISTS umbox_instance(
@@ -93,7 +96,6 @@ CREATE TABLE IF NOT EXISTS umbox_lookup(
     device_type_id     int NOT NULL REFERENCES device_type(id),
     umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
     dag_order          int NOT NULL,
-    UNIQUE(state_id, device_type_id, umbox_image_id),
     UNIQUE(state_id, device_type_id, dag_order)
 );
 
@@ -102,19 +104,37 @@ CREATE TABLE IF NOT EXISTS alert(
     name               varchar(255) NOT NULL,
     timestamp          timestamp NOT NULL DEFAULT now(),
     alert_type_id      int REFERENCES alert_type(id),
+    device_id          int REFERENCES device(id),
     alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id),
     device_status_id   int REFERENCES device_status(id)
+);
+
+CREATE TABLE IF NOT EXISTS alert_type_lookup(
+    id                 serial PRIMARY KEY,
+    variables          hstore,
+    alert_type_id      int REFERENCES alert_type(id),
+    device_type_id     int REFERENCES device_type(id)
 );
 
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
     variables          hstore,
     device_id          int NOT NULL REFERENCES device(id),
-    alert_type_id      int NOT NULL REFERENCES alert_type(id)
+    alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id)
 );
 
-CREATE TABLE IF NOT EXISTS alert_type_lookup(
-    alert_type_id      int REFERENCES alert_type(id),
-    device_type_id     int REFERENCES device_type(id),
-    PRIMARY KEY(alert_type_id, device_type_id)
+CREATE TABLE IF NOT EXISTS stage_log(
+    id                   serial PRIMARY KEY,
+    device_sec_state_id  int NOT NULL REFERENCES device_security_state(id),
+    timestamp            timestamp NOT NULL DEFAULT now(),
+    action               varchar(255) NOT NULL,
+    stage                varchar(255) NOT NULL,
+    info                 varchar(255)
+);
+
+CREATE TABLE IF NOT EXISTS umbox_log(
+    id                  serial PRIMARY KEY,
+    alerter_id          varchar(255) REFERENCES umbox_instance(alerter_id),
+    details             varchar(255),
+    timestamp           timestamp NOT NULL DEFAULT now()
 );

@@ -1,9 +1,9 @@
 package edu.cmu.sei.ttg.kalki.database;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,7 +23,10 @@ public class CommandLookupTest extends AUsesDatabase {
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static DeviceCommand deviceCommand;
+    private static DeviceCommand deviceCommandTwo;
     private static DeviceCommandLookup deviceCommandLookup;
+    private static DeviceCommandLookup deviceCommandLookupTwo;
+    private static Device device;
 
     /*
         Command Lookup Action Tests
@@ -31,32 +34,41 @@ public class CommandLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindAllCommandLookups() {
-        assertEquals(1, Postgres.findAllCommandLookups().size());
+        assertEquals(2, Postgres.findAllCommandLookups().size());
+    }
+
+    @Test
+    public void testFindCommandLookupsByDevice() {
+        ArrayList<DeviceCommandLookup> foundLookups =
+                new ArrayList<DeviceCommandLookup>(Postgres.findCommandLookupsByDevice(device.getId()));
+
+        assertEquals(1, foundLookups.size());
+        assertEquals(deviceCommandLookup.toString(), foundLookups.get(0).toString());
     }
 
     @Test
     public void testFindCommandLookup() {
-        assertEquals(Postgres.findCommandLookup(deviceCommandLookup.getId()).toString(),
-                deviceCommandLookup.toString());
+        assertEquals(deviceCommandLookup.toString(),
+                Postgres.findCommandLookup(deviceCommandLookup.getId()).toString());
     }
 
     @Test
     public void testInsertOrUpdateCommandLookup() {
-        assertEquals(1, Postgres.findAllCommandLookups().size());
+        assertEquals(2, Postgres.findAllCommandLookups().size());
 
-        deviceCommandLookup.setStateId(securityStateTwo.getId());
+        deviceCommandLookup.setCurrentStateId(securityStateTwo.getId());
         deviceCommandLookup.insertOrUpdate();
 
-        assertEquals(deviceCommandLookup.getStateId(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).getStateId());
-        assertEquals(1, Postgres.findAllCommandLookups().size());
+        assertEquals(deviceCommandLookup.getCurrentStateId(),
+                Postgres.findCommandLookup(deviceCommandLookup.getId()).getCurrentStateId());
+        assertEquals(2, Postgres.findAllCommandLookups().size());
 
         DeviceCommandLookup newLookup =
-                new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
+                new DeviceCommandLookup(deviceCommand.getId(), securityState.getId(), securityStateTwo.getId(), deviceType.getId());
 
         int newId = newLookup.insertOrUpdate();
 
-        assertEquals(2, Postgres.findAllCommandLookups().size());
+        assertEquals(3, Postgres.findAllCommandLookups().size());
         assertEquals(newLookup.toString(), Postgres.findCommandLookup(newId).toString());
     }
 
@@ -89,7 +101,17 @@ public class CommandLookupTest extends AUsesDatabase {
         deviceCommand = new DeviceCommand("Test Command", deviceType.getId());
         deviceCommand.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(securityState.getId(), deviceCommand.getId());
+        deviceCommandTwo = new DeviceCommand("Test Command two", deviceTypeTwo.getId());
+        deviceCommandTwo.insert();
+
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), securityState.getId(), securityStateTwo.getId(), deviceType.getId());
         deviceCommandLookup.insert();
+
+        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), securityState.getId(), securityStateTwo.getId(), deviceType.getId());
+        deviceCommandLookupTwo.insert();
+
+        // insert device
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device.insert();
     }
 }

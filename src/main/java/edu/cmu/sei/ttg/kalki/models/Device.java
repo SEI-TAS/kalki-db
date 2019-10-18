@@ -17,6 +17,7 @@ public class Device {
     private String ip;
     private int statusHistorySize;
     private int samplingRate;
+    private int defaultSamplingRate;
     private List<Integer> tagIds;
     private DeviceSecurityState currentState;
     private Alert lastAlert;
@@ -34,9 +35,10 @@ public class Device {
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = samplingRate;
     }
 
-    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate, DeviceSecurityState currentState, Alert lastAlert){
+    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -44,11 +46,12 @@ public class Device {
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = defaultSamplingRate;
         this.currentState = currentState;
         this.lastAlert = lastAlert;
     }
 
-    public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate){
+    public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate, int defaultSamplingRate){
         this.name = name;
         this.description = description;
         try {
@@ -61,10 +64,11 @@ public class Device {
         this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = defaultSamplingRate;
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
-                  int statusHistorySize, int samplingRate) {
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate) {
         this.id = id;
         this.description = description;
         this.name = name;
@@ -77,6 +81,7 @@ public class Device {
         }
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
+        this.defaultSamplingRate = defaultSamplingRate;
         this.ip = ip;
     }
 
@@ -168,14 +173,30 @@ public class Device {
         this.lastAlert = lastAlert;
     }
 
+    public int getDefaultSamplingRate() {
+        return defaultSamplingRate;
+    }
+
+    public void setDefaultSamplingRate(int defaultSamplingRate) {
+        this.defaultSamplingRate = defaultSamplingRate;
+    }
+
     public Integer insert(){
-        this.id = Postgres.insertDevice(this);
+        Device data = Postgres.insertDevice(this);
+        setCurrentState(data.getCurrentState());
+        setId(data.getId());
         return this.id;
     }
 
     public Integer insertOrUpdate(){
-        this.id = Postgres.insertOrUpdateDevice(this);
+        Device data = Postgres.insertOrUpdateDevice(this);
+        setCurrentState(data.getCurrentState());
+        setId(data.getId());
         return this.id;
+    }
+
+    public void resetSecurityState() {
+        Postgres.resetSecurityState(this.id);
     }
 
     public String toString() {

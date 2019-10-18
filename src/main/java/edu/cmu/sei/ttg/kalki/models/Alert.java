@@ -14,21 +14,28 @@ public class Alert {
     private String name;
     private Timestamp timestamp;
     private String alerterId;
+    private int deviceId;
     private Integer deviceStatusId;
     private int alertTypeId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-
-    public Alert() {
-
-    }
-
     public Alert(String name, String alerterId, int alertTypeId){
         this.name = name;
         this.alerterId = alerterId;
         this.alertTypeId = alertTypeId;
-        this.deviceStatusId = null;
+        this.deviceId = 0;
+        this.deviceStatusId = 0;
+        long millis = System.currentTimeMillis();
+        this.timestamp = new Timestamp(millis);
+    }
+
+    public Alert(int deviceId, String name, int alertTypeId) {
+        this.name = name;
+        this.alerterId = null;
+        this.deviceStatusId = 0;
+        this.deviceId = deviceId;
+        this.alertTypeId = alertTypeId;
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
@@ -37,17 +44,8 @@ public class Alert {
         this.name = name;
         this.deviceStatusId = deviceStatusId;
         this.alertTypeId = alertTypeId;
+        this.deviceId = 0;
         this.alerterId = null;
-        long millis = System.currentTimeMillis();
-        this.timestamp = new Timestamp(millis);
-    }
-
-    public Alert(String name, String alerterId, Integer deviceStatusId, int alertTypeId) {
-        this.name = name;
-        this.alerterId = alerterId;
-        this.deviceStatusId = deviceStatusId;
-        this.alertTypeId = alertTypeId;
-
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
@@ -56,17 +54,18 @@ public class Alert {
         this.name = name;
         this.timestamp = timestamp;
         this.alerterId = alerterId;
+        this.deviceId = 0;
         this.deviceStatusId = deviceStatusId;
         this.alertTypeId = alertTypeId;
     }
 
-
-    public Alert(int id, String name, Timestamp timestamp, String alerterId, Integer deviceStatusId, int alertTypeId) {
+    public Alert(int id, String name, Timestamp timestamp, String alerterId, int deviceId, Integer deviceStatusId, int alertTypeId) {
         this.id = id;
         this.name = name;
         this.timestamp = timestamp;
         this.alerterId = alerterId;
         this.deviceStatusId = deviceStatusId;
+        this.deviceId = deviceId;
         this.alertTypeId = alertTypeId;
     }
 
@@ -93,6 +92,10 @@ public class Alert {
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
     }
+
+    public Integer getDeviceId() { return deviceId; }
+
+    public void setDeviceId(Integer deviceId) { this.deviceId = deviceId; }
 
     public String getAlerterId() {
         return alerterId;

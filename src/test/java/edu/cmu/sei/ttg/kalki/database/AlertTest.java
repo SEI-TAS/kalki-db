@@ -1,9 +1,9 @@
 package edu.cmu.sei.ttg.kalki.database;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -51,13 +51,30 @@ public class AlertTest extends AUsesDatabase {
     }
 
     @Test
+    public void testFindAlertsByDevice() {
+        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(device.getId()));
+
+        assertEquals(2, foundAlerts.size());
+
+        foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
+        assertEquals(0, foundAlerts.size());
+    }
+
+    @Test
     public void testInsertAlert() {
-        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(), alertType.getId());
+        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
         assertEquals(null, Postgres.findAlert(3));
 
         newAlert.insert();
 
         assertEquals(newAlert.toString(), Postgres.findAlert(3).toString());
+
+        newAlert = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
+        assertEquals(null, Postgres.findAlert(4));
+
+        newAlert.insert();
+
+        assertEquals(newAlert.toString(), Postgres.findAlert(4).toString());
     }
 
     @Test
@@ -121,7 +138,7 @@ public class AlertTest extends AUsesDatabase {
         alertIoT.insert();
 
         // insert alert for alerter_id/alert_type
-        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), deviceStatus.getId(), alertType.getId());
+        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
         alertUmBox.insert();
     }
 }

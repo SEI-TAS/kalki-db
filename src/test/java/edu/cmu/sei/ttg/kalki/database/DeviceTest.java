@@ -1,9 +1,10 @@
 package edu.cmu.sei.ttg.kalki.database;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import edu.cmu.sei.ttg.kalki.models.*;
 import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class DeviceTest extends AUsesDatabase {
+    private static SecurityState normalState;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static Group group;
@@ -26,6 +28,7 @@ public class DeviceTest extends AUsesDatabase {
     private static UmboxImage umboxImage;
     private static UmboxInstance umboxInstance;
     private static AlertType alertType;
+    private static AlertType alertTypeReset;
     private static DeviceStatus deviceStatus;
     private static Alert alertIoT;
     private static Alert alertUmBox;
@@ -34,6 +37,15 @@ public class DeviceTest extends AUsesDatabase {
         Test Device Actions
      */
 
+    @Test
+    public void testInsertDevice() {
+        Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000);
+        test.insert();
+
+        assertNotNull(test.getCurrentState());
+        assertNotEquals(0, Postgres.findAlertTypeLookupsByDeviceType(test.getType().getId()));
+        assertNotEquals(0, Postgres.findAlertConditionsByDevice(test.getId()).size());
+    }
     @Test
     public void testFindDevice() {
         assertEquals(device.getDescription(), Postgres.findDevice(device.getId()).getDescription());
@@ -92,7 +104,22 @@ public class DeviceTest extends AUsesDatabase {
         assertEquals(null, Postgres.findDevice(deviceTwo.getId()));
     }
 
+    @Test
+    public void testResetSecurityState() {
+        List<Alert> foundAlerts = Postgres.findAlertsByDevice(deviceTwo.getId());
+        assertEquals(0, foundAlerts.size());
+
+        DeviceSecurityState newState = deviceTwo.resetSecurityState();
+        foundAlerts = Postgres.findAlertsByDevice(deviceTwo.getId());
+//        assertEquals(1, foundAlerts.size());
+        assertEquals(deviceTwo.getCurrentState().toString(), newState.toString());
+    }
+
     public void insertData() {
+        //insert normal securityState
+        normalState = new SecurityState("Normal");
+        normalState.insert();
+
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
@@ -126,5 +153,11 @@ public class DeviceTest extends AUsesDatabase {
         alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
         alertIoT.insert();
 
+        //insert state reset alert type
+        alertTypeReset = new AlertType("state-reset", "state reset", "Dashboard");
+        alertTypeReset.insert();
+
+        AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId(), null);
+        atl.insert();
     }
 }

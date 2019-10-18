@@ -1,9 +1,10 @@
 package edu.cmu.sei.ttg.kalki.database;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,13 +28,26 @@ public class AlertTypeTest extends AUsesDatabase {
      */
 
     @Test
+    public void testInsertAlertType() {
+        AlertType at = new AlertType("Name", "Description", "source");
+        at.insert();
+        assertNotEquals(-1, at.getId());
+    }
+
+    @Test
     public void testFindAlertType() {
-        AlertType at = Postgres.findAlertType(alertType.getId());
-        assertEquals(alertType.toString(), at.toString());
+        AlertType alertType = new AlertType("Name", "Description", "source");
+        alertType.insert();
+
+        AlertType test = Postgres.findAlertType(alertType.getId());
+        assertNotNull(test);
+        assertEquals(alertType.toString(), test.toString());
     }
 
     @Test
     public void testFindAllAlertTypes() {
+        AlertType alertType = new AlertType("Name", "Description", "source");
+        alertType.insert();
         List<AlertType> alertTypeList = new ArrayList<AlertType>(Postgres.findAllAlertTypes());
 
         assertEquals(1, alertTypeList.size());
@@ -41,20 +55,9 @@ public class AlertTypeTest extends AUsesDatabase {
     }
 
     @Test
-    public void testFindAlertTypesByDeviceType() {
-        List<AlertType> atList =
-                new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(deviceType.getId()));
-
-        assertEquals(1, atList.size());
-        assertEquals(alertType.toString(), atList.get(0).toString());
-
-        atList = new ArrayList<AlertType>(Postgres.findAlertTypesByDeviceType(deviceTypeTwo.getId()));
-        assertEquals(0, atList.size());
-    }
-
-    @Test
     public void testUpdateAlertType() {
-        assertEquals(alertType.toString(), Postgres.findAlertType(alertType.getId()).toString());
+        AlertType alertType = new AlertType("Name", "Description", "source");
+        alertType.insert();
 
         alertType.setDescription("new description");
         Postgres.updateAlertType(alertType);
@@ -64,33 +67,28 @@ public class AlertTypeTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateAlertType() {
+        AlertType alertType = new AlertType("Name", "Description", "source");
+        alertType.insert();
+
+        assertNotEquals(-1, alertType.getId());
         assertEquals(1, Postgres.findAllAlertTypes().size());
 
         alertType.setDescription("new description");
         alertType.insertOrUpdate();
 
         assertEquals(1, Postgres.findAllAlertTypes().size());
+        assertEquals(alertType.toString(), Postgres.findAlertType(alertType.getId()).toString());
 
         AlertType newAlertType = new AlertType("AlertType2", "test alert type 2", "IoT Monitor");
-        int newId = newAlertType.insertOrUpdate();
-
+        newAlertType.insertOrUpdate();
+        assertNotEquals(-1, newAlertType.getId());
         assertEquals(2, Postgres.findAllAlertTypes().size());
-        assertEquals(newAlertType.toString(), Postgres.findAlertType(newId).toString());
+        assertEquals(newAlertType.toString(), Postgres.findAlertType(newAlertType.getId()).toString());
     }
 
     public void insertData() {
-        // insert alert_type unts-temperature
-        alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
-        alertType.insert();
-
         //insert device type
         deviceType = new DeviceType(-1, "testDeviceType");
         deviceType.insert();
-
-        deviceTypeTwo = new DeviceType(-1, "testDeviceType2");
-        deviceTypeTwo.insert();
-
-        Postgres.executeCommand("INSERT INTO alert_type_lookup(alert_type_id, device_type_id) values " +
-                "("+alertType.getId()+ ", " +deviceType.getId()+");");
     }
 }
