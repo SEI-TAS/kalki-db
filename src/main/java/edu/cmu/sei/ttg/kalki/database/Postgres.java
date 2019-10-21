@@ -4580,12 +4580,16 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         int latestId = -1;
+        long timestamp = System.currentTimeMillis();
+        stageLog.setTimestamp(new Timestamp(timestamp));
         try{
-            st = dbConn.prepareStatement("INSERT INTO stage_log (device_sec_state_id, action, stage, info) VALUES(?,?,?,?)");
+            st = dbConn.prepareStatement("INSERT INTO stage_log (device_sec_state_id, action, stage, info, timestamp) VALUES(?,?,?,?,?)");
             st.setInt(1, stageLog.getDeviceSecurityStateId());
             st.setString(2, stageLog.getAction());
             st.setString(3, stageLog.getStage());
             st.setString(4, stageLog.getInfo());
+            st.setTimestamp(5, stageLog.getTimestamp());
+
             st.executeUpdate();
 
             latestId = getLatestId("stage_log");
