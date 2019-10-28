@@ -19,10 +19,10 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (
                                                                                 '"average"=>"50","gyroscopeX"=>"2.875","gyroscopeY"=>"1.8125","gyroscopeZ"=>"0.6875","modulus"=>"3.4675","state"=>"Suspicious"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-magnetometer'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                                '"magnetometerX"=>"45.0","magnetometerY"=>"80.6","magnetometerZ"=>"137.5","modulus"=>"183.25","state"=>"Normal"');
+                                                                                '"magnetometerX"=>"80.6","magnetometerY"=>"80.6","magnetometerZ"=>"137.5","modulus"=>"183.25","state"=>"Normal"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-magnetometer-avg'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                                '"average"=>"50","magnetometerX"=>"45.0","magnetometerY"=>"80.6","magnetometerZ"=>"137.5","modulus"=>"183.25","state"=>"Suspicious"');
+                                                                                '"average"=>"50","magnetometerX"=>"80.6","magnetometerY"=>"80.6","magnetometerZ"=>"137.5","modulus"=>"183.25","state"=>"Suspicious"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-temperature'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
                                                                                 '"temp_input_lower"=>"20.0", "temp_input_upper"=>"25.0","state"=>"Normal"');
