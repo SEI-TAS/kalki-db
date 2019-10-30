@@ -4459,7 +4459,7 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT * FROM stage_log");
+            st = dbConn.prepareStatement("SELECT * FROM stage_log ORDER BY timestamp ASC");
             rs = st.executeQuery();
             while (rs.next()) {
                 stageLogList.add(rsToStageLog(rs));
