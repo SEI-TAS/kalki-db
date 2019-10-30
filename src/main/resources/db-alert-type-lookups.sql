@@ -57,3 +57,11 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-today-kwh'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
                                                                                 '"today_kwh"=>"0.220"');
+
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'vizio-connected-devices'), (SELECT id FROM device_type WHERE name = 'Vizio'), '"connected_devices"=>"1"');
+
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'vizio-input-source'), (SELECT id FROM device_type WHERE name = 'Vizio'), '');
+
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'vizio-unexpected-auth'), (SELECT id FROM device_type WHERE name = 'Vizio'), '');
+
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'vizio-combination-alert'), (SELECT id FROM device_type WHERE name = 'Vizio'), '"connected_devices"=>"1"');

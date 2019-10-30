@@ -43,3 +43,12 @@ INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greate
 INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Iot Interface');
 
 INSERT INTO alert_type(name, description, source) values('wemo-today-kwh', 'wemo.today_kwh > K', 'Iot Interface');
+
+INSERT INTO alert_type(name, description, source) values('vizio-connected-devices', 'size of list of connected devices > 1', 'Iot Interface');
+
+INSERT INTO alert_type(name, description, source) values('vizio-input-source', 'input source changes', 'Iot Interface');
+
+INSERT INTO alert_type(name, description, source) values('vizio-unexpected-auth', 'If authentication attempt from outside the network', 'umbox');
+
+INSERT INTO alert_type(name, description, source) values('vizio-combination-alert', 'Combination of input-source and connected-devices', 'Iot Interface');
+
