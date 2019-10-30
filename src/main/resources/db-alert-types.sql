@@ -52,3 +52,10 @@ INSERT INTO alert_type(name, description, source) values('vizio-unexpected-auth'
 
 INSERT INTO alert_type(name, description, source) values('vizio-combination-alert', 'Combination of input-source and connected-devices', 'Iot Interface');
 
+INSERT INTO alert_type(name, description, source) values('roomba-unexpected-command', 'If we have a Weekly Schedule, and a command is received', 'Iot Interface');
+
+INSERT INTO alert_type(name, description, source) values('roomba-cloud-traffic', 'If traffic from cloud API is detected', 'umbox');
+
+INSERT INTO alert_type(name, description, source) values('roomba-unexpected-auth', 'If authentication attempt from outside the networ', 'umbox');
+
+INSERT INTO alert_type(name, description, source) values('roomba-auth-attempts', 'If authentication attempt from outside the networ', 'umbox');
