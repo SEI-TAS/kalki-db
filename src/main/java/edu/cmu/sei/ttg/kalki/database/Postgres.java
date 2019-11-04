@@ -1998,6 +1998,30 @@ public class Postgres {
         return null;
     }
 
+    public static Device findDeviceByDeviceSecurityState(int dssId) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try{
+            st = dbConn.prepareStatement("SELECT device_id FROM device_security_state WHERE id = ?");
+            st.setInt(1, dssId);
+
+            rs = st.executeQuery();
+            if(rs.next()){
+                int id = rs.getInt("device_id");
+                Device d = findDevice(id);
+                return d;
+            }
+        } catch (Exception e) {
+            logger.severe("Error while finding the device with device security state: "+dssId+".");
+            logger.severe(e.getMessage());
+        }
+        return null;
+    }
+
     /**
      * Finds the Device related to the given Alert id
      *
@@ -2946,6 +2970,26 @@ public class Postgres {
             }
         }
         return dss;
+    }
+
+    public static List<DeviceSecurityState> findAllDeviceSecurityStates() {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<DeviceSecurityState> stateList = new ArrayList<>();
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id");
+            rs = st.executeQuery();
+            while(rs.next()){
+                stateList.add(rsToDeviceSecurityState(rs));
+            }
+        } catch (Exception e){
+            logger.severe("Error while trying to find all DeviceSecurityStates: "+e.getMessage());
+        }
+        return stateList;
     }
 
     /**
@@ -4415,7 +4459,7 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT * FROM stage_log");
+            st = dbConn.prepareStatement("SELECT * FROM stage_log ORDER BY timestamp ASC");
             rs = st.executeQuery();
             while (rs.next()) {
                 stageLogList.add(rsToStageLog(rs));
@@ -4458,6 +4502,47 @@ public class Postgres {
         return stageLogList;
     }
 
+    public static List<String> findStageLogActions(){
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<String> actions = new ArrayList<>();
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT action FROM stage_log WHERE stage=?");
+            st.setString(1, StageLog.Stage.FINISH.convert());
+            rs = st.executeQuery();
+            while(rs.next()){
+                actions.add(rs.getString("action"));
+            }
+        } catch (Exception e) {
+            logger.severe("Error getting all actions that finished in stage_log: "+e.getMessage());
+        }
+        return actions;
+
+    }
+
+//    public static int findTimeBetweenStages(String stageOne, String stageTwo) {
+//        PreparedStatement st = null;
+//        ResultSet rs = null;
+//        List<String> actions = new ArrayList<>();
+//        if(dbConn == null){
+//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+//        }
+//        try {
+//            st = dbConn.prepareStatement("SELECT action FROM stage_log WHERE stage=?");
+//            st.setString(1, StageLog.Stage.FINISH.convert());
+//            rs = st.executeQuery();
+//            while(rs.next()){
+//                actions.add(rs.getString("action"));
+//            }
+//        } catch (Exception e) {
+//            logger.severe("Error getting all actions that finished in stage_log: "+e.getMessage());
+//        }
+//        return actions;
+//    }
+
     /**
      * Converts a result set to a StageLog object
      * @param rs
@@ -4495,12 +4580,16 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         int latestId = -1;
+        long timestamp = System.currentTimeMillis();
+        stageLog.setTimestamp(new Timestamp(timestamp));
         try{
-            st = dbConn.prepareStatement("INSERT INTO stage_log (device_sec_state_id, action, stage, info) VALUES(?,?,?,?)");
+            st = dbConn.prepareStatement("INSERT INTO stage_log (device_sec_state_id, action, stage, info, timestamp) VALUES(?,?,?,?,?)");
             st.setInt(1, stageLog.getDeviceSecurityStateId());
             st.setString(2, stageLog.getAction());
             st.setString(3, stageLog.getStage());
             st.setString(4, stageLog.getInfo());
+            st.setTimestamp(5, stageLog.getTimestamp());
+
             st.executeUpdate();
 
             latestId = getLatestId("stage_log");

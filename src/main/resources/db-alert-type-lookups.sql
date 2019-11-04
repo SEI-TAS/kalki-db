@@ -7,22 +7,22 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id F
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name = 'unts-abnormal-traffic'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'));
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES((SELECT id FROM alert_type WHERE name = 'unts-acceleration'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                               '"accelerometerX"=>"0.0344","accelerometerY"=>"0.0766","accelerometerZ"=>"1.126","modulus"=>"1.12964","state"=>"Normal"');
+                                                                               '"accelerometerX"=>"0.0344","accelerometerY"=>"0.0766","accelerometerZ"=>"1.126","modulus"=>"1.13064","state"=>"Normal"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES((SELECT id FROM alert_type WHERE name = 'unts-acceleration-avg'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                               '"average"=>"50","state"=>"Suspicious"');
+                                                                               '"average"=>"50","accelerometerX"=>"0.0344","accelerometerY"=>"0.0766","accelerometerZ"=>"1.126","modulus"=>"1.13064","state"=>"Suspicious"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-gryo'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
                                                                                 '"gyroscopeX"=>"2.875","gyroscopeY"=>"1.8125","gyroscopeZ"=>"0.6875","modulus"=>"3.4675","state"=>"Normal"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-gyro-avg'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                                '"average"=>"50","state"=>"Suspicious"');
+                                                                                '"average"=>"50","gyroscopeX"=>"2.875","gyroscopeY"=>"1.8125","gyroscopeZ"=>"0.6875","modulus"=>"3.4675","state"=>"Suspicious"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-magnetometer'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                                '"magnetometerX"=>"76.6","magnetometery"=>"112.1","magnetometerZ"=>"117.1","modulus"=>"179.29","state"=>"Normal"');
+                                                                                '"magnetometerX"=>"115.6","magnetometerY"=>"115.6","magnetometerZ"=>"137.5","modulus"=>"213.25","state"=>"Normal"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-magnetometer-avg'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
-                                                                                '"average"=>"50","state"=>"Suspicious"');
+                                                                                '"average"=>"50","magnetometerX"=>"115.6","magnetometerY"=>"115.6","magnetometerZ"=>"137.5","modulus"=>"213.25","state"=>"Suspicious"');
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'unts-temperature'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'),
                                                                                 '"temp_input_lower"=>"20.0", "temp_input_upper"=>"25.0","state"=>"Normal"');
