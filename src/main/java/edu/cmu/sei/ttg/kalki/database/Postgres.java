@@ -105,6 +105,15 @@ public class Postgres {
         }
     }
 
+    public static void dropConnection() {
+        try {
+            dbConn.close();
+        } catch (SQLException e) {
+            logger.severe("Error dropping connection: "+e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Creates a DB if it does not exist.
      */
@@ -300,6 +309,10 @@ public class Postgres {
     public static void setupTestDatabase() {
         logger.info("Setting up test database.");
         dropTables();
+        int numTables = getTableCount();
+        if(numTables != 0){
+            return;
+        }
         createHstoreExtension();
         // DB Structure
         initDB("db-tables.sql");
@@ -344,8 +357,7 @@ public class Postgres {
      */
     public static void dropTables() {
         logger.info("Dropping tables.");
-        executeCommand("DROP SCHEMA public CASCADE");
-        executeCommand("CREATE SCHEMA public");
+        initDB("db-drop-tables.sql");
     }
 
 
@@ -1022,7 +1034,7 @@ public class Postgres {
             return -1;
         }
         try {
-            PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?);");
+            PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?)");
             insertAlertCondition.setObject(1, cond.getVariables());
             insertAlertCondition.setInt(2, cond.getDeviceId());
             insertAlertCondition.setInt(3, cond.getAlertTypeLookupId());
@@ -1078,7 +1090,7 @@ public class Postgres {
             List<Device> deviceList = findDevicesByType(alertTypeLookup.getDeviceTypeId());
 
             for (Device d : deviceList) {
-                PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?);");
+                PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?)");
                 insertAlertCondition.setObject(1, alertTypeLookup.getVariables());
                 insertAlertCondition.setInt(2, d.getId());
                 insertAlertCondition.setInt(3, alertTypeLookup.getId());
@@ -1405,7 +1417,7 @@ public class Postgres {
             return -1;
         }
         try {
-            PreparedStatement insertAtl = dbConn.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?);");
+            PreparedStatement insertAtl = dbConn.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?)");
             insertAtl.setInt(1, atl.getAlertTypeId());
             insertAtl.setInt(2, atl.getDeviceTypeId());
             insertAtl.setObject(3, atl.getVariables());

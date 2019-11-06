@@ -93,7 +93,7 @@ public class UmboxInstanceTest extends AUsesDatabase {
         device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
         device.insert();
 
-        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1);
+        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1, 1);
         deviceTwo.insert();
 
         // insert umbox_image
