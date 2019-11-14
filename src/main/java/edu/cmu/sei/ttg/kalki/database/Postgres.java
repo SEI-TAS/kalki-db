@@ -4397,6 +4397,31 @@ public class Postgres {
         return umboxLogList;
     }
 
+    public static List<UmboxLog> findAllUmboxLogsForDevice(int deviceId) {
+        logger.info("Finding UmboxLogs for device: "+deviceId);
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        List<UmboxLog> logList = new ArrayList<>();
+        if(dbConn == null){
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+        try {
+            st = dbConn.prepareStatement("SELECT log.* FROM umbox_log AS log, umbox_instance AS inst WHERE " +
+                    "inst.device_id = ? AND inst.alerter_id = log.alerter_id " +
+                    "ORDER BY log.id DESC");
+            st.setInt(1, deviceId);
+            rs = st.executeQuery();
+            while(rs.next()){
+                logList.add(rsToUmboxLog(rs));
+            }
+        } catch (Exception e) {
+            logger.severe("Exception finding UmboxLogs for device: "+deviceId+"; "+e.getMessage());
+            e.printStackTrace();
+        }
+        return logList;
+    }
+
     /**
      * Converts a row from the umbox_log table to a UmboxLog object
      * @param rs The ResultSet representing the row in the table
