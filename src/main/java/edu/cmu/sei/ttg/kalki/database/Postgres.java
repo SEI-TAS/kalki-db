@@ -3,7 +3,7 @@ package edu.cmu.sei.ttg.kalki.database;
 import edu.cmu.sei.ttg.kalki.models.*;
 import edu.cmu.sei.ttg.kalki.listeners.*;
 import org.postgresql.util.HStoreConverter;
-
+import org.postgresql.util.PSQLException;
 import java.sql.*;
 import java.util.*;
 import java.io.InputStream;
@@ -710,7 +710,8 @@ public class Postgres {
             int deviceStatusId = rs.getInt("device_status_id");
             int alertTypeId = rs.getInt("alert_type_id");
             int deviceId = rs.getInt("device_id");
-            String info = rs.getString("info");
+            String info = "";
+            try { info = rs.getString("info"); }catch (PSQLException e1) { }
             alert = new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId, info);
         } catch (Exception e) {
             e.printStackTrace();
