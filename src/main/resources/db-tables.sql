@@ -106,7 +106,8 @@ CREATE TABLE IF NOT EXISTS alert(
     alert_type_id      int REFERENCES alert_type(id),
     device_id          int REFERENCES device(id),
     alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id),
-    device_status_id   int REFERENCES device_status(id)
+    device_status_id   int REFERENCES device_status(id),
+    info               varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS alert_type_lookup(

@@ -710,7 +710,8 @@ public class Postgres {
             int deviceStatusId = rs.getInt("device_status_id");
             int alertTypeId = rs.getInt("alert_type_id");
             int deviceId = rs.getInt("device_id");
-            alert = new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId);
+            String info = rs.getString("info");
+            alert = new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId, info);
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Alert: " + e.getClass().getName() + ": " + e.getMessage());
@@ -753,12 +754,13 @@ public class Postgres {
                     }
                 }
 
-                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, device_id, alerter_id) VALUES (?,?,?,?,?);");
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, device_id, alerter_id, info) VALUES (?,?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
                 insertAlert.setInt(3, alert.getAlertTypeId());
                 insertAlert.setInt(4, deviceId);
                 insertAlert.setString(5, alert.getAlerterId());
+                insertAlert.setString(6, alert.getInfo());
             }
             else {
                 if(deviceId == 0) {
@@ -776,13 +778,14 @@ public class Postgres {
                         throw new SQLException("Device ID not found for device_status with id " + alert.getDeviceStatusId());
                     }
                 }
-                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_id, device_status_id) VALUES (?,?,?,?,?,?);");
+                insertAlert = dbConn.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_id, device_status_id, info) VALUES (?,?,?,?,?,?,?);");
                 insertAlert.setString(1, alert.getName());
                 insertAlert.setTimestamp(2, alert.getTimestamp());
                 insertAlert.setInt(3, alert.getAlertTypeId());
                 insertAlert.setString(4, alert.getAlerterId());
                 insertAlert.setInt(5, deviceId);
                 insertAlert.setInt(6, alert.getDeviceStatusId());
+                insertAlert.setString(7, alert.getInfo());
             }
 
             insertAlert.executeUpdate();
@@ -809,18 +812,19 @@ public class Postgres {
             try {
                 if (alert.getDeviceStatusId() == 0) {
                     PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
-                            "SET name = ?, timestamp = ?, alerter_id = ?, device_id = ?, alert_type_id = ?" +
+                            "SET name = ?, timestamp = ?, alerter_id = ?, device_id = ?, alert_type_id = ?, info = ? " +
                             "WHERE id = ?");
                     update.setString(1, alert.getName());
                     update.setTimestamp(2, alert.getTimestamp());
                     update.setString(3, alert.getAlerterId());
                     update.setInt(4, alert.getDeviceId());
                     update.setInt(5, alert.getAlertTypeId());
-                    update.setInt(6, alert.getId());
+                    update.setString(6, alert.getInfo());
+                    update.setInt(7, alert.getId());
                     update.executeUpdate();
                 } else {
                     PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
-                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, device_id = ?, alert_type_id = ?" +
+                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, device_id = ?, alert_type_id = ?, info = ?" +
                             "WHERE id = ?");
                     update.setString(1, alert.getName());
                     update.setTimestamp(2, alert.getTimestamp());
@@ -828,7 +832,8 @@ public class Postgres {
                     update.setInt(4, alert.getDeviceStatusId());
                     update.setInt(5, alert.getDeviceId());
                     update.setInt(6, alert.getAlertTypeId());
-                    update.setInt(7, alert.getId());
+                    update.setString(7, alert.getInfo());
+                    update.setInt(8, alert.getId());
                     update.executeUpdate();
                 }
 
@@ -2322,7 +2327,7 @@ public class Postgres {
                 String name = rs.getString("name");
                 int alertTypeId = rs.getInt("id");
 
-                Alert alert = new Alert(deviceId, name, alertTypeId);
+                Alert alert = new Alert(deviceId, name, alertTypeId, "State reset");
                 alert.insert();
             }
         } catch (SQLException e) {
@@ -4373,6 +4378,7 @@ public class Postgres {
      * Finds rows in the umbox_log table with the given alerter_id
      * @param alerter_id
      * @return List of UmboxLogs with given alerter_id
+     *
      */
     public static List<UmboxLog> findAllUmboxLogsForAlerterId(String alerter_id) {
         logger.info("Finding UmboxLogs with alerter_id: "+alerter_id);

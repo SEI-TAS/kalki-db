@@ -151,7 +151,7 @@ public class DeviceTest extends AUsesDatabase {
         deviceStatus.insert();
 
         // insert alert for device_status/alert_type
-        alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
+        alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId(), "");
         alertIoT.insert();
 
         //insert state reset alert type
