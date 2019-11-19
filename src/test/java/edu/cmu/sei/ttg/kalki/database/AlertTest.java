@@ -62,14 +62,14 @@ public class AlertTest extends AUsesDatabase {
 
     @Test
     public void testInsertAlert() {
-        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
+        Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId(), "");
         assertEquals(null, Postgres.findAlert(3));
 
         newAlert.insert();
 
         assertEquals(newAlert.toString(), Postgres.findAlert(3).toString());
 
-        newAlert = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
+        newAlert = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId(), "");
         assertEquals(null, Postgres.findAlert(4));
 
         newAlert.insert();
@@ -111,7 +111,7 @@ public class AlertTest extends AUsesDatabase {
         device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
         device.insert();
 
-        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1);
+        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1, 1);
         deviceTwo.insert();
 
         // insert umbox_image
@@ -134,11 +134,11 @@ public class AlertTest extends AUsesDatabase {
         deviceStatus.insert();
 
         // insert alert for device_status/alert_type
-        alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId());
+        alertIoT = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId(), "");
         alertIoT.insert();
 
         // insert alert for alerter_id/alert_type
-        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId());
+        alertUmBox = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId(), "");
         alertUmBox.insert();
     }
 }
