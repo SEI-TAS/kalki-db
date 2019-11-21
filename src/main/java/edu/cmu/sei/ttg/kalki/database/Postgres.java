@@ -1980,6 +1980,7 @@ public class Postgres {
     public static List<Device> findDevicesByGroup(int groupId) {
         PreparedStatement st = null;
         ResultSet rs = null;
+        List<Device> devices = new ArrayList<Device>();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
@@ -1989,11 +1990,11 @@ public class Postgres {
             st.setInt(1, groupId);
             rs = st.executeQuery();
 
-            List<Device> devices = new ArrayList<Device>();
             while (rs.next()) {
-                devices.add(rsToDevice(rs));
+                Device d = rsToDevice(rs);
+                d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
+                devices.add(d);
             }
-            return devices;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all devices for group: " + e.getClass().getName() + ": " + e.getMessage());
         } catch (Exception e) {
@@ -2013,7 +2014,7 @@ public class Postgres {
             } catch (Exception e) {
             }
         }
-        return null;
+        return devices;
     }
 
     public static Device findDeviceByDeviceSecurityState(int dssId) {
