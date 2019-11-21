@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS device(
     status_history_size    int NOT NULL,
     sampling_rate          int NOT NULL,
     default_sampling_rate  int NOT NULL,
-    current_state_id       int,
     last_alert_id          int
 );
 

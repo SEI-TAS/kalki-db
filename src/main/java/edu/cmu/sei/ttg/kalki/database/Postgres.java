@@ -2184,7 +2184,6 @@ public class Postgres {
                     normalDeviceState.insert();
 
                     device.setCurrentState(normalDeviceState);
-                    device.insertOrUpdate();
                 }
                 else {
                     throw new NoSuchElementException("No normal security state has been added to the database");
@@ -2243,7 +2242,7 @@ public class Postgres {
                 executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                 PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?, current_state_id = ?" +
+                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ? " +
                         "WHERE id = ?");
                 update.setString(1, device.getName());
                 update.setString(2, device.getDescription());
@@ -2256,14 +2255,7 @@ public class Postgres {
                 update.setInt(6, device.getStatusHistorySize());
                 update.setInt(7, device.getSamplingRate());
 
-                if (device.getCurrentState() != null) {
-                    update.setInt(8, device.getCurrentState().getStateId());
-                } else {
-                    update.setInt(8, -1);
-                }
-
-
-                update.setInt(9, device.getId());
+                update.setInt(8, device.getId());
                 update.executeUpdate();
 
                 // Insert tags into device_tag
