@@ -2491,11 +2491,12 @@ public class Postgres {
      * Finds the last N DeviceStatuses for the given device
      *
      * @param deviceId the id of the device
-     * @param length   the number of statuses to retrieve
+     * @param startingTime The timestamp to start
+     * @param period The amount of time back to search
      * @param timeUnit the unit of time to use (minute(s), hour(s), day(s))
      * @return a list of N device statuses
      */
-    public static List<DeviceStatus> findDeviceStatusesOverTime(int deviceId, int length, String timeUnit) {
+    public static List<DeviceStatus> findDeviceStatusesOverTime(int deviceId, Timestamp startingTime, int period, String timeUnit) {
         PreparedStatement st = null;
         ResultSet rs = null;
         if (dbConn == null) {
@@ -2503,8 +2504,13 @@ public class Postgres {
             return null;
         }
         try {
-            String query = String.format("SELECT * FROM device_status WHERE (device_id = %d) AND (timestamp between (now() - interval '%s %s') and now())", deviceId, Integer.toString(length), timeUnit);
-            st = dbConn.prepareStatement(query);
+            String interval = String.valueOf(period)+" "+timeUnit;
+            st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between (?::timestamp - (?::interval)) and ?::timestamp");
+            st.setInt(1, deviceId);
+            st.setTimestamp(2, startingTime);
+            st.setString(3, interval);
+            st.setTimestamp(4, startingTime);
+            logger.info("Parameter count: "+String.valueOf(st.getParameterMetaData().getParameterCount()));
             rs = st.executeQuery();
 
             List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
@@ -2514,6 +2520,7 @@ public class Postgres {
             return deviceHistories;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());

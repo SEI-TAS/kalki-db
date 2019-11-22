@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
+import java.sql.Timestamp;
 
 
 public class Device {
@@ -212,8 +213,8 @@ public class Device {
         return Postgres.findNDeviceStatuses(this.id, N);
     }
 
-    public List<DeviceStatus> samplesOverTime(int length, String timeUnit){
-        return Postgres.findDeviceStatusesOverTime(this.id, length, timeUnit);
+    public List<DeviceStatus> samplesOverTime(Timestamp startingTime, int duration, String timeUnit){
+        return Postgres.findDeviceStatusesOverTime(this.id, startingTime, duration, timeUnit);
     }
 
     public Map<Device, DeviceStatus> statusesOfSameType() { return Postgres.findDeviceStatusesByType(this.type.getId()); }
