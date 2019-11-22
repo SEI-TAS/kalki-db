@@ -4,6 +4,8 @@ import edu.cmu.sei.ttg.kalki.models.*;
 import edu.cmu.sei.ttg.kalki.listeners.*;
 import org.postgresql.util.HStoreConverter;
 import org.postgresql.util.PSQLException;
+
+import java.io.FileInputStream;
 import java.sql.*;
 import java.util.*;
 import java.io.InputStream;
@@ -4752,6 +4754,34 @@ public class Postgres {
             return newStatuses;
         } else {
             return null;
+        }
+    }
+
+    /***
+     * Executes SQL from the given file.
+     */
+    static void executeSQLFile(String fileName)
+    {
+        System.out.println("Reading from file: "+fileName);
+        try {
+            InputStream is = new FileInputStream(fileName);
+            Scanner s = new Scanner(is);
+
+            String line, statement="";
+            while(s.hasNextLine()){
+                line = s.nextLine();
+                if(line.equals("") || line.equals(" ")) {
+                    Postgres.executeCommand(statement);
+                    statement="";
+                } else {
+                    statement += line;
+                }
+            }
+            if (!statement.equals(""))
+                Postgres.executeCommand(statement);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
