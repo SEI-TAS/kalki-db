@@ -4760,7 +4760,7 @@ public class Postgres {
     /***
      * Executes SQL from the given file.
      */
-    static void executeSQLFile(String fileName)
+    public static void executeSQLFile(String fileName)
     {
         System.out.println("Reading from file: "+fileName);
         try {
