@@ -2034,6 +2034,7 @@ public class Postgres {
             if(rs.next()){
                 int id = rs.getInt("device_id");
                 Device d = findDevice(id);
+                d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                 return d;
             }
         } catch (Exception e) {
@@ -2084,8 +2085,12 @@ public class Postgres {
             st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
             st.setInt(1, id);
             rs = st.executeQuery();
-            while (rs.next())
-                deviceList.add(rsToDevice(rs));
+            while (rs.next()){
+                Device d = rsToDevice(rs);
+                d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
+                deviceList.add(d);
+            }
+
 
             return deviceList;
         } catch (SQLException e) {
