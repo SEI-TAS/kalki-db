@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS device(
 );
 
 CREATE TABLE IF NOT EXISTS device_status(
-    device_id     int NOT NULL REFERENCES device(id),
+    device_id     int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     attributes    hstore,
     timestamp     TIMESTAMP,
     id            serial    PRIMARY KEY
@@ -55,13 +55,13 @@ CREATE TABLE IF NOT EXISTS device_status(
 
 CREATE TABLE IF NOT EXISTS device_security_state(
     id           serial PRIMARY KEY,
-    device_id    int NOT NULL REFERENCES device(id),
+    device_id    int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     timestamp    TIMESTAMP,
     state_id     int NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device_tag(
-    device_id    int NOT NULL REFERENCES device(id),
+    device_id    int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     tag_id       int NOT NULL REFERENCES tag(id),
     PRIMARY KEY (device_id, tag_id)
 );
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS umbox_instance(
     id                 serial PRIMARY KEY,
     alerter_id         varchar(255) UNIQUE,
     umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
-    device_id          int NOT NULL REFERENCES device(id),
+    device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     started_at         timestamp NOT NULL DEFAULT now()
 );
 
@@ -103,8 +103,8 @@ CREATE TABLE IF NOT EXISTS alert(
     name               varchar(255) NOT NULL,
     timestamp          timestamp NOT NULL DEFAULT now(),
     alert_type_id      int REFERENCES alert_type(id),
-    device_id          int REFERENCES device(id),
-    alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id),
+    device_id          int REFERENCES device(id) ON DELETE CASCADE,
+    alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id) ON DELETE CASCADE,
     device_status_id   int REFERENCES device_status(id),
     info               varchar(255)
 );
@@ -119,13 +119,13 @@ CREATE TABLE IF NOT EXISTS alert_type_lookup(
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
     variables          hstore,
-    device_id          int NOT NULL REFERENCES device(id),
+    device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id)
 );
 
 CREATE TABLE IF NOT EXISTS stage_log(
     id                   serial PRIMARY KEY,
-    device_sec_state_id  int NOT NULL REFERENCES device_security_state(id),
+    device_sec_state_id  int NOT NULL REFERENCES device_security_state(id) ON DELETE CASCADE,
     timestamp            timestamp NOT NULL DEFAULT now(),
     action               varchar(255) NOT NULL,
     stage                varchar(255) NOT NULL,
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS stage_log(
 
 CREATE TABLE IF NOT EXISTS umbox_log(
     id                  serial PRIMARY KEY,
-    alerter_id          varchar(255) REFERENCES umbox_instance(alerter_id),
+    alerter_id          varchar(255) REFERENCES umbox_instance(alerter_id) ON DELETE CASCADE,
     details             varchar(255),
     timestamp           timestamp NOT NULL DEFAULT now()
 );

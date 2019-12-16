@@ -572,11 +572,13 @@ public class Postgres {
         logger.info(String.format("Deleting by id = %d in %s", id, table));
         PreparedStatement st = null;
         try {
-            st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
+            st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id=?", table));
             st.setInt(1, id);
             st.executeUpdate();
             return true;
         } catch (SQLException e) {
+            logger.severe("Error deleting id: "+id+" from table: "+table+". "+e.getMessage());
+            e.printStackTrace();
         } finally {
             try {
                 if (st != null) st.close();
@@ -2292,12 +2294,10 @@ public class Postgres {
         logger.info(String.format("Deleting device with id = %d", id));
         PreparedStatement st = null;
         try {
-            // Delete associated tags
-            executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", id));
-            //delete device security state
-            executeCommand(String.format("DELETE FROM device_security_state WHERE device_id = %d", id));
             deleteById("device", id);
             return true;
+        } catch (Exception e) {
+            logger.severe("Error while deleting device with id: "+id+". "+e.getMessage());
         } finally {
             try {
                 if (st != null) st.close();
