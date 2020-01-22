@@ -4,6 +4,8 @@ import edu.cmu.sei.ttg.kalki.models.*;
 import edu.cmu.sei.ttg.kalki.listeners.*;
 import org.postgresql.util.HStoreConverter;
 import org.postgresql.util.PSQLException;
+
+import java.io.FileInputStream;
 import java.sql.*;
 import java.util.*;
 import java.io.InputStream;
@@ -570,11 +572,13 @@ public class Postgres {
         logger.info(String.format("Deleting by id = %d in %s", id, table));
         PreparedStatement st = null;
         try {
-            st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id = ?", table));
+            st = dbConn.prepareStatement(String.format("DELETE FROM %s WHERE id=?", table));
             st.setInt(1, id);
             st.executeUpdate();
             return true;
         } catch (SQLException e) {
+            logger.severe("Error deleting id: "+id+" from table: "+table+". "+e.getMessage());
+            e.printStackTrace();
         } finally {
             try {
                 if (st != null) st.close();
@@ -1980,6 +1984,7 @@ public class Postgres {
     public static List<Device> findDevicesByGroup(int groupId) {
         PreparedStatement st = null;
         ResultSet rs = null;
+        List<Device> devices = new ArrayList<Device>();
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
@@ -1989,11 +1994,11 @@ public class Postgres {
             st.setInt(1, groupId);
             rs = st.executeQuery();
 
-            List<Device> devices = new ArrayList<Device>();
             while (rs.next()) {
-                devices.add(rsToDevice(rs));
+                Device d = rsToDevice(rs);
+                d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
+                devices.add(d);
             }
-            return devices;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all devices for group: " + e.getClass().getName() + ": " + e.getMessage());
         } catch (Exception e) {
@@ -2013,7 +2018,7 @@ public class Postgres {
             } catch (Exception e) {
             }
         }
-        return null;
+        return devices;
     }
 
     public static Device findDeviceByDeviceSecurityState(int dssId) {
@@ -2031,6 +2036,7 @@ public class Postgres {
             if(rs.next()){
                 int id = rs.getInt("device_id");
                 Device d = findDevice(id);
+                d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                 return d;
             }
         } catch (Exception e) {
@@ -2081,8 +2087,12 @@ public class Postgres {
             st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
             st.setInt(1, id);
             rs = st.executeQuery();
-            while (rs.next())
-                deviceList.add(rsToDevice(rs));
+            while (rs.next()){
+                Device d = rsToDevice(rs);
+                d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
+                deviceList.add(d);
+            }
+
 
             return deviceList;
         } catch (SQLException e) {
@@ -2184,7 +2194,6 @@ public class Postgres {
                     normalDeviceState.insert();
 
                     device.setCurrentState(normalDeviceState);
-                    device.insertOrUpdate();
                 }
                 else {
                     throw new NoSuchElementException("No normal security state has been added to the database");
@@ -2243,7 +2252,7 @@ public class Postgres {
                 executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
                 PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?, current_state_id = ?" +
+                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ? " +
                         "WHERE id = ?");
                 update.setString(1, device.getName());
                 update.setString(2, device.getDescription());
@@ -2256,14 +2265,7 @@ public class Postgres {
                 update.setInt(6, device.getStatusHistorySize());
                 update.setInt(7, device.getSamplingRate());
 
-                if (device.getCurrentState() != null) {
-                    update.setInt(8, device.getCurrentState().getStateId());
-                } else {
-                    update.setInt(8, -1);
-                }
-
-
-                update.setInt(9, device.getId());
+                update.setInt(8, device.getId());
                 update.executeUpdate();
 
                 // Insert tags into device_tag
@@ -2292,12 +2294,10 @@ public class Postgres {
         logger.info(String.format("Deleting device with id = %d", id));
         PreparedStatement st = null;
         try {
-            // Delete associated tags
-            executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", id));
-            //delete device security state
-            executeCommand(String.format("DELETE FROM device_security_state WHERE device_id = %d", id));
             deleteById("device", id);
             return true;
+        } catch (Exception e) {
+            logger.severe("Error while deleting device with id: "+id+". "+e.getMessage());
         } finally {
             try {
                 if (st != null) st.close();
@@ -2496,11 +2496,12 @@ public class Postgres {
      * Finds the last N DeviceStatuses for the given device
      *
      * @param deviceId the id of the device
-     * @param length   the number of statuses to retrieve
+     * @param startingTime The timestamp to start
+     * @param period The amount of time back to search
      * @param timeUnit the unit of time to use (minute(s), hour(s), day(s))
      * @return a list of N device statuses
      */
-    public static List<DeviceStatus> findDeviceStatusesOverTime(int deviceId, int length, String timeUnit) {
+    public static List<DeviceStatus> findDeviceStatusesOverTime(int deviceId, Timestamp startingTime, int period, String timeUnit) {
         PreparedStatement st = null;
         ResultSet rs = null;
         if (dbConn == null) {
@@ -2508,8 +2509,13 @@ public class Postgres {
             return null;
         }
         try {
-            String query = String.format("SELECT * FROM device_status WHERE (device_id = %d) AND (timestamp between (now() - interval '%s %s') and now())", deviceId, Integer.toString(length), timeUnit);
-            st = dbConn.prepareStatement(query);
+            String interval = String.valueOf(period)+" "+timeUnit;
+            st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between (?::timestamp - (?::interval)) and ?::timestamp");
+            st.setInt(1, deviceId);
+            st.setTimestamp(2, startingTime);
+            st.setString(3, interval);
+            st.setTimestamp(4, startingTime);
+            logger.info("Parameter count: "+String.valueOf(st.getParameterMetaData().getParameterCount()));
             rs = st.executeQuery();
 
             List<DeviceStatus> deviceHistories = new ArrayList<DeviceStatus>();
@@ -2519,6 +2525,7 @@ public class Postgres {
             return deviceHistories;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
@@ -4759,6 +4766,34 @@ public class Postgres {
             return newStatuses;
         } else {
             return null;
+        }
+    }
+
+    /***
+     * Executes SQL from the given file.
+     */
+    public static void executeSQLFile(String fileName)
+    {
+        System.out.println("Reading from file: "+fileName);
+        try {
+            InputStream is = new FileInputStream(fileName);
+            Scanner s = new Scanner(is);
+
+            String line, statement="";
+            while(s.hasNextLine()){
+                line = s.nextLine();
+                if(line.equals("") || line.equals(" ")) {
+                    Postgres.executeCommand(statement);
+                    statement="";
+                } else {
+                    statement += line;
+                }
+            }
+            if (!statement.equals(""))
+                Postgres.executeCommand(statement);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

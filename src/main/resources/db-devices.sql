@@ -21,7 +21,6 @@ CREATE OR REPLACE FUNCTION setCurrentState()
                 LOOP
                     SELECT INTO SS id FROM security_state WHERE name='Normal';
                     INSERT INTO device_security_state (device_id, state_id, timestamp) VALUES (d.id, SS.id, current_timestamp) RETURNING id INTO dSS;
-                    UPDATE device set current_state_id=dSS.id WHERE id=d.id;
                 END LOOP;
 END;
 $$ LANGUAGE plpgsql;
