@@ -1,6 +1,8 @@
 # KalkiDB
 * [Usage](#usage)
-* [Code Integration](#code-integration)
+    * [Docker Container Startup](#docker-container-startup)
+    * [Code Integration](#code-integration)
+* [Exporting and Importing Data](#exporting-and-importing-data)
 * [Models & Actions](#models-&-actions)
     * [Postgres Tables](#postgres-tables)
     * [Java Objects](#java-objects)
@@ -24,17 +26,34 @@ dependencies {
 }
 ```
 
-### Docker
-Pull the correct postgres base image from the docker repository `$ docker pull postgres:9.5.19`
-
-Set up a docker network by running `$ docker network create -d bridge kalki_nw`. This initializes a container network. *This only ever needs to be done once*.
-
+### Docker Container Startup
 Start the database by running `$ ./run_postgres_container.sh` from the project root.
-This will create a docker container named `kalki-postgres` so the data persists when the database is terminated.
+This will create a docker container named `kalki-postgres` running the Postgres DB engine.
 
-Stop the docker container via `$ docker kill kalki-postgres`  
+To stop the docker container execute `$ docker kill kalki-postgres`  
 
-To export current database to a SQL file: 
+### Code Integration
+
+First, initialize the Postgres singleton using 
+```
+Postgres.initialize(String ip, String port, String dbName, String dbUser);
+```
+            
+Now, you can use the database and models. See [Java Objects](#java-objects).
+
+Examples:
+```
+DeviceStatus newLight = new DeviceStatus(deviceId);
+light.insertOrUpdate();
+            
+Device device = Postgres.findDevice(deviceId);
+```
+   
+
+## Exporting and Importing Data
+* NOTE: Container must be started in order to import/export.
+
+To export the current database to a SQL file: 
 ```
 $ pg_dump kalkidb -U kalkiuser -h localhost -p 5432 > [filename].sql
     kalkipass
@@ -44,30 +63,6 @@ To import a database from a SQL file:
 ```
 $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
     kalkipass
-```
-* Container must be started in order to import/export
-
-__NOTE:__ If your application is also running in docker you must include `--net=kalki_nw` in your `docker run` command   
-(ex: `$ docker run --net=kalki_nw --name=<container-name> <image>`)
-## Code Integration
-
-First, initialize Postgres using 
-```
-Postgres.initialize(String ip, String port, String dbName, String dbUser);
-```
-and, if necessary, setup the database, creating tables, triggers, and functions:
-```
-Postgres.setupDatabase();
-```
-            
-Now, you can use the database and models. See [Java Objects](#java-objects)
-
-Examples:
-```
-DeviceStatus newLight = new DeviceStatus(deviceId);
-light.insertOrUpdate();
-            
-Device device = Postgres.findDevice(deviceId);
 ```
              
 ## Models & Actions    
