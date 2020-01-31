@@ -394,35 +394,6 @@ public class Postgres {
     }
 
     /**
-     * Insert the default types into the database.
-     */
-    public static void insertDefaultDeviceTypes() {
-        logger.info("Inserting default types.");
-        List<String> typeNames = new ArrayList<String>();
-        typeNames.add("Hue Light");
-        typeNames.add("Dlink Camera");
-        typeNames.add("WeMo Insight");
-        typeNames.add("Udoo Neo");
-        for (String typeName : typeNames) {
-            executeCommand("INSERT INTO device_type (name) VALUES ('" + typeName + "')");
-        }
-    }
-
-    /**
-     * Insert the default security states into the database.
-     */
-    public static void insertDefaultSecurityStates() {
-        logger.info("Inserting default security states.");
-        List<String> stateNames = new ArrayList<>();
-        stateNames.add("normal");
-        stateNames.add("suspicious");
-        stateNames.add("under_attack");
-        for (String stateName : stateNames) {
-            executeCommand("INSERT INTO security_state (name) VALUES ('" + stateName + "')");
-        }
-    }
-
-    /**
      * Lists all postgres databases. Primarily for testing.
      */
     public static void listAllDatabases() {
@@ -475,7 +446,6 @@ public class Postgres {
         }
         return rs;
     }
-
 
     /**
      * Uses Postgresql pg_get_serial_sequence to select the most recent id for the given table
@@ -896,39 +866,6 @@ public class Postgres {
         }
         return alertCondition;
     }
-
-    //REPLACED WITH findAlertTypeById(int id)
-
-//    /**
-//     * Finds the newest AlertCondition from the databse associated with the given alertType
-//     *
-//     * @param alertTypeId The id of the alertType used to find the alertCondition
-//     * @return AlertCondition or null
-//     */
-//    public static AlertCondition findAlertConditionByAlertType(int alertTypeId) {
-//        PreparedStatement st = null;
-//        ResultSet rs = null;
-//        AlertCondition foundCondition = null;
-//        if (dbConn == null) {
-//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-//            return null;
-//        }
-//        try {
-//            st = dbConn.prepareStatement("SELECT ac.id, ac.device_id, ac.variables, atl.alert_type_id FROM alert_condition AS ac, alert_type_lookup AS atl " +
-//                                         "WHERE atl.alert_type_id = ? AND ac.alert_type_lookup_id=atl.id " +
-//                                         "ORDER BY ac.id DESC LIMIT 1");
-//            st.setInt(1, alertTypeId);
-//            rs = st.executeQuery();
-//            if (rs.next()) {
-//                foundCondition = rsToAlertCondition(rs);
-//            }
-//            rs.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.severe("Error finding alert condition by alert type: " + e.getClass().getName() + ": " + e.getMessage());
-//        }
-//        return foundCondition;
-//    }
 
     /**
      * Finds all AlertConditions in the database
@@ -2652,28 +2589,6 @@ public class Postgres {
         return deviceStatusMap;
     }
 
-//
-//    public static DeviceStatus findLastDeviceStatusAttributeChange(int deviceId, String attribute) {
-//        PreparedStatement st = null;
-//        ResultSet rs = null;
-//        if(dbConn == null) {
-//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-//            return null;
-//        }
-//
-//        try {
-////            st = dbConn.prepareStatement
-//        } catch (SQLException e) {
-//            logger.severe("Sql exception getting device statuses for device: "+ deviceId+" "+ e.getClass().getName() + ": " + e.getMessage());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.severe("Error getting devices statuses for device: "+ deviceId+" " + e.getClass().getName() + ": " + e.getMessage());
-//        }  finally {
-//            try { if (rs != null) { rs.close(); } } catch (Exception e) {}
-//            try { if (st != null) { st.close(); } } catch (Exception e) {}
-//        }
-//    }
-
     /**
      * Finds all DeviceStatuses in the database.
      *
@@ -2943,6 +2858,311 @@ public class Postgres {
     }
 
     /*
+     *      Policy specific actions
+     */
+
+    public static Policy findPolicy(int id) {
+        return rsToPolicy(findById(id, "policy"));
+    }
+
+    /**
+     * Finds the policy given the StateTransition PolicyCondition and DeviceType id's
+     * @param stateTransId
+     * @param policyCondId
+     * @param devTypeId
+     * @return
+     */
+    public static Policy findPolicy(int stateTransId, int policyCondId, int devTypeId) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+
+        try {
+            PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy WHERE " +
+                    "state_trans_id = ? AND " +
+                    "policy_cond_id = ? AND " +
+                    "device_type_id = ?");
+            query.setInt(1, stateTransId);
+            query.setInt(2, policyCondId);
+            query.setInt(3, devTypeId);
+
+            ResultSet rs = query.executeQuery();
+            rs.next();
+            return rsToPolicy(rs);
+        } catch (Exception e) {
+            logger.severe("Error finding Policy: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+    /**
+     * Converts a ResultSet obj to a Policy
+     * @param rs Result set of a query to the policy table
+     * @return The object representing the query result
+     */
+    public static Policy rsToPolicy(ResultSet rs) {
+        Policy policy = null;
+        try {
+            int id = rs.getInt("id");
+            int stateTransId = rs.getInt("state_trans_id");
+            int policyCondId = rs.getInt("policy_cond_id");
+            int devTypeId = rs.getInt("device_type_id");
+            int samplingRate = rs.getInt("sampling_rate");
+            policy = new Policy(id, stateTransId, policyCondId, devTypeId, samplingRate);
+        } catch (Exception e) {
+            logger.severe("Error converting rs to Policy: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return policy;
+    }
+
+    /**
+     * Inserts the given Policy obj to the policy table
+     * @param policy The obj to insert
+     * @return Row's id on success. -1 otherwise
+     */
+    public static Integer insertPolicy(Policy policy) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?)");
+            insert.setInt(1, policy.getStateTransId());
+            insert.setInt(2, policy.getPolicyCondId());
+            insert.setInt(3, policy.getDevTypeId());
+            insert.setInt(4, policy.getSamplingRate());
+            insert.executeUpdate();
+            return getLatestId("policy");
+        } catch (Exception e) {
+            logger.severe("Error inserting Policy: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Updates the row in the policy table with the given id
+     * @param policy
+     * @return The id of the given policy on success. -1 otherwise
+     */
+    public static Integer updatePolicy(Policy policy) {
+        if (dbConn == null) {
+           logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+           return -1;
+        }
+
+        try {
+            PreparedStatement update = dbConn.prepareStatement("UPDATE policy SET " +
+                    "state_trans_id = ? " +
+                    "policy_cond_id = ? " +
+                    "device_type_id = ? " +
+                    "sampling_rate = ? " +
+                    "WHERE id = ?");
+            update.setInt(1, policy.getStateTransId());
+            update.setInt(2, policy.getPolicyCondId());
+            update.setInt(3, policy.getDevTypeId());
+            update.setInt(4, policy.getSamplingRate());
+            update.setInt(5, policy.getId());
+            update.executeUpdate();
+            return policy.getId();
+        } catch (Exception e) {
+            logger.severe("Error updating Policy: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /***
+     * Delete a row in the policy table with the given id
+     * @param policyId
+     * @return True on success, false otherwise
+     */
+    public static boolean deletePolicy(int policyId) {
+        return deleteById("policy", policyId);
+    }
+
+    /*
+     *      PolicyCondition specific actions
+     */
+
+
+    /**
+     * Find a PolicyCondition and it's associated AlertType id's
+     * @param id
+     * @return A PolicyCondition obj. Null otherwise
+     */
+    public static PolicyCondition findPolicyCondtion(int id) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+
+        try {
+            PolicyCondition policyCondition = rsToPolicyCondition(findById(id,"policy_condition"));
+            PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy_condition_alert WHERE policy_cond_id = ?");
+            query.setInt(1, policyCondition.getId());
+            ResultSet rs = query.executeQuery();
+
+            List<Integer> alertTypeIds = new ArrayList<>();
+            while(rs.next()) {
+                alertTypeIds.add(rs.getInt("alert_type_id"));
+            }
+            policyCondition.setAlertTypeIds(alertTypeIds);
+
+            return policyCondition;
+        } catch (Exception e) {
+            logger.severe("Error converting rs to PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * Converts a ResultSet obj to a PolicyCondition
+     * @param rs Result set of a query to the policy table
+     * @return The object representing the query result
+     */
+    public static PolicyCondition rsToPolicyCondition(ResultSet rs) {
+        PolicyCondition policyCondition = null;
+        try {
+            int id = rs.getInt("id");
+            int threshold = rs.getInt("threshold");
+            policyCondition = new PolicyCondition(id, threshold, null);
+        } catch (Exception e) {
+            logger.severe("Error converting rs to PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return policyCondition;
+    }
+
+    /**
+     * Inserts a row into the policy_condition table and a row for each alert_type_id in policy_condition_alert
+     * @param policyCondition
+     * @return
+     */
+    public static Integer insertPolicyCondition(PolicyCondition policyCondition) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_condition(threshold) VALUES(?)");
+            insert.setInt(1, policyCondition.getThreshold());
+            insert.executeUpdate();
+            policyCondition.setId(getLatestId("policy_condition"));
+
+            if(policyCondition.getAlertTypeIds() != null){
+                for(int i=0; i<policyCondition.getAlertTypeIds().size(); i++) {
+                    int id = policyCondition.getAlertTypeIds().get(i);
+                    insert = dbConn.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)");
+                    insert.setInt(1, policyCondition.getId());
+                    insert.setInt(2, id);
+                    insert.executeQuery();
+                }
+            }
+
+            return policyCondition.getId();
+        } catch (Exception e) {
+            logger.severe("Error inserting PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /*
+     *      StateTransition specific actions
+     */
+
+    public static StateTransition findStateTransition(int id) {
+        return rsToStateTransition(findById(id, "state_transition"));
+    }
+
+    /**
+     * Converts a ResultSet obj to a Policy
+     * @param rs Result set of a query to the policy table
+     * @return The object representing the query result
+     */
+    public static StateTransition rsToStateTransition(ResultSet rs) {
+        StateTransition stateTransition = null;
+        try {
+            int id = rs.getInt("id");
+            int startSecStateId = rs.getInt("start_sec_state_id");
+            int finishSecStateId = rs.getInt("finish_sec_state_id");
+            stateTransition = new StateTransition(id, startSecStateId, finishSecStateId);
+        } catch (Exception e) {
+            logger.severe("Error converting rs to StateTransition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return stateTransition;
+    }
+
+    /**
+     * Inserts the given StateTransition obj to the state_transition table
+     * @param trans The obj to insert
+     * @return Row's id on success. -1 otherwise
+     */
+    public static Integer insertStateTransition(StateTransition trans) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO state_transition(start_sec_state_id, finish_sec_state_id) VALUES(?,?)");
+            insert.setInt(1, trans.getStartStateId());
+            insert.setInt(2, trans.getFinishStateId());
+            insert.executeUpdate();
+            return getLatestId("state_transition");
+        } catch (Exception e) {
+            logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Updates the row in the StateTransition table with the given id
+     * @param trans
+     * @return The id of the given transition on success. -1 otherwise
+     */
+    public static Integer updateStateTransition(StateTransition trans) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            PreparedStatement update = dbConn.prepareStatement("UPDATE state_transition SET " +
+                    "start_sec_state_id = ? " +
+                    "finish_sec_state_id = ? " +
+                    "WHERE id = ?");
+            update.setInt(1, trans.getStartStateId());
+            update.setInt(2, trans.getFinishStateId());
+            update.setInt(3, trans.getId());
+            update.executeUpdate();
+            return trans.getId();
+        } catch (Exception e) {
+            logger.severe("Error updating StateTransition: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /***
+     * Delete a row in the state_transition table with the given id
+     * @param id
+     * @return True on success, false otherwise
+     */
+    public static boolean deleteStateTransition(int id) {
+        return deleteById("state_transition", id);
+    }
+
+    /*
      *      DeviceSecurityState specific actions
      */
 
@@ -3209,37 +3429,6 @@ public class Postgres {
         }
         return -1;
     }
-
-// THE FOLLOWING FUNCTION SHOULDNT BE NEEDED
-// DEVICE_SECURITY_STATES SHOULD ONLY BE INSERTED/QUERIED
-//    /**
-//     * Updates DeviceSecurityState with given id to have the parameters of the given DeviceState.
-//     * @param deviceState DeviceSecurityState holding new parameters to be saved in the database.
-//     */
-//    public static CompletionStage<Integer> updateDeviceSecurityState(DeviceSecurityState deviceState){
-//        return CompletableFuture.supplyAsync(() -> {
-//            logger.info("Updating DeviceState with id=" + deviceState.getId());
-//            if (dbConn == null) {
-//                logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-//                return -1;
-//            }
-//            try {
-//                PreparedStatement update = dbConn.prepareStatement
-//                        ("UPDATE device_state SET device_id = ?, timestamp = ?, state = ?" +
-//                                "WHERE id=?");
-//                update.setInt(1, deviceState.getDeviceId());
-//                update.setTimestamp(2, deviceState.getTimestamp());
-//                update.setString(3, deviceState.getName());
-//                update.setInt(4, deviceState.getId());
-//                update.executeUpdate();
-//                return deviceState.getId();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                logger.severe("Error updating DeviceState: " + e.getClass().toString() + ": " + e.getMessage());
-//            }
-//            return -1;
-//        });
-//    }
 
     /**
      * Deletes a DeviceSecurityState by its id.
