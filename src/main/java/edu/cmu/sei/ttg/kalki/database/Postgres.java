@@ -2989,7 +2989,6 @@ public class Postgres {
      *      PolicyCondition specific actions
      */
 
-
     /**
      * Find a PolicyCondition and it's associated AlertType id's
      * @param id
@@ -3130,13 +3129,81 @@ public class Postgres {
         return false;
     }
 
-
+    /**
+     * Deletes a row in the policy_condition table with the given id
+     * @param id
+     * @return
+     */
     public static Boolean deletePolicyCondition(int id) {
-//        if(!deletePolicyConditionAlertRows(id))
-//            return false;
-
         return deleteById("policy_condition", id);
     }
+
+    /*
+     *      Policy instance specific actions
+     */
+
+    /**
+     * Finds a row in the policy_instance table with the given id
+     * @param id
+     * @return
+     */
+    public static PolicyInstance findPolicyInstance(int id) {
+        return rsToPolicyInstance(findById(id, "policy_instance"));
+    }
+
+    /**
+     * Converts a ResultSet from a query on policy instance to a java PolicyInstance
+     * @param rs
+     * @return
+     */
+    private static PolicyInstance rsToPolicyInstance(ResultSet rs) {
+        PolicyInstance inst = null;
+        try {
+            int id = rs.getInt("id");
+            int policyId = rs.getInt("policy_id");
+            Timestamp timestamp = rs.getTimestamp("timestamp");
+            inst = new PolicyInstance(id, policyId, timestamp);
+        } catch (Exception e) {
+            logger.severe("Error converting rs to PolicyInstance: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+
+        return inst;
+    }
+
+    /**
+     * Inserts a PolicyInstance to the policy_instance table
+     * @param instance
+     * @return
+     */
+    public static Integer insertPolicyInstance(PolicyInstance instance) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_instance(policy_id, timestamp) VALUES(?,?)");
+            insert.setInt(1, instance.getPolicyId());
+            insert.setTimestamp(2, instance.getTimestamp());
+            insert.executeUpdate();
+            return getLatestId("policy_instance");
+        } catch (Exception e) {
+            logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Deletes a row in the policy_instance table with the given id
+     * @param id
+     * @return
+     */
+    public static boolean deletePolicyInstance(int id) {
+        return deleteById("policy_instance", id);
+    }
+
     /*
      *      StateTransition specific actions
      */
