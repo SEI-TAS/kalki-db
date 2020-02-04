@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.List;
 
+import edu.cmu.sei.ttg.kalki.database.Postgres;
+
 public class PolicyCondition {
     private int id;
     private int threshold;
@@ -47,6 +49,12 @@ public class PolicyCondition {
 
     public void setAlertTypeIds(List<Integer> alertTypeIds) {
         this.alertTypeIds = alertTypeIds;
+    }
+
+    public void insert(){
+        int id = Postgres.insertPolicyCondition(this);
+        if(id > 0)
+            this.id = id;
     }
 
     public String toString() {

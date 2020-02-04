@@ -2896,6 +2896,7 @@ public class Postgres {
         }
         return null;
     }
+
     /**
      * Converts a ResultSet obj to a Policy
      * @param rs Result set of a query to the policy table
@@ -2994,7 +2995,7 @@ public class Postgres {
      * @param id
      * @return A PolicyCondition obj. Null otherwise
      */
-    public static PolicyCondition findPolicyCondtion(int id) {
+    public static PolicyCondition findPolicyCondition(int id) {
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
@@ -3074,6 +3075,68 @@ public class Postgres {
         return -1;
     }
 
+    /**
+     * Updates a row in policy_condition and related rows in policy_condition_alert
+     * @param policyCondition The policy condition to update
+     * @return the condition's id on succes; -1 on failure
+     */
+    public static Integer updatePolicyCondition(PolicyCondition policyCondition) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return -1;
+        }
+
+        try {
+            // Update PolicyCondition table
+            PreparedStatement update = dbConn.prepareStatement("UPDATE policy_condition SET threshold = ? WHERE id = ?");
+            update.setInt(1, policyCondition.getThreshold());
+            update.setInt(2, policyCondition.getId());
+            update.executeUpdate();
+
+            // Update PolicyConditionAlert table
+            if(!deletePolicyConditionAlertRows(policyCondition.getId()))
+                return -1;
+
+            for(Integer alertId: policyCondition.getAlertTypeIds()) {
+                PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)");
+                insert.setInt(1, policyCondition.getId());
+                insert.setInt(2, alertId);
+                insert.executeUpdate();
+            }
+
+            return policyCondition.getId();
+        } catch (Exception e) {
+            logger.severe("Error updating PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Helper function to remove all rows from policy_condition_alert for the givein PolicyCondition id
+     * @param policyConditionId
+     * @return
+     */
+    private static boolean deletePolicyConditionAlertRows(int policyConditionId){
+        try {
+            PreparedStatement delete = dbConn.prepareStatement("DELETE FROM policy_condition_alert WHERE policy_cond_id = ?");
+            delete.setInt(1, policyConditionId);
+            delete.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.severe("Error deleting PolicyConditionAlert rows: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+
+    public static Boolean deletePolicyCondition(int id) {
+//        if(!deletePolicyConditionAlertRows(id))
+//            return false;
+
+        return deleteById("policy_condition", id);
+    }
     /*
      *      StateTransition specific actions
      */
