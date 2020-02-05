@@ -20,6 +20,7 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 public class CommandTest extends AUsesDatabase {
     private static SecurityState securityState;
     private static SecurityState securityStateTwo;
+    private static StateTransition stateTransition;
     private static Device device;
     private static Device deviceTwo;
     private static DeviceType deviceType;
@@ -30,6 +31,9 @@ public class CommandTest extends AUsesDatabase {
     private static DeviceCommandLookup deviceCommandLookupTwo;
     private static DeviceSecurityState deviceSecurityState;
     private static DeviceSecurityState deviceSecurityStateTwo;
+    private static PolicyCondition policyCondition;
+    private static Policy policy;
+    private static PolicyInstance policyInstance;
 
     /*
         Command Action Tests
@@ -46,25 +50,14 @@ public class CommandTest extends AUsesDatabase {
     }
 
     @Test
-    public void testFindCommandsByDevice() {
+    public void testFindCommandsByPolicyInstance() {
         device.setCurrentState(deviceSecurityStateTwo);
         device.insertOrUpdate();
 
-        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsByDevice(device));
+        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsByPolicyInstance(policyInstance.getId()));
 
-        assertEquals(1, foundCommands.size());
+        assertEquals(2, foundCommands.size());
         assertEquals(deviceCommand.toString(), foundCommands.get(0).toString());
-    }
-
-    @Test
-    public void testFindCommandsForGroup() {
-        device.setCurrentState(deviceSecurityStateTwo);
-        device.insertOrUpdate();
-
-        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsForGroup(deviceTwo, device));
-
-        assertEquals(1, foundCommands.size());
-        assertEquals(deviceCommandTwo.toString(), foundCommands.get(0).toString());
     }
 
     @Test
@@ -98,6 +91,8 @@ public class CommandTest extends AUsesDatabase {
     public void insertData() {
         securityState = Postgres.findSecurityState(1);
         securityStateTwo = Postgres.findSecurityState(2);
+        stateTransition = new StateTransition(securityState.getId(), securityStateTwo.getId());
+        stateTransition.insert();
 
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
@@ -118,6 +113,16 @@ public class CommandTest extends AUsesDatabase {
         deviceSecurityStateTwo = new DeviceSecurityState(device.getId(), 2);
         deviceSecurityStateTwo.insert();
 
+        // insert policy
+        policyCondition = new PolicyCondition(1, null);
+        policyCondition.insert();
+
+        policy = new Policy(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policy.insert();
+
+        policyInstance = new PolicyInstance(policy.getId());
+        policyInstance.insert();
+
         // insert command
         deviceCommand = new DeviceCommand("Test Command", deviceType.getId());
         deviceCommand.insert();
@@ -125,10 +130,10 @@ public class CommandTest extends AUsesDatabase {
         deviceCommandTwo = new DeviceCommand("Second Command", deviceTypeTwo.getId());
         deviceCommandTwo.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), securityStateTwo.getId(), securityState.getId(), deviceType.getId());
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), policy.getId());
         deviceCommandLookup.insert();
 
-        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), securityStateTwo.getId(), securityState.getId(), deviceType.getId());
+        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policy.getId());
         deviceCommandLookupTwo.insert();
     }
 }

@@ -20,6 +20,11 @@ import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 public class CommandLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
     private static SecurityState securityStateTwo;
+    private static StateTransition stateTransition;
+    private static StateTransition stateTransitionTwo;
+    private static PolicyCondition policyCondition;
+    private static Policy policy;
+    private static Policy policyTwo;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static DeviceCommand deviceCommand;
@@ -56,15 +61,15 @@ public class CommandLookupTest extends AUsesDatabase {
     public void testInsertOrUpdateCommandLookup() {
         assertEquals(2, Postgres.findAllCommandLookups().size());
 
-        deviceCommandLookup.setCurrentStateId(securityStateTwo.getId());
+        deviceCommandLookup.setPolicyId(policyTwo.getId());
         deviceCommandLookup.insertOrUpdate();
 
-        assertEquals(deviceCommandLookup.getCurrentStateId(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).getCurrentStateId());
+        assertEquals(deviceCommandLookup.getPolicyId(),
+                Postgres.findCommandLookup(deviceCommandLookup.getId()).getPolicyId());
         assertEquals(2, Postgres.findAllCommandLookups().size());
 
         DeviceCommandLookup newLookup =
-                new DeviceCommandLookup(deviceCommand.getId(), securityState.getId(), securityStateTwo.getId(), deviceType.getId());
+                new DeviceCommandLookup(deviceCommand.getId(), policy.getId());
 
         int newId = newLookup.insertOrUpdate();
 
@@ -90,12 +95,28 @@ public class CommandLookupTest extends AUsesDatabase {
         securityStateTwo = new SecurityState("Suspicious");
         securityStateTwo.insert();
 
+        stateTransition = new StateTransition(securityState.getId(), securityStateTwo.getId());
+        stateTransition.insert();
+
+        stateTransitionTwo  = new StateTransition(securityStateTwo.getId(), securityState.getId());
+        stateTransitionTwo.insert();
+
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
 
         deviceTypeTwo = new DeviceType(0, "test device type");
         deviceTypeTwo.insert();
+
+        // insert policy related objects
+        policyCondition = new PolicyCondition(1, null);
+        policyCondition.insert();
+
+        policy = new Policy(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policy.insert();
+
+        policyTwo = new Policy(stateTransitionTwo.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policyTwo.insert();
 
         // insert command_lookups
         deviceCommand = new DeviceCommand("Test Command", deviceType.getId());
@@ -104,10 +125,10 @@ public class CommandLookupTest extends AUsesDatabase {
         deviceCommandTwo = new DeviceCommand("Test Command two", deviceTypeTwo.getId());
         deviceCommandTwo.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), securityState.getId(), securityStateTwo.getId(), deviceType.getId());
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), policy.getId());
         deviceCommandLookup.insert();
 
-        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), securityState.getId(), securityStateTwo.getId(), deviceType.getId());
+        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policy.getId());
         deviceCommandLookupTwo.insert();
 
         // insert device

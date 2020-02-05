@@ -9,28 +9,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public class DeviceCommandLookup {
     private int id;
     private int commandId;
-    private int currentStateId;
-    private int previousStateId;
-    private int deviceTypeId;
+    private int policyId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommandLookup() {
     }
 
-    public DeviceCommandLookup(int commandId, int currentStateId, int previousStateId, int deviceTypeId) {
-        this.currentStateId = currentStateId;
-        this.previousStateId = previousStateId;
-        this.deviceTypeId = deviceTypeId;
+    public DeviceCommandLookup(int commandId, int policyId) {
         this.commandId = commandId;
+        this.policyId = policyId;
     }
 
-    public DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId, int deviceTypeId) {
+    public DeviceCommandLookup(int id, int commandId, int policyId) {
+        this(commandId, policyId);
         this.id = id;
-        this.currentStateId = currentStateId;
-        this.previousStateId = previousStateId;
-        this.deviceTypeId = deviceTypeId;
-        this.commandId = commandId;
     }
 
     public int getId() {
@@ -49,28 +42,12 @@ public class DeviceCommandLookup {
         return commandId;
     }
 
-    public void setCurrentStateId(int currentStateId) {
-        this.currentStateId = currentStateId;
+    public int getPolicyId() {
+        return policyId;
     }
 
-    public int getCurrentStateId() {
-        return currentStateId;
-    }
-
-    public void setPreviousStateId(int previousStateId) {
-        this.previousStateId = previousStateId;
-    }
-
-    public int getPreviousStateId() {
-        return previousStateId;
-    }
-
-    public int getDeviceTypeId() {
-        return deviceTypeId;
-    }
-
-    public void setDeviceTypeId(int deviceTypeId) {
-        this.deviceTypeId = deviceTypeId;
+    public void setPolicyId(int policyId) {
+        this.policyId = policyId;
     }
 
     public int insert() {
