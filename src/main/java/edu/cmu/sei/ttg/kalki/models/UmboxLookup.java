@@ -8,22 +8,25 @@ import edu.cmu.sei.ttg.kalki.database.Postgres;
 public class UmboxLookup {
 
     private int id;
-    private Integer stateId;
-    private Integer deviceTypeId;
+    private Integer policyId;
     private Integer umboxImageId;
     private Integer dagOrder;
+
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public UmboxLookup() {
 
     }
 
-    public UmboxLookup(int id, Integer stateId, Integer deviceTypeId, Integer umboxImageId, Integer dagOrder) {
-        this.id = id;
-        this.stateId = stateId;
-        this.deviceTypeId = deviceTypeId;
+    public UmboxLookup(Integer policyId, Integer umboxImageId, Integer dagOrder) {
+        this.policyId = policyId;
         this.umboxImageId = umboxImageId;
         this.dagOrder = dagOrder;
+    }
+
+    public UmboxLookup(int id, Integer policyId, Integer umboxImageId, Integer dagOrder) {
+        this(policyId, umboxImageId, dagOrder);
+        this.id = id;
     }
 
     public int getId() {
@@ -34,20 +37,12 @@ public class UmboxLookup {
         this.id = id;
     }
 
-    public Integer getStateId() {
-        return stateId;
+    public Integer getPolicyId() {
+        return policyId;
     }
 
-    public void setStateId(Integer stateId) {
-        this.stateId = stateId;
-    }
-
-    public Integer getDeviceTypeId() {
-        return deviceTypeId;
-    }
-
-    public void setDeviceTypeId(Integer deviceTypeId) {
-        this.deviceTypeId = deviceTypeId;
+    public void setPolicyId(Integer policyId) {
+        this.policyId = policyId;
     }
 
     public Integer getUmboxImageId() {

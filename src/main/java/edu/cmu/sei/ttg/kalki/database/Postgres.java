@@ -4522,8 +4522,8 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d " +
-                    "WHERE ul.device_type_id = d.type_id AND d.id = ?;");
+            st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d, policy p " +
+                    "WHERE ul.policy_id = p.id AND p.device_type_id = d.type_id AND d.id = ?;");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -4562,17 +4562,16 @@ public class Postgres {
     private static UmboxLookup rsToUmboxLookup(ResultSet rs) {
         UmboxLookup umboxLookup = null;
         Integer id = null;
-        Integer stateId = null;
+        Integer policyId = null;
         Integer deviceTypeId = null;
         Integer umboxImageId = null;
         Integer dagOrder = null;
         try {
             id = rs.getInt("id");
-            stateId = rs.getInt("state_id");
-            deviceTypeId = rs.getInt("device_type_id");
+            policyId = rs.getInt("policy_id");
             umboxImageId = rs.getInt("umbox_image_id");
             dagOrder = rs.getInt("dag_order");
-            umboxLookup = new UmboxLookup(id, stateId, deviceTypeId, umboxImageId, dagOrder);
+            umboxLookup = new UmboxLookup(id, policyId, umboxImageId, dagOrder);
             return umboxLookup;
         } catch (Exception e) {
             e.printStackTrace();
@@ -4588,11 +4587,10 @@ public class Postgres {
         logger.info("Adding umbox lookup: ");
         PreparedStatement st = null;
         try {
-            st = dbConn.prepareStatement("INSERT INTO umbox_lookup (state_id, device_type_id, umbox_image_id, dag_order) VALUES (?,?,?,?)");
-            st.setInt(1, ul.getStateId());
-            st.setInt(2, ul.getDeviceTypeId());
-            st.setInt(3, ul.getUmboxImageId());
-            st.setInt(4, ul.getDagOrder());
+            st = dbConn.prepareStatement("INSERT INTO umbox_lookup (policy_id, umbox_image_id, dag_order) VALUES (?,?,?)");
+            st.setInt(1, ul.getPolicyId());
+            st.setInt(2, ul.getUmboxImageId());
+            st.setInt(3, ul.getDagOrder());
             st.executeUpdate();
             return getLatestId("umbox_lookup");
         }
@@ -4618,13 +4616,12 @@ public class Postgres {
         } else {
             try {
                 PreparedStatement update = dbConn.prepareStatement("UPDATE umbox_lookup " +
-                        "SET state_id = ?, device_type_id = ?, umbox_image_id = ?, dag_order = ?" +
+                        "SET policy_id = ?, umbox_image_id = ?, dag_order = ?" +
                         "WHERE id = ?");
-                update.setInt(1, ul.getStateId());
-                update.setInt(2, ul.getDeviceTypeId());
-                update.setInt(3, ul.getUmboxImageId());
-                update.setInt(4, ul.getDagOrder());
-                update.setInt(5, ul.getId());
+                update.setInt(1, ul.getPolicyId());
+                update.setInt(2, ul.getUmboxImageId());
+                update.setInt(3, ul.getDagOrder());
+                update.setInt(4, ul.getId());
                 update.executeUpdate();
 
                 return ul.getId();

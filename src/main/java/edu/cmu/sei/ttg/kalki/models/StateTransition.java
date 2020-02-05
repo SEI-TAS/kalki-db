@@ -1,5 +1,7 @@
 package edu.cmu.sei.ttg.kalki.models;
 
+import edu.cmu.sei.ttg.kalki.database.Postgres;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,6 +47,12 @@ public class StateTransition {
 
     public void setFinishStateId(int finishStateId) {
         this.finishStateId = finishStateId;
+    }
+
+    public void insert(){
+        int id = Postgres.insertStateTransition(this);
+        if(id>0)
+            this.id = id;
     }
 
     public String toString() {
