@@ -77,7 +77,8 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |device_id       |int      |
 |alert_type_id   |int      |
 |alerter_id      |String   |
-|device_status_id|int      |  
+|device_status_id|int      |
+|info            |String   | 
 ###### Actions:  
 |Function Definition                             |Return Type|
 |:-----------------------------------------------|:--------|
@@ -157,7 +158,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |:-------------------------------------|:--------|
 |`findCommand(int id)`           |`DeviceCommand`|
 |`findAllCommands()`|`List<DeviceCommand>`|
-|`findCommandsByDevice(Device device)` |`List<DeviceCommand>`|
+|`findCommandsByPolicyInstance(int instanceId)` |`List<DeviceCommand>`|
 |`insertCommand(DeviceCommand command)`|`Integer`|
 |`insertOrUpdateCommand(DeviceCommand command)`|`Integer`|
 |`updateCommand(DeviceCommand command)`|`Integer`|
@@ -168,9 +169,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Property        |Type     |
 |---------------:|:--------|
 |id              |serial PRIMARY KEY|  
-|current_state_id        |int NOT NULL|
-|previous_state_id       |int NOT NULL|
-|device_type_id          |int NOT NULL|
+|policy_id        |int NOT NULL|
 |command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
@@ -268,6 +267,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |`findAllDeviceTypes()`       |`List<DeviceType>`|
 |`insertDeviceType(DeviceType type)`|`Integer`   |
 |`updateDeviceType(DeviceType type)`|`Integer`   |
+|`insertOrUpdateDeviceType(DeviceType type)`|`Integer`   |
 |`deleteDeviceType(int id)`   |`Boolean`   |
 
 #### Group
@@ -285,6 +285,54 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |`updateGroup(Group group)` |`Integer`    |
 |`deleteGroup(int id)`      |`Boolean`    |
 
+
+#### Policy
+###### Schema:
+|Property     |Type     |
+|------------:|:--------|
+|id           |int      |  
+|state_trans_id|int NOT NULL |
+|policy_cond_id|int NOT NULL |
+|device_type_id|int NOT NULL |
+|sampling_rate |int NOT NULL |
+###### Actions:  
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findPolicy(int id)`        |`Policy`      |
+|`findPolicy(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
+|`insertPolicy(Policy policy)` |`Integer`    |
+|`updatePolicy(Policy policy)` |`Integer`    |
+|`deletePolicy(int policyId) ` |`Boolean`    |
+
+#### PolicyCondition
+###### Schema:
+|Property     |Type     |
+|------------:|:--------|
+|id           |int      |  
+|threshold    |int NOT NULL |
+###### Actions:  
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findPolicyCondition(int id)`|`PolicyCondition`      |
+|`insertPolicyCondition(PolicyCondition policyCondition)`          |`Integer`|
+|`updatePolicyCondition(PolicyCondition policyCondition)` |`Integer`    |
+|`deletePolicyCondition(int id)` |`Boolean`    |
+|`deletePolicyConditionAlertRows(int policyConditionId)`      |`Boolean`    |
+
+#### PolicyInstance
+###### Schema:
+|Property     |Type     |
+|------------:|:--------|
+|id           |int      |  
+|policy_id|int NOT NULL |
+|timestamp|int NOT NULL |
+###### Actions:  
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findPolicyInstance(int id) `        |`PolicyInstance`      |
+|`finsertPolicyInstance(PolicyInstance instance)`          |`Integer`|
+|`deletePolicyInstance(int id)` |`Boolean`    |
+
 #### SecurityState
 ###### Schema:
 |Property  |Type     |
@@ -299,6 +347,20 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |`insertSecurityState(SecurityState state)` |`Integer`            |
 |`updateSecurityState(SecurityState state)` |`Integer`            |
 |`deleteSecurityState(int id)`              |`Boolean`            |
+
+#### StateTransition
+###### Schema:
+|Property  |Type     |
+|---------:|:------|
+|id        |int |  
+|name      |String NOT NULL|
+###### Actions:
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findStateTransition(int id) `                |`StateTransition`      |
+|`insertStateTransition(StateTransition trans)` |`Integer`            |
+|`updateStateTransition(StateTransition trans)` |`Integer`            |
+|`deleteStateTransition(int id)`              |`Boolean`            |
 
 #### StageLog
 ###### Schema:
@@ -390,10 +452,9 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Property        |Type      |
 |---------------:|:---------|
 |id              |serial PRIMARY KEY|  
-|state_id        |int NOT NULL|  
 |umbox_image_id  |int NOT NULL|
-|device_type_id  |int NOT NULL |
-|order           |int NOT NULL|
+|policy_id       |int NOT NULL |
+|dag_order       |int NOT NULL|
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
@@ -578,16 +639,14 @@ This class supports:
 |Property  |Type      |
 |------------:|:---------|
 |id           |int       |  
-|currentStateId      |int   | 
-|previousStateId     |int |
 |commandId    |int   |
-
+|policyId    |int   |
 ###### Constructors:
 |Definition |  
 |:---|
 |`DeviceCommandLookup()`|
-|`DeviceCommandLookup(int commandId, int currentStateId, int previousStateId)`|'
-|`DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId)`|
+|`DeviceCommandLookup(int commandId, int policyId)`|'
+|`DeviceCommandLookup(int id, int commandId, int policyId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -696,6 +755,74 @@ This class supports:
  - ex: setName("Name")
 - `insert()`
 - `insertOrUpdate()`
+- `toString()`
+
+#### Policy
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|stateTransId     |int    |
+|policyCondId     |int    |
+|devTypeId        |int    |
+|samplingRate     |int    |
+###### Constructors:
+|Definition |  
+|:---|
+|`Policy()`|
+|`Policy(int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+|`Policy(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `toString()`
+
+#### PolicyCondition
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|threshold |int    |
+|alertTypeIds |List<Integer>    |
+###### Constructors:
+|Definition |  
+|:---|
+|`PolicyCondition()`|
+|`PolicyCondition(int threshold, List<Integer> alertTypeIds)`|
+|`PolicyCondition(int id, int threshold, List<Integer> alertTypeIds)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `toString()`
+
+#### PolicyInstance
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|policyId  |int    |
+|timestamp |Timestamp    |
+###### Constructors:
+|Definition |  
+|:---|
+|`PolicyInstance()`|
+|`PolicyInstance(int policyId)`|
+|`PolicyInstance(int id, int policyId, Timestamp timestamp)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
 - `toString()`
 
 #### SecurityState
@@ -859,15 +986,15 @@ This class supports:
 |Property        |Type      |
 |---------------:|:---------|
 |id              |String    |  
-|stateId         |Integer    |
-|deviceTypeId    |Integer    |
+|policyId        |Integer    |
 |umboxImageId    |Integer     |
 |dagOrder        |Integer |
 ###### Constructors:
 |Function Definition |
 |:---|
 |`UmboxLookup()`  |
-|`UmboxLookup(int id, Integer stateId, Integer deviceTypeId, Integer umboxImageId, Integer dagOrder)`|
+|`UmboxLookup(Integer policyId, Integer umboxImageId, Integer dagOrder)`|
+|`UmboxLookup(int id, Integer policyId, Integer umboxImageId, Integer dagOrder)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -890,6 +1017,7 @@ These triggers generate notifications on the following conditions.
 |device_security_state |INSERT      |`devicesecuritystateinsert` |
 |device_status         |INSERT      |`devicestatusinsert`        |
 |device                |INSERT      |`deviceinsert`              |
+|policy_instance       |INSERT      |`policyinstanceinsert`              |
 
 Without taking any additional steps, the notifications will be generated with nothing listening.
 You can start listening to these notifications which will add the necessary handlers to a notification 

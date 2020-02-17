@@ -97,3 +97,20 @@ DROP TRIGGER IF EXISTS deviceSecurityStateNotify ON device_security_state;
 CREATE TRIGGER deviceSecurityStateNotify
     AFTER INSERT ON device_security_state
     FOR EACH ROW EXECUTE PROCEDURE deviceSecurityStateNotify()
+
+CREATE OR REPLACE FUNCTION policyInstanceNotify ()
+    RETURNS TRIGGER AS $$
+DECLARE
+    payload TEXT;
+BEGIN
+    payload := NEW.id;
+    PERFORM pg_notify('policyinstanceinsert', payload);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS policyInstanceNotify ON policy_instance;
+
+CREATE TRIGGER policyInstanceNotify
+    AFTER INSERT ON policy_instance
+    FOR EACH ROW EXECUTE PROCEDURE policyInstanceNotify();
