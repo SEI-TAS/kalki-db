@@ -5,17 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 
-import edu.cmu.sei.ttg.kalki.database.Postgres;
 import edu.cmu.sei.ttg.kalki.models.*;
-
-import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class CommandLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -23,8 +15,8 @@ public class CommandLookupTest extends AUsesDatabase {
     private static StateTransition stateTransition;
     private static StateTransition stateTransitionTwo;
     private static PolicyCondition policyCondition;
-    private static Policy policy;
-    private static Policy policyTwo;
+    private static PolicyRule policyRuleOne;
+    private static PolicyRule policyRuleTwo;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static DeviceCommand deviceCommand;
@@ -61,15 +53,15 @@ public class CommandLookupTest extends AUsesDatabase {
     public void testInsertOrUpdateCommandLookup() {
         assertEquals(2, Postgres.findAllCommandLookups().size());
 
-        deviceCommandLookup.setPolicyId(policyTwo.getId());
+        deviceCommandLookup.setPolicyRuleId(policyRuleTwo.getId());
         deviceCommandLookup.insertOrUpdate();
 
-        assertEquals(deviceCommandLookup.getPolicyId(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).getPolicyId());
+        assertEquals(deviceCommandLookup.getPolicyRuleId(),
+                Postgres.findCommandLookup(deviceCommandLookup.getId()).getPolicyRuleId());
         assertEquals(2, Postgres.findAllCommandLookups().size());
 
         DeviceCommandLookup newLookup =
-                new DeviceCommandLookup(deviceCommand.getId(), policy.getId());
+                new DeviceCommandLookup(deviceCommand.getId(), policyRuleOne.getId());
 
         int newId = newLookup.insertOrUpdate();
 
@@ -112,11 +104,11 @@ public class CommandLookupTest extends AUsesDatabase {
         policyCondition = new PolicyCondition(1, null);
         policyCondition.insert();
 
-        policy = new Policy(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
-        policy.insert();
+        policyRuleOne = new PolicyRule(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policyRuleOne.insert();
 
-        policyTwo = new Policy(stateTransitionTwo.getId(), policyCondition.getId(), deviceType.getId(), 1);
-        policyTwo.insert();
+        policyRuleTwo = new PolicyRule(stateTransitionTwo.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policyRuleTwo.insert();
 
         // insert command_lookups
         deviceCommand = new DeviceCommand("Test Command", deviceType.getId());
@@ -125,10 +117,10 @@ public class CommandLookupTest extends AUsesDatabase {
         deviceCommandTwo = new DeviceCommand("Test Command two", deviceTypeTwo.getId());
         deviceCommandTwo.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), policy.getId());
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), policyRuleOne.getId());
         deviceCommandLookup.insert();
 
-        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policy.getId());
+        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policyRuleOne.getId());
         deviceCommandLookupTwo.insert();
 
         // insert device

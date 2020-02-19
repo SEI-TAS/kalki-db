@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS policy_condition(
     threshold   int NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS policy(
+CREATE TABLE IF NOT EXISTS policy_rule(
     id              serial PRIMARY KEY,
     state_trans_id   int NOT NULL REFERENCES state_transition(id) ON DELETE CASCADE,
     policy_cond_id  int NOT NULL REFERENCES policy_condition(id) ON DELETE CASCADE,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS policy(
 
 CREATE TABLE IF NOT EXISTS policy_instance(
     id          serial PRIMARY KEY,
-    policy_id   int NOT NULL REFERENCES policy(id),
+    policy_rule_id   int NOT NULL REFERENCES policy_rule(id),
     device_id   int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     timestamp   TIMESTAMP
 );
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS umbox_image(
 
 CREATE TABLE IF NOT EXISTS umbox_lookup(
     id                 serial PRIMARY KEY,
-    policy_id          int NOT NULL REFERENCES policy(id),
+    policy_rule_id          int NOT NULL REFERENCES policy_rule(id),
     umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
     dag_order          int NOT NULL
 );
@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS command(
 CREATE TABLE IF NOT EXISTS command_lookup(
     id                 serial PRIMARY KEY,
     command_id         int NOT NULL REFERENCES command(id),
-    policy_id          int NOT NULL REFERENCES policy(id)
+    policy_rule_id          int NOT NULL REFERENCES policy_rule(id)
 );
 
 CREATE TABLE IF NOT EXISTS stage_log(

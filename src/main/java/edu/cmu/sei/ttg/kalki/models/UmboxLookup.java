@@ -8,7 +8,7 @@ import edu.cmu.sei.ttg.kalki.database.Postgres;
 public class UmboxLookup {
 
     private int id;
-    private Integer policyId;
+    private Integer policyRuleId;
     private Integer umboxImageId;
     private Integer dagOrder;
 
@@ -18,14 +18,14 @@ public class UmboxLookup {
 
     }
 
-    public UmboxLookup(Integer policyId, Integer umboxImageId, Integer dagOrder) {
-        this.policyId = policyId;
+    public UmboxLookup(Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
+        this.policyRuleId = policyRuleId;
         this.umboxImageId = umboxImageId;
         this.dagOrder = dagOrder;
     }
 
-    public UmboxLookup(int id, Integer policyId, Integer umboxImageId, Integer dagOrder) {
-        this(policyId, umboxImageId, dagOrder);
+    public UmboxLookup(int id, Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
+        this(policyRuleId, umboxImageId, dagOrder);
         this.id = id;
     }
 
@@ -37,12 +37,12 @@ public class UmboxLookup {
         this.id = id;
     }
 
-    public Integer getPolicyId() {
-        return policyId;
+    public Integer getPolicyRuleId() {
+        return policyRuleId;
     }
 
-    public void setPolicyId(Integer policyId) {
-        this.policyId = policyId;
+    public void setPolicyRuleId(Integer policyRuleId) {
+        this.policyRuleId = policyRuleId;
     }
 
     public Integer getUmboxImageId() {

@@ -5,17 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 
-import edu.cmu.sei.ttg.kalki.database.Postgres;
 import edu.cmu.sei.ttg.kalki.models.*;
-
-import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class UmboxLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -26,7 +18,7 @@ public class UmboxLookupTest extends AUsesDatabase {
     private static Device device;
     private static Device deviceTwo;
     private static PolicyCondition policyCondition;
-    private static Policy policy;
+    private static PolicyRule policyRule;
     private static StateTransition stateTransition;
     private static UmboxImage umboxImage;
     private static UmboxLookup umboxLookup;
@@ -56,7 +48,7 @@ public class UmboxLookupTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateUmboxLookup() {
-        UmboxLookup newUmboxLookup = new UmboxLookup(policy.getId(), deviceType.getId(), umboxImage.getId(), 2);
+        UmboxLookup newUmboxLookup = new UmboxLookup(policyRule.getId(), deviceType.getId(), umboxImage.getId(), 2);
         newUmboxLookup.insertOrUpdate();
 
         assertEquals(newUmboxLookup.toString(), Postgres.findUmboxLookup(newUmboxLookup.getId()).toString());
@@ -114,11 +106,11 @@ public class UmboxLookupTest extends AUsesDatabase {
         policyCondition.insert();
 
         // insert policy
-        policy = new Policy(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
-        policy.insert();
+        policyRule = new PolicyRule(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policyRule.insert();
 
         // insert umbox_lookup (should be handle by umbox_image)
-        umboxLookup = new UmboxLookup(policy.getId(), umboxImage.getId(), 1);
+        umboxLookup = new UmboxLookup(policyRule.getId(), umboxImage.getId(), 1);
         umboxLookup.insertOrUpdate();
 
     }

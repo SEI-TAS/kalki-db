@@ -9,20 +9,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 public class DeviceCommandLookup {
     private int id;
     private int commandId;
-    private int policyId;
+    private int policyRuleId;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommandLookup() {
     }
 
-    public DeviceCommandLookup(int commandId, int policyId) {
+    public DeviceCommandLookup(int commandId, int policyRuleId) {
         this.commandId = commandId;
-        this.policyId = policyId;
+        this.policyRuleId = policyRuleId;
     }
 
-    public DeviceCommandLookup(int id, int commandId, int policyId) {
-        this(commandId, policyId);
+    public DeviceCommandLookup(int id, int commandId, int policyRuleId) {
+        this(commandId, policyRuleId);
         this.id = id;
     }
 
@@ -42,12 +42,12 @@ public class DeviceCommandLookup {
         return commandId;
     }
 
-    public int getPolicyId() {
-        return policyId;
+    public int getPolicyRuleId() {
+        return policyRuleId;
     }
 
-    public void setPolicyId(int policyId) {
-        this.policyId = policyId;
+    public void setPolicyRuleId(int policyRuleId) {
+        this.policyRuleId = policyRuleId;
     }
 
     public int insert() {

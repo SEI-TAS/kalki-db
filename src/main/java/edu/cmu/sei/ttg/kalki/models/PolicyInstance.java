@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 
 public class PolicyInstance {
     private int id;
-    private int policyId;
+    private int policyRuleId;
     private int deviceId;
     private Timestamp timestamp;
 
@@ -17,16 +17,16 @@ public class PolicyInstance {
 
     public PolicyInstance() {}
 
-    public PolicyInstance(int policyId) {
-        this.policyId = policyId;
+    public PolicyInstance(int policyRuleId) {
+        this.policyRuleId = policyRuleId;
 
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
 
-    public PolicyInstance(int id, int policyId, int deviceId, Timestamp timestamp) {
+    public PolicyInstance(int id, int policyRuleId, int deviceId, Timestamp timestamp) {
         this.id = id;
-        this.policyId = policyId;
+        this.policyRuleId = policyRuleId;
         this.deviceId = deviceId;
         this.timestamp = timestamp;
     }
@@ -39,17 +39,17 @@ public class PolicyInstance {
         this.id = id;
     }
 
-    public int getPolicyId() {
-        return policyId;
+    public int getPolicyRuleId() {
+        return policyRuleId;
     }
 
-    public void setPolicyId(int policyId) {
-        this.policyId = policyId;
+    public void setPolicyRuleId(int policyRuleId) {
+        this.policyRuleId = policyRuleId;
     }
 
     public int getDeviceId() { return deviceId; }
 
-    public void setDeviceId(int device id) { this.deviceId = deviceId; }
+    public void setDeviceId(int deviceId) { this.deviceId = deviceId; }
 
     public Timestamp getTimestamp() {
         return timestamp;

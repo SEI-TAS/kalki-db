@@ -169,7 +169,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Property        |Type     |
 |---------------:|:--------|
 |id              |serial PRIMARY KEY|  
-|policy_id        |int NOT NULL|
+|policy_rule_id        |int NOT NULL|
 |command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
@@ -286,7 +286,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |`deleteGroup(int id)`      |`Boolean`    |
 
 
-#### Policy
+#### PolicyRule
 ###### Schema:
 |Property     |Type     |
 |------------:|:--------|
@@ -298,11 +298,11 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 ###### Actions:  
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findPolicy(int id)`        |`Policy`      |
-|`findPolicy(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
-|`insertPolicy(Policy policy)` |`Integer`    |
-|`updatePolicy(Policy policy)` |`Integer`    |
-|`deletePolicy(int policyId) ` |`Boolean`    |
+|`findPolicyRule(int id)`        |`Policy`      |
+|`findPolicyRule(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
+|`insertPolicyRule(PolicyRule policyRule)` |`Integer`    |
+|`updatePolicyRule(PolicyRule policyRule)` |`Integer`    |
+|`deletePolicyRule(int policyRuleId) ` |`Boolean`    |
 
 #### PolicyCondition
 ###### Schema:
@@ -324,7 +324,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Property     |Type     |
 |------------:|:--------|
 |id           |int      |  
-|policy_id|int NOT NULL |
+|policy_rule_id|int NOT NULL |
 |timestamp|int NOT NULL |
 ###### Actions:  
 |Function Definition | Return Type |  
@@ -453,7 +453,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |---------------:|:---------|
 |id              |serial PRIMARY KEY|  
 |umbox_image_id  |int NOT NULL|
-|policy_id       |int NOT NULL |
+|policy_rule_id       |int NOT NULL |
 |dag_order       |int NOT NULL|
 ###### Actions:
 |Function Definition | Return Type |  
@@ -640,13 +640,13 @@ This class supports:
 |------------:|:---------|
 |id           |int       |  
 |commandId    |int   |
-|policyId    |int   |
+|policyRuleId    |int   |
 ###### Constructors:
 |Definition |  
 |:---|
 |`DeviceCommandLookup()`|
-|`DeviceCommandLookup(int commandId, int policyId)`|'
-|`DeviceCommandLookup(int id, int commandId, int policyId)`|
+|`DeviceCommandLookup(int commandId, int policyRuleId)`|'
+|`DeviceCommandLookup(int id, int commandId, int policyRuleId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -808,15 +808,15 @@ This class supports:
 |Property  |Type      |
 |---------:|:---------|
 |id        |int       |
-|policyId  |int    |
+|policyRuleId  |int    |
 |deviceId  |int    |
 |timestamp |Timestamp    |
 ###### Constructors:
 |Definition |  
 |:---|
 |`PolicyInstance()`|
-|`PolicyInstance(int policyId)`|
-|`PolicyInstance(int id, int policyId, int deviceId, Timestamp timestamp)`|
+|`PolicyInstance(int policyRuleId)`|
+|`PolicyInstance(int id, int policyRuleId, int deviceId, Timestamp timestamp)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -987,15 +987,15 @@ This class supports:
 |Property        |Type      |
 |---------------:|:---------|
 |id              |String    |  
-|policyId        |Integer    |
+|policyRuleId        |Integer    |
 |umboxImageId    |Integer     |
 |dagOrder        |Integer |
 ###### Constructors:
 |Function Definition |
 |:---|
 |`UmboxLookup()`  |
-|`UmboxLookup(Integer policyId, Integer umboxImageId, Integer dagOrder)`|
-|`UmboxLookup(int id, Integer policyId, Integer umboxImageId, Integer dagOrder)`|
+|`UmboxLookup(Integer policyRuleId, Integer umboxImageId, Integer dagOrder)`|
+|`UmboxLookup(int id, Integer policyRuleId, Integer umboxImageId, Integer dagOrder)`|
 ###### Methods:
 This class supports:
 - `get<field>()`

@@ -6,7 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import edu.cmu.sei.ttg.kalki.database.Postgres;
 
-public class Policy {
+public class PolicyRule
+{
     private int id;
     private int stateTransId;
     private int policyCondId;
@@ -15,16 +16,14 @@ public class Policy {
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public Policy() { }
-
-    public Policy(int stateTransId, int policyCondId, int devTypeId, int samplingRate){
+    public PolicyRule(int stateTransId, int policyCondId, int devTypeId, int samplingRate){
         this.stateTransId = stateTransId;
         this.policyCondId = policyCondId;
         this.devTypeId = devTypeId;
         this.samplingRate = samplingRate;
     }
 
-    public Policy(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate){
+    public PolicyRule(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate){
         this(stateTransId, policyCondId, devTypeId, samplingRate);
         this.id = id;
     }
@@ -70,7 +69,7 @@ public class Policy {
     }
 
     public void insert() {
-        int id = Postgres.insertPolicy(this);
+        int id = Postgres.insertPolicyRule(this);
         if(id > 0)
             this.id = id;
     }

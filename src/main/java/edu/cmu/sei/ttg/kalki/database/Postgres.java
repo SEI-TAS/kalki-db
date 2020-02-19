@@ -1556,7 +1556,7 @@ public class Postgres {
             List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
 
             st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c, policy_instance AS pi " +
-                    "WHERE pi.policy_id = cl.policy_id AND c.id = cl.command_id AND pi.id = ?");
+                    "WHERE pi.policy_rule_id = cl.policy_rule_id AND c.id = cl.command_id AND pi.id = ?");
             st.setInt(1, instanceId);
             rs = st.executeQuery();
 
@@ -1752,8 +1752,8 @@ public class Postgres {
         try {
             int id = rs.getInt("id");
             int commandId = rs.getInt("command_id");
-            int policyId = rs.getInt("policy_id");
-            commandLookup = new DeviceCommandLookup(id, commandId, policyId);
+            int policyRuleId = rs.getInt("policy_rule_id");
+            commandLookup = new DeviceCommandLookup(id, commandId, policyRuleId);
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName() + ": " + e.getMessage());
@@ -1774,9 +1774,9 @@ public class Postgres {
         }
         try {
             PreparedStatement insertCommandLookup =
-                    dbConn.prepareStatement("INSERT INTO command_lookup(command_id, policy_id) VALUES (?,?)");
+                    dbConn.prepareStatement("INSERT INTO command_lookup(command_id, policy_rule_id) VALUES (?,?)");
             insertCommandLookup.setInt(1, commandLookup.getCommandId());
-            insertCommandLookup.setInt(2, commandLookup.getPolicyId());
+            insertCommandLookup.setInt(2, commandLookup.getPolicyRuleId());
             insertCommandLookup.executeUpdate();
 
             return getLatestId("command_lookup");
@@ -1814,9 +1814,9 @@ public class Postgres {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
         }
         try {
-            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET command_id = ?, policy_id = ? WHERE id = ?");
+            PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET command_id = ?, policy_rule_id = ? WHERE id = ?");
             updatecommand.setInt(1, commandLookup.getCommandId());
-            updatecommand.setInt(2, commandLookup.getPolicyId());
+            updatecommand.setInt(2, commandLookup.getPolicyRuleId());
             updatecommand.setInt(3, commandLookup.getId());
             updatecommand.executeUpdate();
 
@@ -2845,25 +2845,25 @@ public class Postgres {
      *      Policy specific actions
      */
 
-    public static Policy findPolicy(int id) {
-        return rsToPolicy(findById(id, "policy"));
+    public static PolicyRule findPolicyRule(int id) {
+        return rsToPolicyRule(findById(id, "policy_rule"));
     }
 
     /**
-     * Finds the policy given the StateTransition PolicyCondition and DeviceType id's
+     * Finds the policy rule given the StateTransition PolicyCondition and DeviceType id's
      * @param stateTransId
      * @param policyCondId
      * @param devTypeId
      * @return
      */
-    public static Policy findPolicy(int stateTransId, int policyCondId, int devTypeId) {
+    public static PolicyRule findPolicyRule(int stateTransId, int policyCondId, int devTypeId) {
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return null;
         }
 
         try {
-            PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy WHERE " +
+            PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy_rule WHERE " +
                     "state_trans_id = ? AND " +
                     "policy_cond_id = ? AND " +
                     "device_type_id = ?");
@@ -2873,9 +2873,9 @@ public class Postgres {
 
             ResultSet rs = query.executeQuery();
             rs.next();
-            return rsToPolicy(rs);
+            return rsToPolicyRule(rs);
         } catch (Exception e) {
-            logger.severe("Error finding Policy: "+e.getClass().getName() +": "+e.getMessage());
+            logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -2886,41 +2886,41 @@ public class Postgres {
      * @param rs Result set of a query to the policy table
      * @return The object representing the query result
      */
-    public static Policy rsToPolicy(ResultSet rs) {
-        Policy policy = null;
+    public static PolicyRule rsToPolicyRule(ResultSet rs) {
+        PolicyRule policyRule = null;
         try {
             int id = rs.getInt("id");
             int stateTransId = rs.getInt("state_trans_id");
             int policyCondId = rs.getInt("policy_cond_id");
             int devTypeId = rs.getInt("device_type_id");
             int samplingRate = rs.getInt("sampling_rate");
-            policy = new Policy(id, stateTransId, policyCondId, devTypeId, samplingRate);
+            policyRule = new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
         } catch (Exception e) {
-            logger.severe("Error converting rs to Policy: "+e.getClass().getName() +": "+e.getMessage());
+            logger.severe("Error converting rs to PolicyRule: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
-        return policy;
+        return policyRule;
     }
 
     /**
-     * Inserts the given Policy obj to the policy table
-     * @param policy The obj to insert
+     * Inserts the given PolicyRule obj to the policy table
+     * @param policyRule The obj to insert
      * @return Row's id on success. -1 otherwise
      */
-    public static Integer insertPolicy(Policy policy) {
+    public static Integer insertPolicyRule(PolicyRule policyRule) {
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
 
         try {
-            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?)");
-            insert.setInt(1, policy.getStateTransId());
-            insert.setInt(2, policy.getPolicyCondId());
-            insert.setInt(3, policy.getDevTypeId());
-            insert.setInt(4, policy.getSamplingRate());
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?)");
+            insert.setInt(1, policyRule.getStateTransId());
+            insert.setInt(2, policyRule.getPolicyCondId());
+            insert.setInt(3, policyRule.getDevTypeId());
+            insert.setInt(4, policyRule.getSamplingRate());
             insert.executeUpdate();
-            return getLatestId("policy");
+            return getLatestId("policy_rule");
         } catch (Exception e) {
             logger.severe("Error inserting Policy: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
@@ -2930,29 +2930,29 @@ public class Postgres {
 
     /**
      * Updates the row in the policy table with the given id
-     * @param policy
+     * @param policyRule
      * @return The id of the given policy on success. -1 otherwise
      */
-    public static Integer updatePolicy(Policy policy) {
+    public static Integer updatePolicyRule(PolicyRule policyRule) {
         if (dbConn == null) {
            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
            return -1;
         }
 
         try {
-            PreparedStatement update = dbConn.prepareStatement("UPDATE policy SET " +
+            PreparedStatement update = dbConn.prepareStatement("UPDATE policy_rule SET " +
                     "state_trans_id = ? " +
                     "policy_cond_id = ? " +
                     "device_type_id = ? " +
                     "sampling_rate = ? " +
                     "WHERE id = ?");
-            update.setInt(1, policy.getStateTransId());
-            update.setInt(2, policy.getPolicyCondId());
-            update.setInt(3, policy.getDevTypeId());
-            update.setInt(4, policy.getSamplingRate());
-            update.setInt(5, policy.getId());
+            update.setInt(1, policyRule.getStateTransId());
+            update.setInt(2, policyRule.getPolicyCondId());
+            update.setInt(3, policyRule.getDevTypeId());
+            update.setInt(4, policyRule.getSamplingRate());
+            update.setInt(5, policyRule.getId());
             update.executeUpdate();
-            return policy.getId();
+            return policyRule.getId();
         } catch (Exception e) {
             logger.severe("Error updating Policy: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
@@ -2961,12 +2961,12 @@ public class Postgres {
     }
 
     /***
-     * Delete a row in the policy table with the given id
-     * @param policyId
+     * Delete a row in the policy rule table with the given id
+     * @param policyRuleId
      * @return True on success, false otherwise
      */
-    public static boolean deletePolicy(int policyId) {
-        return deleteById("policy", policyId);
+    public static boolean deletePolicyRule(int policyRuleId) {
+        return deleteById("policy_rule", policyRuleId);
     }
 
     /*
@@ -3144,10 +3144,10 @@ public class Postgres {
         PolicyInstance inst = null;
         try {
             int id = rs.getInt("id");
-            int policyId = rs.getInt("policy_id");
+            int policyRuleId = rs.getInt("policy_rule_id");
             int deviceId = rs.getInt("device_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
-            inst = new PolicyInstance(id, policyId, deviceId, timestamp);
+            inst = new PolicyInstance(id, policyRuleId, deviceId, timestamp);
         } catch (Exception e) {
             logger.severe("Error converting rs to PolicyInstance: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
@@ -3168,8 +3168,8 @@ public class Postgres {
         }
 
         try {
-            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_instance(policy_id, device_id, timestamp) VALUES(?,?,?)");
-            insert.setInt(1, instance.getPolicyId());
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_instance(policy_rule_id, device_id, timestamp) VALUES(?,?,?)");
+            insert.setInt(1, instance.getPolicyRuleId());
             insert.setInt(2, instance.getDeviceId());
             insert.setTimestamp(3, instance.getTimestamp());
             insert.executeUpdate();
@@ -4508,8 +4508,8 @@ public class Postgres {
             return null;
         }
         try {
-            st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d, policy p " +
-                    "WHERE ul.policy_id = p.id AND p.device_type_id = d.type_id AND d.id = ?;");
+            st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d, policy_rule p " +
+                    "WHERE ul.policy_rule_id = p.id AND p.device_type_id = d.type_id AND d.id = ?;");
             st.setInt(1, deviceId);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -4548,16 +4548,16 @@ public class Postgres {
     private static UmboxLookup rsToUmboxLookup(ResultSet rs) {
         UmboxLookup umboxLookup = null;
         Integer id = null;
-        Integer policyId = null;
+        Integer policyRuleId = null;
         Integer deviceTypeId = null;
         Integer umboxImageId = null;
         Integer dagOrder = null;
         try {
             id = rs.getInt("id");
-            policyId = rs.getInt("policy_id");
+            policyRuleId = rs.getInt("policy_rule_id");
             umboxImageId = rs.getInt("umbox_image_id");
             dagOrder = rs.getInt("dag_order");
-            umboxLookup = new UmboxLookup(id, policyId, umboxImageId, dagOrder);
+            umboxLookup = new UmboxLookup(id, policyRuleId, umboxImageId, dagOrder);
             return umboxLookup;
         } catch (Exception e) {
             e.printStackTrace();
@@ -4573,8 +4573,8 @@ public class Postgres {
         logger.info("Adding umbox lookup: ");
         PreparedStatement st = null;
         try {
-            st = dbConn.prepareStatement("INSERT INTO umbox_lookup (policy_id, umbox_image_id, dag_order) VALUES (?,?,?)");
-            st.setInt(1, ul.getPolicyId());
+            st = dbConn.prepareStatement("INSERT INTO umbox_lookup (policy_rule_id, umbox_image_id, dag_order) VALUES (?,?,?)");
+            st.setInt(1, ul.getPolicyRuleId());
             st.setInt(2, ul.getUmboxImageId());
             st.setInt(3, ul.getDagOrder());
             st.executeUpdate();
@@ -4602,9 +4602,10 @@ public class Postgres {
         } else {
             try {
                 PreparedStatement update = dbConn.prepareStatement("UPDATE umbox_lookup " +
-                        "SET policy_id = ?, umbox_image_id = ?, dag_order = ?" +
+                        "SET policy_" +
+                        "rule_id = ?, umbox_image_id = ?, dag_order = ?" +
                         "WHERE id = ?");
-                update.setInt(1, ul.getPolicyId());
+                update.setInt(1, ul.getPolicyRuleId());
                 update.setInt(2, ul.getUmboxImageId());
                 update.setInt(3, ul.getDagOrder());
                 update.setInt(4, ul.getId());

@@ -5,17 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 
-import edu.cmu.sei.ttg.kalki.database.Postgres;
 import edu.cmu.sei.ttg.kalki.models.*;
-
-import edu.cmu.sei.ttg.kalki.database.AUsesDatabase;
 
 public class CommandTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -32,7 +24,7 @@ public class CommandTest extends AUsesDatabase {
     private static DeviceSecurityState deviceSecurityState;
     private static DeviceSecurityState deviceSecurityStateTwo;
     private static PolicyCondition policyCondition;
-    private static Policy policy;
+    private static PolicyRule policyRule;
     private static PolicyInstance policyInstance;
 
     /*
@@ -117,10 +109,10 @@ public class CommandTest extends AUsesDatabase {
         policyCondition = new PolicyCondition(1, null);
         policyCondition.insert();
 
-        policy = new Policy(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
-        policy.insert();
+        policyRule = new PolicyRule(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
+        policyRule.insert();
 
-        policyInstance = new PolicyInstance(policy.getId());
+        policyInstance = new PolicyInstance(policyRule.getId());
         policyInstance.insert();
 
         // insert command
@@ -130,10 +122,10 @@ public class CommandTest extends AUsesDatabase {
         deviceCommandTwo = new DeviceCommand("Second Command", deviceTypeTwo.getId());
         deviceCommandTwo.insert();
 
-        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), policy.getId());
+        deviceCommandLookup = new DeviceCommandLookup(deviceCommand.getId(), policyRule.getId());
         deviceCommandLookup.insert();
 
-        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policy.getId());
+        deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policyRule.getId());
         deviceCommandLookupTwo.insert();
     }
 }
