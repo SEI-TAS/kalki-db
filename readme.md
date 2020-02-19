@@ -809,13 +809,14 @@ This class supports:
 |---------:|:---------|
 |id        |int       |
 |policyId  |int    |
+|deviceId  |int    |
 |timestamp |Timestamp    |
 ###### Constructors:
 |Definition |  
 |:---|
 |`PolicyInstance()`|
 |`PolicyInstance(int policyId)`|
-|`PolicyInstance(int id, int policyId, Timestamp timestamp)`|
+|`PolicyInstance(int id, int policyId, int deviceId, Timestamp timestamp)`|
 ###### Methods:
 This class supports:
 - `get<field>()`

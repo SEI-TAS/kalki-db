@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 public class PolicyInstance {
     private int id;
     private int policyId;
+    private int deviceId;
     private Timestamp timestamp;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
@@ -23,9 +24,10 @@ public class PolicyInstance {
         this.timestamp = new Timestamp(millis);
     }
 
-    public PolicyInstance(int id, int policyId, Timestamp timestamp) {
+    public PolicyInstance(int id, int policyId, int deviceId, Timestamp timestamp) {
         this.id = id;
         this.policyId = policyId;
+        this.deviceId = deviceId;
         this.timestamp = timestamp;
     }
 
@@ -44,6 +46,10 @@ public class PolicyInstance {
     public void setPolicyId(int policyId) {
         this.policyId = policyId;
     }
+
+    public int getDeviceId() { return deviceId; }
+
+    public void setDeviceId(int device id) { this.deviceId = deviceId; }
 
     public Timestamp getTimestamp() {
         return timestamp;

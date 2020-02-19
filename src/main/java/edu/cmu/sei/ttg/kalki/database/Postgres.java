@@ -22,6 +22,7 @@ public class Postgres {
     private static final int TABLE_COUNT=17;
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
+    public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyinstanceinsert";
 
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
@@ -3144,8 +3145,9 @@ public class Postgres {
         try {
             int id = rs.getInt("id");
             int policyId = rs.getInt("policy_id");
+            int deviceId = rs.getInt("device_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
-            inst = new PolicyInstance(id, policyId, timestamp);
+            inst = new PolicyInstance(id, policyId, deviceId, timestamp);
         } catch (Exception e) {
             logger.severe("Error converting rs to PolicyInstance: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
@@ -3166,9 +3168,10 @@ public class Postgres {
         }
 
         try {
-            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_instance(policy_id, timestamp) VALUES(?,?)");
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_instance(policy_id, device_id, timestamp) VALUES(?,?,?)");
             insert.setInt(1, instance.getPolicyId());
-            insert.setTimestamp(2, instance.getTimestamp());
+            insert.setInt(2, instance.getDeviceId());
+            insert.setTimestamp(3, instance.getTimestamp());
             insert.executeUpdate();
             return getLatestId("policy_instance");
         } catch (Exception e) {

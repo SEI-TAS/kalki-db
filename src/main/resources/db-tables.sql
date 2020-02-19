@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS policy(
 CREATE TABLE IF NOT EXISTS policy_instance(
     id          serial PRIMARY KEY,
     policy_id   int NOT NULL REFERENCES policy(id),
+    device_id   int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
     timestamp   TIMESTAMP
 );
 
