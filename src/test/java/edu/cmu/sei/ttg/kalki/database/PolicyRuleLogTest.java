@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import edu.cmu.sei.ttg.kalki.models.*;
 
-public class PolicyInstanceTest extends AUsesDatabase {
+public class PolicyRuleLogTest extends AUsesDatabase {
     private DeviceType deviceType;
     private StateTransition stateTransition;
     private PolicyCondition policyCondition;
@@ -14,30 +14,30 @@ public class PolicyInstanceTest extends AUsesDatabase {
 
     @Test
     public void findPolicyCondition() {
-        PolicyInstance instance = new PolicyInstance(policyRule.getId());
-        instance.insert();
+        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        policyRuleLog.insert();
 
-        PolicyInstance test = Postgres.findPolicyInstance(instance.getId());
-        assertEquals(instance.toString(), test.toString());
+        PolicyRuleLog test = Postgres.findPolicyRuleLog(policyRuleLog.getId());
+        assertEquals(policyRuleLog.toString(), test.toString());
     }
 
     @Test
-    public void testInsertPolicyInstance() {
-        PolicyInstance instance = new PolicyInstance(policyRule.getId());
-        instance.insert();
+    public void testInsertPolicyRuleLog() {
+        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        policyRuleLog.insert();
 
-        assertEquals(1, instance.getId());
+        assertEquals(1, policyRuleLog.getId());
     }
 
     @Test
-    public void testDeletePolicyInstance() {
-        PolicyInstance instance = new PolicyInstance(policyRule.getId());
-        instance.insert();
+    public void testDeletePolicyRuleLog() {
+        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        policyRuleLog.insert();
 
-        boolean success = Postgres.deletePolicyInstance(instance.getId());
+        boolean success = Postgres.deletePolicyRuleLog(policyRuleLog.getId());
         assert success;
 
-        PolicyInstance cond = Postgres.findPolicyInstance(instance.getId());
+        PolicyRuleLog cond = Postgres.findPolicyRuleLog(policyRuleLog.getId());
         assertEquals(null, cond);
     }
 

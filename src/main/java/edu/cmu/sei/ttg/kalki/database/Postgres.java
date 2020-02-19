@@ -22,7 +22,7 @@ public class Postgres {
     private static final int TABLE_COUNT=17;
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
-    public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyinstanceinsert";
+    public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyruleloginsert";
 
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
@@ -1484,7 +1484,7 @@ public class Postgres {
         return commands;
     }
 
-    //Replaced by findCommandsByPolicyInstance
+    //Replaced by findCommandsByPolicyRuleLog
     /**
      * Finds commands for device based on the state of triggeringDevice
      * @param device the device the commands are for
@@ -1540,12 +1540,12 @@ public class Postgres {
 //    }
 
     /**
-     * Finds the commands for the device from the policy instance
+     * Finds the commands for the device from the policy rule log
      *
-     * @param instanceId The policy instance id
+     * @param policyRuleId The policy rule id
      * @return commands A list of command names
      */
-    public static List<DeviceCommand> findCommandsByPolicyInstance(int instanceId) {
+    public static List<DeviceCommand> findCommandsByPolicyRuleLog(int policyRuleId) {
         PreparedStatement st = null;
         ResultSet rs = null;
         if (dbConn == null) {
@@ -1555,9 +1555,9 @@ public class Postgres {
         try {
             List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
 
-            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c, policy_instance AS pi " +
+            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c, policy_rule_log AS pi " +
                     "WHERE pi.policy_rule_id = cl.policy_rule_id AND c.id = cl.command_id AND pi.id = ?");
-            st.setInt(1, instanceId);
+            st.setInt(1, policyRuleId);
             rs = st.executeQuery();
 
             while (rs.next()) {
@@ -3123,33 +3123,33 @@ public class Postgres {
     }
 
     /*
-     *      Policy instance specific actions
+     *      Policy rule log specific actions
      */
 
     /**
-     * Finds a row in the policy_instance table with the given id
+     * Finds a row in the policy_rule_log table with the given id
      * @param id
      * @return
      */
-    public static PolicyInstance findPolicyInstance(int id) {
-        return rsToPolicyInstance(findById(id, "policy_instance"));
+    public static PolicyRuleLog findPolicyRuleLog(int id) {
+        return rsToPolicyRuleLog(findById(id, "policy_rule_log"));
     }
 
     /**
-     * Converts a ResultSet from a query on policy instance to a java PolicyInstance
+     * Converts a ResultSet from a query on policy rule log to a java PolicyRuleLog
      * @param rs
      * @return
      */
-    private static PolicyInstance rsToPolicyInstance(ResultSet rs) {
-        PolicyInstance inst = null;
+    private static PolicyRuleLog rsToPolicyRuleLog(ResultSet rs) {
+        PolicyRuleLog inst = null;
         try {
             int id = rs.getInt("id");
             int policyRuleId = rs.getInt("policy_rule_id");
             int deviceId = rs.getInt("device_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
-            inst = new PolicyInstance(id, policyRuleId, deviceId, timestamp);
+            inst = new PolicyRuleLog(id, policyRuleId, deviceId, timestamp);
         } catch (Exception e) {
-            logger.severe("Error converting rs to PolicyInstance: "+e.getClass().getName() +": "+e.getMessage());
+            logger.severe("Error converting rs to PolicyRuleLog: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
 
@@ -3157,23 +3157,23 @@ public class Postgres {
     }
 
     /**
-     * Inserts a PolicyInstance to the policy_instance table
-     * @param instance
+     * Inserts a PolicyRuleLog to the policy_rule_log table
+     * @param policyRuleLog
      * @return
      */
-    public static Integer insertPolicyInstance(PolicyInstance instance) {
+    public static Integer insertPolicyRuleLog(PolicyRuleLog policyRuleLog) {
         if (dbConn == null) {
             logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
             return -1;
         }
 
         try {
-            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_instance(policy_rule_id, device_id, timestamp) VALUES(?,?,?)");
-            insert.setInt(1, instance.getPolicyRuleId());
-            insert.setInt(2, instance.getDeviceId());
-            insert.setTimestamp(3, instance.getTimestamp());
+            PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_rule_log(policy_rule_id, device_id, timestamp) VALUES(?,?,?)");
+            insert.setInt(1, policyRuleLog.getPolicyRuleId());
+            insert.setInt(2, policyRuleLog.getDeviceId());
+            insert.setTimestamp(3, policyRuleLog.getTimestamp());
             insert.executeUpdate();
-            return getLatestId("policy_instance");
+            return getLatestId("policy_rule_log");
         } catch (Exception e) {
             logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
@@ -3182,12 +3182,12 @@ public class Postgres {
     }
 
     /**
-     * Deletes a row in the policy_instance table with the given id
+     * Deletes a row in the policy_rule_log table with the given id
      * @param id
      * @return
      */
-    public static boolean deletePolicyInstance(int id) {
-        return deleteById("policy_instance", id);
+    public static boolean deletePolicyRuleLog(int id) {
+        return deleteById("policy_rule_log", id);
     }
 
     /*

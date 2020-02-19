@@ -16,6 +16,8 @@ public class PolicyRule
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
+    public PolicyRule() {}
+
     public PolicyRule(int stateTransId, int policyCondId, int devTypeId, int samplingRate){
         this.stateTransId = stateTransId;
         this.policyCondId = policyCondId;

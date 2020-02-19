@@ -25,7 +25,7 @@ public class CommandTest extends AUsesDatabase {
     private static DeviceSecurityState deviceSecurityStateTwo;
     private static PolicyCondition policyCondition;
     private static PolicyRule policyRule;
-    private static PolicyInstance policyInstance;
+    private static PolicyRuleLog policyRuleLog;
 
     /*
         Command Action Tests
@@ -42,11 +42,11 @@ public class CommandTest extends AUsesDatabase {
     }
 
     @Test
-    public void testFindCommandsByPolicyInstance() {
+    public void testFindCommandsByPolicyRuleLog() {
         device.setCurrentState(deviceSecurityStateTwo);
         device.insertOrUpdate();
 
-        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsByPolicyInstance(policyInstance.getId()));
+        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsByPolicyRuleLog(policyRuleLog.getId()));
 
         assertEquals(2, foundCommands.size());
         assertEquals(deviceCommand.toString(), foundCommands.get(0).toString());
@@ -112,8 +112,8 @@ public class CommandTest extends AUsesDatabase {
         policyRule = new PolicyRule(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
         policyRule.insert();
 
-        policyInstance = new PolicyInstance(policyRule.getId());
-        policyInstance.insert();
+        policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        policyRuleLog.insert();
 
         // insert command
         deviceCommand = new DeviceCommand("Test Command", deviceType.getId());

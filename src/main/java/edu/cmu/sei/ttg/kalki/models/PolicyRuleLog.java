@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.Timestamp;
 
-public class PolicyInstance {
+public class PolicyRuleLog
+{
     private int id;
     private int policyRuleId;
     private int deviceId;
@@ -15,16 +16,16 @@ public class PolicyInstance {
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-    public PolicyInstance() {}
+    public PolicyRuleLog() {}
 
-    public PolicyInstance(int policyRuleId) {
+    public PolicyRuleLog(int policyRuleId) {
         this.policyRuleId = policyRuleId;
 
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);
     }
 
-    public PolicyInstance(int id, int policyRuleId, int deviceId, Timestamp timestamp) {
+    public PolicyRuleLog(int id, int policyRuleId, int deviceId, Timestamp timestamp) {
         this.id = id;
         this.policyRuleId = policyRuleId;
         this.deviceId = deviceId;
@@ -60,7 +61,7 @@ public class PolicyInstance {
     }
 
     public void insert() {
-        int id = Postgres.insertPolicyInstance(this);
+        int id = Postgres.insertPolicyRuleLog(this);
         if(id>0)
             this.id = id;
     }
@@ -70,7 +71,7 @@ public class PolicyInstance {
             return ow.writeValueAsString(this);
         }
         catch (JsonProcessingException e) {
-            return "Bad PolicyInstance";
+            return "Bad PolicyRuleLog";
         }
     }
 

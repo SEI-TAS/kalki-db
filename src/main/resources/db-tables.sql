@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS device_group(
     name  varchar(255) NOT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS tag(
     id           serial PRIMARY KEY,
     name         varchar(255) NOT NULL
@@ -74,7 +73,7 @@ CREATE TABLE IF NOT EXISTS policy_rule(
     UNIQUE(state_trans_id, policy_cond_id, device_type_id)
 );
 
-CREATE TABLE IF NOT EXISTS policy_instance(
+CREATE TABLE IF NOT EXISTS policy_rule_log(
     id          serial PRIMARY KEY,
     policy_rule_id   int NOT NULL REFERENCES policy_rule(id),
     device_id   int NOT NULL REFERENCES device(id) ON DELETE CASCADE,

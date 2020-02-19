@@ -158,7 +158,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |:-------------------------------------|:--------|
 |`findCommand(int id)`           |`DeviceCommand`|
 |`findAllCommands()`|`List<DeviceCommand>`|
-|`findCommandsByPolicyInstance(int instanceId)` |`List<DeviceCommand>`|
+|`findCommandsByPolicyRuleLog(int policyRuleLogId)` |`List<DeviceCommand>`|
 |`insertCommand(DeviceCommand command)`|`Integer`|
 |`insertOrUpdateCommand(DeviceCommand command)`|`Integer`|
 |`updateCommand(DeviceCommand command)`|`Integer`|
@@ -319,7 +319,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |`deletePolicyCondition(int id)` |`Boolean`    |
 |`deletePolicyConditionAlertRows(int policyConditionId)`      |`Boolean`    |
 
-#### PolicyInstance
+#### PolicyRuleLog
 ###### Schema:
 |Property     |Type     |
 |------------:|:--------|
@@ -329,9 +329,9 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 ###### Actions:  
 |Function Definition | Return Type |  
 |:---|:---| 
-|`findPolicyInstance(int id) `        |`PolicyInstance`      |
-|`finsertPolicyInstance(PolicyInstance instance)`          |`Integer`|
-|`deletePolicyInstance(int id)` |`Boolean`    |
+|`findPolicyRuleLog(int id) `        |`PolicyRuleLog`      |
+|`finsertPolicyRuleLog(PolicyRuleLog policyRuleLog)`          |`Integer`|
+|`deletePolicyRuleLog(int id)` |`Boolean`    |
 
 #### SecurityState
 ###### Schema:
@@ -803,7 +803,7 @@ This class supports:
 - `insert()`
 - `toString()`
 
-#### PolicyInstance
+#### PolicyRuleLog
 ###### Schema:
 |Property  |Type      |
 |---------:|:---------|
@@ -814,9 +814,9 @@ This class supports:
 ###### Constructors:
 |Definition |  
 |:---|
-|`PolicyInstance()`|
-|`PolicyInstance(int policyRuleId)`|
-|`PolicyInstance(int id, int policyRuleId, int deviceId, Timestamp timestamp)`|
+|`PolicyRuleLog()`|
+|`PolicyRuleLog(int policyRuleId)`|
+|`PolicyRuleLog(int id, int policyRuleId, int deviceId, Timestamp timestamp)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -1018,7 +1018,7 @@ These triggers generate notifications on the following conditions.
 |device_security_state |INSERT      |`devicesecuritystateinsert` |
 |device_status         |INSERT      |`devicestatusinsert`        |
 |device                |INSERT      |`deviceinsert`              |
-|policy_instance       |INSERT      |`policyinstanceinsert`              |
+|policy_rule_log       |INSERT      |`policyruleloginsert`              |
 
 Without taking any additional steps, the notifications will be generated with nothing listening.
 You can start listening to these notifications which will add the necessary handlers to a notification 
