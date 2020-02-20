@@ -2,6 +2,7 @@ package edu.cmu.sei.ttg.kalki.database;
 
 import edu.cmu.sei.ttg.kalki.models.*;
 import edu.cmu.sei.ttg.kalki.listeners.*;
+import edu.cmu.sei.ttg.kalki.utils.Config;
 import org.postgresql.util.HStoreConverter;
 import org.postgresql.util.PSQLException;
 
@@ -51,6 +52,18 @@ public class Postgres {
             e.printStackTrace();
             logger.severe("Error initializing postgres: " + e.getClass().getName() + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Initialize the singleton assuming the Config object has been loaded.
+     */
+    public static void initializeFromConfig() {
+        String host = Config.data.get("db_host");
+        String port = Config.data.get("db_port");
+        String dbName = Config.data.get("db_name");
+        String dbUser = Config.data.get("db_user");
+        String dbPassword = Config.data.get("db_password");
+        Postgres.initialize(host, port, dbName, dbUser, dbPassword);
     }
 
     /**
