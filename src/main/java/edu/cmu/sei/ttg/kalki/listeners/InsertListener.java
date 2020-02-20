@@ -9,17 +9,19 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Logger;
 
 public class InsertListener extends TimerTask
 {
-    private static InsertListener instance = null;
-    private static Logger logger = Logger.getLogger("myLogger");
     private static boolean isListening = false;
     private static Map<String, InsertHandler> handlerMap = new HashMap<>();
     private static Timer timer = null;
 
     private PGConnection pgconn;
+
+    private InsertListener()
+    {
+        this.pgconn = (PGConnection) Postgres.dbConn;
+    }
 
     public static void startListening() {
         if(!isListening) {
@@ -55,13 +57,7 @@ public class InsertListener extends TimerTask
         handlerMap.clear();
     }
 
-    private InsertListener()
-    {
-        this.pgconn = (PGConnection) Postgres.dbConn;
-    }
-
-    public void run()
-    {
+    public void run() {
         try
         {
             PGNotification notifications[] = pgconn.getNotifications();

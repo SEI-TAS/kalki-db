@@ -23,6 +23,7 @@ public class Postgres {
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
     public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyruleloginsert";
+    public static final String TRIGGER_NOTIF_NEW_ALERT = "alerthistoryinsert";
 
     private static Logger logger = Logger.getLogger("myLogger");
     private static String dbName;
