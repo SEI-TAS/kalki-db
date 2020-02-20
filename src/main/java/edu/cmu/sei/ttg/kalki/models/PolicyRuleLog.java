@@ -18,8 +18,9 @@ public class PolicyRuleLog
 
     public PolicyRuleLog() {}
 
-    public PolicyRuleLog(int policyRuleId) {
+    public PolicyRuleLog(int policyRuleId, int deviceId) {
         this.policyRuleId = policyRuleId;
+        this.deviceId = deviceId;
 
         long millis = System.currentTimeMillis();
         this.timestamp = new Timestamp(millis);

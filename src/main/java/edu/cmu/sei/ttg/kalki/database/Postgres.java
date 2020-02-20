@@ -2882,6 +2882,37 @@ public class Postgres {
     }
 
     /**
+     * Finds all policy rules given the DeviceType ids
+     * @param securityStateId
+     * @param devTypeId
+     * @return
+     */
+    public static List<PolicyRule> findPolicyRules(int devTypeId) {
+        if (dbConn == null) {
+            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
+            return null;
+        }
+
+        try {
+            PreparedStatement query = dbConn.prepareStatement("SELECT * " +
+                    "FROM policy_rule WHERE " +
+                    "device_type_id = ?");
+            query.setInt(1, devTypeId);
+
+            ResultSet rs = query.executeQuery();
+            List<PolicyRule> rules = new ArrayList<>();
+            while(rs.next()) {
+                rules.add(rsToPolicyRule(rs));
+            }
+            return rules;
+        } catch (Exception e) {
+            logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
      * Converts a ResultSet obj to a Policy
      * @param rs Result set of a query to the policy table
      * @return The object representing the query result
