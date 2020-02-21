@@ -82,11 +82,11 @@ public class Postgres {
      * Initialize the singleton assuming the Config object has been loaded.
      */
     public static void initializeFromConfig() {
-        String host = Config.data.get("db_host");
-        String port = Config.data.get("db_port");
-        String dbName = Config.data.get("db_name");
-        String dbUser = Config.data.get("db_user");
-        String dbPassword = Config.data.get("db_password");
+        String host = Config.getValue("db_host");
+        String port = Config.getValue("db_port");
+        String dbName = Config.getValue("db_name");
+        String dbUser = Config.getValue("db_user");
+        String dbPassword = Config.getValue("db_password");
         Postgres.initialize(host, port, dbName, dbUser, dbPassword);
     }
 

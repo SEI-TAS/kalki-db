@@ -11,15 +11,16 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
+ * Singleton class that loads and provides access to a configuration from a file.
  * Created by sebastianecheverria on 8/2/17.
  */
 public class Config
 {
-    public static Map<String, String> data = new HashMap<>();
+    private static Map<String, String> data = new HashMap<>();
 
     public static void load(String configFilePath) throws IOException
     {
-        System.out.println(System.getProperty("user.dir"));
+        //System.out.println(System.getProperty("user.dir"));
         InputStream fs = new FileInputStream(configFilePath);
         JSONTokener parser = new JSONTokener(fs);
         JSONObject config = new JSONObject(parser);
@@ -33,5 +34,15 @@ public class Config
         }
 
         fs.close();
+    }
+
+    public static String getValue(String key)
+    {
+        return data.get(key);
+    }
+
+    public static void setValue(String key, String value)
+    {
+        data.put(key, value);
     }
 }
