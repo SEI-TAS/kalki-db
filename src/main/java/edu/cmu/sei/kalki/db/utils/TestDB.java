@@ -21,7 +21,7 @@ public class TestDB
     /**
      * Overwrite default DB params to create a new, temp test DB.
      */
-    private static void overwriteDBConfig()
+    public static void overwriteDBConfig()
     {
         Config.setValue("db_recreate", "true");
         Config.setValue("db_name", "kalkidb_test");
@@ -31,7 +31,7 @@ public class TestDB
     /***
      * Inserts data from the given file to prepare to run simple tests.
      */
-    private static void insertTestData(String fileName)
+    public static void insertTestData(String fileName)
     {
         if(fileName == null || fileName.isEmpty())
         {
