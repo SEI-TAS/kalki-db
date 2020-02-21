@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class StageLogTest extends AUsesDatabase {
     private Device device;

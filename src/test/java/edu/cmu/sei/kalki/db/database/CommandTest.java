@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class CommandTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -122,7 +122,7 @@ public class CommandTest extends AUsesDatabase {
         policyRule = new PolicyRule(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
         policyRule.insert();
 
-        policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        policyRuleLog = new PolicyRuleLog(policyRule.getId(), device.getId());
         policyRuleLog.insert();
 
         // insert command

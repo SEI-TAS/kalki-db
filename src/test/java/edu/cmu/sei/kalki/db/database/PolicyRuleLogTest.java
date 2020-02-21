@@ -10,17 +10,18 @@ import edu.cmu.sei.kalki.db.models.PolicyRuleLog;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 import org.junit.jupiter.api.Test;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class PolicyRuleLogTest extends AUsesDatabase {
     private DeviceType deviceType;
     private StateTransition stateTransition;
     private PolicyCondition policyCondition;
     private PolicyRule policyRule;
+    private Device device;
 
     @Test
     public void findPolicyCondition() {
-        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId(), device.getId());
         policyRuleLog.insert();
 
         PolicyRuleLog test = Postgres.findPolicyRuleLog(policyRuleLog.getId());
@@ -29,7 +30,7 @@ public class PolicyRuleLogTest extends AUsesDatabase {
 
     @Test
     public void testInsertPolicyRuleLog() {
-        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId(), device.getId());
         policyRuleLog.insert();
 
         assertEquals(1, policyRuleLog.getId());
@@ -37,7 +38,7 @@ public class PolicyRuleLogTest extends AUsesDatabase {
 
     @Test
     public void testDeletePolicyRuleLog() {
-        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId());
+        PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId(), device.getId());
         policyRuleLog.insert();
 
         boolean success = Postgres.deletePolicyRuleLog(policyRuleLog.getId());
@@ -48,6 +49,10 @@ public class PolicyRuleLogTest extends AUsesDatabase {
     }
 
     public void insertData() {
+        // insert device
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device.insert();
+
         deviceType = new DeviceType(-1, "Device Type");
         deviceType.insert();
 

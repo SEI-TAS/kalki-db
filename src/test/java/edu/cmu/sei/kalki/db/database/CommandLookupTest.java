@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class CommandLookupTest extends AUsesDatabase {
     private static SecurityState securityState;

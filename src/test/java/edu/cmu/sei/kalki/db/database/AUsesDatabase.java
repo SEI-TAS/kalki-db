@@ -10,8 +10,6 @@ public abstract class AUsesDatabase {
     public static void initializeDB() {
         if (!hasRun) {
             String rootPassword = "kalkipass";  //based on run script
-            String dbHost = "localhost";        //based on run script
-            String dbPort = "5432";             //based on run script
             String dbName = "kalkidb_test";
             String dbUser = "kalkiuser_test";
             String dbPass = "kalkipass";
@@ -24,7 +22,7 @@ public abstract class AUsesDatabase {
                 Postgres.createDBIfNotExists(rootPassword, dbName, dbUser);
 
                 //initialize test DB
-                Postgres.initialize(dbHost, dbPort, dbName, dbUser, dbPass);
+                Postgres.initialize(dbName, dbUser, dbPass);
             } catch (Exception e) {
                 System.out.println(e);
             }
@@ -34,7 +32,7 @@ public abstract class AUsesDatabase {
 
     @BeforeEach
     public void resetDB() {
-        Postgres.setupTestDatabase();
+        Postgres.setupTables();
         insertData();
     }
 

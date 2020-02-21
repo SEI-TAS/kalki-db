@@ -9,7 +9,7 @@ import edu.cmu.sei.kalki.db.models.PolicyRule;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 import org.junit.jupiter.api.Test;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class PolicyRuleTest extends AUsesDatabase {
     private static PolicyRule policyRule;

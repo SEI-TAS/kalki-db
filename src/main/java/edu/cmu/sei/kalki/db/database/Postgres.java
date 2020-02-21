@@ -44,7 +44,6 @@ public class Postgres {
     private static final String DEFAULT_ROOT_USER = "kalkiuser";
     private static final String BASE_DB = "postgres";
     private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
-    private static final int TABLE_COUNT=17;
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
     public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyruleloginsert";
@@ -331,56 +330,61 @@ public class Postgres {
 
     /**
      * First time database setup.
-     * Creates necessary extensions, databases, and tables
+     * Creates necessary extensions, databases, and tables. Also inserts default device types.
      */
-    public static void setupDatabase() {
-        int numTables = getTableCount();
-        logger.info("Current number of tables: " + numTables);
-        if(numTables != 0) {//tables have been initialized
-            logger.info("Database has been setup by another component");
-            return;
-        }
-        logger.info("Setting up database.");
-        createHstoreExtension();
-        // DB Structure
-        initDB("db-tables.sql");
-        initDB("db-triggers.sql");
-
-        // DB Initial Data
-        initDB("db-alert-types.sql");
-        initDB("db-device-types.sql");
-        initDB("db-security-states.sql");
-        initDB("db-command-lookups.sql");
-//        initDB("db-umbox-images.sql");
-        initDB("db-alert-type-lookups.sql");
-//        initDB("db-devices.sql");
-
+    public static void setupDatabase()
+    {
+        setupTables();
+        setupDefaultDeviceTypes();
     }
 
     /**
-     * First time database setup for tests.
-     * Creates necessary extensions, databases, and tables
+     * First time database setup.
+     * Creates necessary extensions, tables, and initial data.
      */
-    public static void setupTestDatabase() {
-        logger.info("Setting up test database.");
-        dropTables();
+    public static void setupTables() {
         int numTables = getTableCount();
-        if(numTables != 0){
+        logger.info("Current number of tables: " + numTables);
+        if(numTables != 0) {
+            logger.info("Database has been setup already.");
             return;
         }
+
+        // Extensions to support compound fields.
         createHstoreExtension();
-        // DB Structure
-        initDB("db-tables.sql");
-        initDB("db-triggers.sql");
-        initDB("db-security-states.sql");
+
+        // DB tables and triggers.
+        executeSQLResource("db-tables.sql");
+        executeSQLResource("db-triggers.sql");
+
+        // DB initial data.
+        executeSQLResource("db-security-states.sql");
+        executeSQLResource("db-common-alert-types.sql");
     }
 
     /**
      * Add the hstore extension to the postgres database.
      */
-    public static void createHstoreExtension() {
+    private static void createHstoreExtension() {
         logger.info("Adding hstore extension.");
         executeCommand("CREATE EXTENSION IF NOT EXISTS hstore;");
+    }
+
+    /**
+     * Inserts default device types and their information.
+     */
+    private static void setupDefaultDeviceTypes() {
+        // Device Type Specific configuration
+        executeSQLResource("deviceTypes/dlc.sql");
+        executeSQLResource("deviceTypes/phle.sql");
+        executeSQLResource("deviceTypes/unts.sql");
+        executeSQLResource("deviceTypes/wemo.sql");
+
+        // Device Type Config for all types
+        executeSQLResource("db-common-alert-type-lookups.sql");
+
+        // Device instances in use.
+        // executeSQLResource("db-devices.sql");
     }
 
     /**
@@ -412,38 +416,7 @@ public class Postgres {
      */
     public static void dropTables() {
         logger.info("Dropping tables.");
-        initDB("db-drop-tables.sql");
-    }
-
-
-    /**
-     * Reads from the specified file to initialize db
-     *
-     * @param fileName the file containing SQL commands to execute
-     */
-    public static void initDB(String fileName) {
-//        logger.info("\n\n"+fileName+"\n\n");
-        try {
-            InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
-            Scanner s = new Scanner(is);
-
-            String line, statement = "";
-            while (s.hasNextLine()) {
-                line = s.nextLine();
-                if (line.equals("") || line.equals(" ")) { // statements are white space delimited
-                    executeCommand(statement);
-                    statement = "";
-                } else {
-                    statement += line;
-                }
-            }
-            if (!statement.equals(""))
-                executeCommand(statement);
-        } catch (Exception e) {
-            logger.severe("Error initializing db:");
-            e.printStackTrace();
-        }
-
+        executeSQLResource("db-drop-tables.sql");
     }
 
     /**
@@ -5155,14 +5128,43 @@ public class Postgres {
         }
     }
 
+    /**
+     * Reads from the specified resource file
+     *
+     * @param fileName the file containing SQL commands to execute
+     */
+    private static void executeSQLResource(String fileName) {
+        System.out.println("Executing script from resource: " + fileName);
+        try {
+            InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
+            executeSQLScript(is);
+        } catch (Exception e) {
+            logger.severe("Error opening file: ");
+            e.printStackTrace();
+        }
+    }
+
     /***
      * Executes SQL from the given file.
      */
     public static void executeSQLFile(String fileName)
     {
-        System.out.println("Reading from file: "+fileName);
+        System.out.println("Executing script from file: " + fileName);
         try {
             InputStream is = new FileInputStream(fileName);
+            executeSQLScript(is);
+        } catch (Exception e) {
+            logger.severe("Error opening file: ");
+            e.printStackTrace();
+        }
+    }
+
+    /***
+     * Executes SQL from the given input stream.
+     */
+    private static void executeSQLScript(InputStream is)
+    {
+        try {
             Scanner s = new Scanner(is);
 
             String line, statement="";
@@ -5170,7 +5172,7 @@ public class Postgres {
                 line = s.nextLine();
                 if(line.equals("") || line.equals(" ")) {
                     Postgres.executeCommand(statement);
-                    statement="";
+                    statement = "";
                 } else {
                     statement += line;
                 }
@@ -5179,6 +5181,7 @@ public class Postgres {
                 Postgres.executeCommand(statement);
 
         } catch (Exception e) {
+            logger.severe("Error executing script: ");
             e.printStackTrace();
         }
     }

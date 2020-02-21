@@ -7,7 +7,7 @@ import edu.cmu.sei.kalki.db.models.UmboxImage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class UmboxImageTest extends AUsesDatabase {
     private static UmboxImage umboxImage;

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import edu.cmu.sei.kalki.db.models.Group;
 import org.junit.jupiter.api.Test;
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 public class GroupTest extends AUsesDatabase {
     private static Group group;

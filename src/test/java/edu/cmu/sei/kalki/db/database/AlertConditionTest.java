@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.HashMap;
 
 
-import edu.cmu.sei.ttg.kalki.models.*;
+import edu.cmu.sei.kalki.db.models.*;
 
 //@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AlertConditionTest extends AUsesDatabase {
