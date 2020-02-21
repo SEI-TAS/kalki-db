@@ -82,12 +82,27 @@ public class Postgres {
      * Initialize the singleton assuming the Config object has been loaded.
      */
     public static void initializeFromConfig() {
-        String host = Config.getValue("db_host");
-        String port = Config.getValue("db_port");
+        // Mandatory params, minimum need to connect to DB.
         String dbName = Config.getValue("db_name");
         String dbUser = Config.getValue("db_user");
-        String dbPassword = Config.getValue("db_password");
-        Postgres.initialize(host, port, dbName, dbUser, dbPassword);
+        String dbPass = Config.getValue("db_password");
+
+        // Optional params, only needed if one wants to re-create the DB and user.
+        String recreateDB = Config.getValue("db_recreate");
+        if(recreateDB != null && recreateDB.equals("true"))
+        {
+            String rootUser = Config.getValue("db_root_user");
+            String rootPassword = Config.getValue("db_root_password");
+            String dbHost = DEFAULT_IP;
+
+            // Recreate DB and user.
+            Postgres.removeDatabase(dbHost, rootUser, rootPassword, dbName);
+            Postgres.removeUser(dbHost, rootUser, rootPassword, dbUser);
+            Postgres.createUserIfNotExists(dbHost, rootUser, rootPassword, dbUser, dbPass);
+            Postgres.createDBIfNotExists(dbHost, rootUser, rootPassword, dbName, dbUser);
+        }
+
+        Postgres.initialize(dbName, dbUser, dbPass);
     }
 
     /**
@@ -158,14 +173,14 @@ public class Postgres {
     /**
      * Creates a DB if it does not exist.
      */
-    public static boolean createDBIfNotExists(String rootPassword, String dbName, String dbOwner) throws SQLException {
+    public static boolean createDBIfNotExists(String rootPassword, String dbName, String dbOwner) {
         return createDBIfNotExists(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, dbName, dbOwner);
     }
 
     /**
      * Creates a DB if it does not exist.
      */
-    public static boolean createDBIfNotExists(String ip, String rootUser, String rootPassword, String dbName, String dbOwner) throws SQLException {
+    public static boolean createDBIfNotExists(String ip, String rootUser, String rootPassword, String dbName, String dbOwner) {
         // First check it DB exists.
         String checkDB = "SELECT datname FROM pg_catalog.pg_database "
                 + "WHERE datname = '" + dbName + "';";
@@ -179,7 +194,6 @@ public class Postgres {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw e;
         }
         return false;
     }
