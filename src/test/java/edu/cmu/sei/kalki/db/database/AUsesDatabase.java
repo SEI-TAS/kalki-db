@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AUsesDatabase {
+    // Used to create DB only once, not once per each test class.
     private static boolean hasRun = false;
 
     @BeforeAll
@@ -32,6 +33,7 @@ public abstract class AUsesDatabase {
 
     @BeforeEach
     public void resetDB() {
+        Postgres.dropTables();
         Postgres.setupTables();
         insertData();
     }

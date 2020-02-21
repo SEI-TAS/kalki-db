@@ -49,12 +49,11 @@ public class PolicyRuleLogTest extends AUsesDatabase {
     }
 
     public void insertData() {
-        // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
-        device.insert();
-
         deviceType = new DeviceType(-1, "Device Type");
         deviceType.insert();
+
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device.insert();
 
         stateTransition = new StateTransition(1, 2);
         Postgres.insertStateTransition(stateTransition);

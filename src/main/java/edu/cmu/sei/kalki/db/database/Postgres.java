@@ -291,7 +291,6 @@ public class Postgres {
         return DriverManager.getConnection(POSTGRES_URL_SCHEMA + ip + ":" + DEFAULT_PORT + "/" + BASE_DB, connectionProps);
     }
 
-
     /**
      * Executes the given SQL command in the database, using the already set up, default connection.
      *
