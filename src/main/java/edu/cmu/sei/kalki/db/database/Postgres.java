@@ -63,14 +63,11 @@ public class Postgres {
             this.dbName = dbName;
             this.dbUser = dbUser;
             this.dbPassword = dbPassword;
-            while((this.dbConn = makeConnection(ip, port))==null) {
-                ProcessBuilder builder = new ProcessBuilder();
-                logger.info("Starting postgres container.");
-                builder.command("bash", "-c", "docker run -p 5432:5432 --net=kalki_nw --rm --name kalki-postgres -e POSTGRES_USER=kalkiuser -e POSTGRES_PASSWORD=kalkipass -e POSTGRES_DB=kalkidb -d postgres");
-                Process p = builder.start();
-                p.waitFor();
-                try { Thread.sleep(2000); } catch(Exception e) {}
+            while((this.dbConn = makeConnection(ip, port)) == null) {
+                logger.info("Waiting for DB engine to be available...");
+                try { Thread.sleep(1000); } catch(Exception e) {throw e;}
             }
+            logger.info("DB connection established.");
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error initializing postgres: " + e.getClass().getName() + ": " + e.getMessage());
@@ -305,25 +302,84 @@ public class Postgres {
      *
      * @param command SQL commmand string
      */
-    public static void executeCommand(String command, Connection connection) {
+    private static void executeCommand(String command, Connection connection) {
         if (connection == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            logger.info(String.format("Executing command: %s", command));
-            Statement st = null;
+            String message = "Trying to execute commands with null connection.";
+            logger.severe(message);
+            throw new RuntimeException(message);
+        }
+        logger.info(String.format("Executing command: %s", command));
+        Statement st = null;
+        try {
+            st = connection.createStatement();
+            st.execute(command);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error executing database command: '" + command + "' " +
+                    e.getClass().getName() + ": " + e.getMessage());
+        } finally {
             try {
-                st = connection.createStatement();
-                st.execute(command);
+                if (st != null) st.close();
             } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error executing database command: '" + command + "' " +
-                        e.getClass().getName() + ": " + e.getMessage());
-            } finally {
-                try {
-                    if (st != null) st.close();
-                } catch (Exception e) {
+            }
+        }
+    }
+
+    /**
+     * Reads from the specified resource file
+     *
+     * @param fileName the file containing SQL commands to execute
+     */
+    private static void executeSQLResource(String fileName) {
+        logger.info("Executing script from resource: " + fileName);
+        try {
+            InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
+            executeSQLScript(is);
+        } catch (Exception e) {
+            logger.severe("Error opening file: ");
+            e.printStackTrace();
+        }
+    }
+
+    /***
+     * Executes SQL from the given file.
+     */
+    public static void executeSQLFile(String fileName)
+    {
+        logger.info("Executing script from file: " + fileName);
+        try {
+            InputStream is = new FileInputStream(fileName);
+            executeSQLScript(is);
+        } catch (Exception e) {
+            logger.severe("Error opening file: ");
+            e.printStackTrace();
+        }
+    }
+
+    /***
+     * Executes SQL from the given input stream.
+     */
+    private static void executeSQLScript(InputStream is)
+    {
+        try {
+            Scanner s = new Scanner(is);
+
+            String line, statement="";
+            while(s.hasNextLine()){
+                line = s.nextLine();
+                if(line.equals("") || line.equals(" ")) {
+                    Postgres.executeCommand(statement);
+                    statement = "";
+                } else {
+                    statement += line;
                 }
             }
+            if (!statement.equals(""))
+                Postgres.executeCommand(statement);
+
+        } catch (Exception e) {
+            logger.severe("Error executing script: ");
+            e.printStackTrace();
         }
     }
 
@@ -393,13 +449,14 @@ public class Postgres {
     }
 
     private static int getTableCount() {
-        PreparedStatement st = null;
-        ResultSet rs = null;
+        checkDBConnection();
         try {
-            st = dbConn.prepareStatement("SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public'");
-            rs = st.executeQuery();
+            PreparedStatement st = dbConn.prepareStatement("SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public'");
+            ResultSet rs = st.executeQuery();
             if(rs.next()){
-                return rs.getInt("count");
+                int count = rs.getInt("count");
+                rs.close();
+                return count;
             }
         } catch (SQLException e){
             logger.severe("There was an getting the current table count: "+ e.getMessage());
@@ -420,6 +477,17 @@ public class Postgres {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
+     * Checks if the DB connection has been initializes, throws an exception if it has not.
+     */
+    private static void checkDBConnection() {
+        if (dbConn == null) {
+            String message = "Trying to execute commands with null connection. Initialize Postgres first!";
+            logger.severe(message);
+            throw new RuntimeException(message);
+        }
+    }
+
+    /**
      * Finds a database entry in a given table by id
      *
      * @param id        id of the entry to find
@@ -428,22 +496,16 @@ public class Postgres {
      */
     private static ResultSet findById(int id, String tableName) {
         logger.info(String.format("Finding by id = %d in %s", id, tableName));
-        PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
-            st = dbConn.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
+            PreparedStatement st = dbConn.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
             st.setInt(1, id);
             rs = st.executeQuery();
             // Moves the result set to the first row if it exists. Returns null otherwise.
             if (!rs.next()) {
                 return null;
             }
-            // closes rs. Need to close it somewhere else
-//            st.close();
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
@@ -459,7 +521,6 @@ public class Postgres {
      */
     private static int getLatestId(String tableName) {
         try {
-            int serialNum = 0;
             Statement stmt = dbConn.createStatement();
             String query = String.format("select currval('%s_id_seq')", tableName);
             ResultSet rs = stmt.executeQuery(query);
@@ -481,10 +542,7 @@ public class Postgres {
      */
     private static ResultSet getAllFromTable(String tableName) {
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             Statement st = dbConn.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName);
@@ -552,10 +610,7 @@ public class Postgres {
     public static List<Alert> findAlerts(List<String> alerterIds) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         List<Alert> alertHistory = new ArrayList<Alert>();
         for (String alerterId : alerterIds) {
             try {
@@ -597,10 +652,7 @@ public class Postgres {
     public static List<Alert> findAlertsByDevice(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         List<Alert> alertHistory = new ArrayList<Alert>();
 
         try {
@@ -667,10 +719,7 @@ public class Postgres {
      */
     public static Integer insertAlert(Alert alert) {
         logger.info("Inserting alert: " + alert.toString());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
 
         try {
             PreparedStatement insertAlert;
@@ -745,42 +794,40 @@ public class Postgres {
      */
     public static Integer updateAlert(Alert alert) {
         logger.info(String.format("Updating Alert with id = %d with values: %s", alert.getId(), alert));
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            try {
-                if (alert.getDeviceStatusId() == 0) {
-                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
-                            "SET name = ?, timestamp = ?, alerter_id = ?, device_id = ?, alert_type_id = ?, info = ? " +
-                            "WHERE id = ?");
-                    update.setString(1, alert.getName());
-                    update.setTimestamp(2, alert.getTimestamp());
-                    update.setString(3, alert.getAlerterId());
-                    update.setInt(4, alert.getDeviceId());
-                    update.setInt(5, alert.getAlertTypeId());
-                    update.setString(6, alert.getInfo());
-                    update.setInt(7, alert.getId());
-                    update.executeUpdate();
-                } else {
-                    PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
-                            "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, device_id = ?, alert_type_id = ?, info = ?" +
-                            "WHERE id = ?");
-                    update.setString(1, alert.getName());
-                    update.setTimestamp(2, alert.getTimestamp());
-                    update.setString(3, alert.getAlerterId());
-                    update.setInt(4, alert.getDeviceStatusId());
-                    update.setInt(5, alert.getDeviceId());
-                    update.setInt(6, alert.getAlertTypeId());
-                    update.setString(7, alert.getInfo());
-                    update.setInt(8, alert.getId());
-                    update.executeUpdate();
-                }
+        checkDBConnection();
 
-                return alert.getId();
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating Alert: " + e.getClass().toString() + ": " + e.getMessage());
+        try {
+            if (alert.getDeviceStatusId() == 0) {
+                PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
+                        "SET name = ?, timestamp = ?, alerter_id = ?, device_id = ?, alert_type_id = ?, info = ? " +
+                        "WHERE id = ?");
+                update.setString(1, alert.getName());
+                update.setTimestamp(2, alert.getTimestamp());
+                update.setString(3, alert.getAlerterId());
+                update.setInt(4, alert.getDeviceId());
+                update.setInt(5, alert.getAlertTypeId());
+                update.setString(6, alert.getInfo());
+                update.setInt(7, alert.getId());
+                update.executeUpdate();
+            } else {
+                PreparedStatement update = dbConn.prepareStatement("UPDATE alert " +
+                        "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, device_id = ?, alert_type_id = ?, info = ?" +
+                        "WHERE id = ?");
+                update.setString(1, alert.getName());
+                update.setTimestamp(2, alert.getTimestamp());
+                update.setString(3, alert.getAlerterId());
+                update.setInt(4, alert.getDeviceStatusId());
+                update.setInt(5, alert.getDeviceId());
+                update.setInt(6, alert.getAlertTypeId());
+                update.setString(7, alert.getInfo());
+                update.setInt(8, alert.getId());
+                update.executeUpdate();
             }
+
+            return alert.getId();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error updating Alert: " + e.getClass().toString() + ": " + e.getMessage());
         }
         return -1;
     }
@@ -810,10 +857,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         AlertCondition alertCondition = new AlertCondition();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
                     "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
@@ -840,10 +884,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<AlertCondition> alertConditionList = new ArrayList<AlertCondition>();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
                                          "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
@@ -869,10 +910,7 @@ public class Postgres {
     public static List<AlertCondition> findAlertConditionsByDevice(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         List<AlertCondition> conditionList = new ArrayList<AlertCondition>();
         try {
             st = dbConn.prepareStatement("SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
@@ -940,10 +978,7 @@ public class Postgres {
      */
     public static Integer insertAlertCondition(AlertCondition cond) {
         logger.info("Inserting alert condition for device: " + cond.getDeviceId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement insertAlertCondition = dbConn.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?)");
             insertAlertCondition.setObject(1, cond.getVariables());
@@ -966,10 +1001,7 @@ public class Postgres {
      */
     public static Integer insertAlertConditionForDevice(int id) {
         logger.info("Inserting alert conditions for device: " + id);
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
 
         Device d = findDevice(id);
         List<AlertTypeLookup> atlList = findAlertTypeLookupsByDeviceType(d.getType().getId());
@@ -992,10 +1024,7 @@ public class Postgres {
      */
     public static Integer updateAlertConditionsForDeviceType(AlertTypeLookup alertTypeLookup) {
         logger.info("Inserting alert conditions for device type: " + alertTypeLookup.getDeviceTypeId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
 
             List<Device> deviceList = findDevicesByType(alertTypeLookup.getDeviceTypeId());
@@ -1054,10 +1083,7 @@ public class Postgres {
     public static List<AlertType> findAlertTypesByDeviceType(int deviceTypeId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         List<AlertType> alertTypeList = new ArrayList<AlertType>();
         try {
             st = dbConn.prepareStatement("SELECT alert_type.id, alert_type.name, alert_type.description, alert_type.source " +
@@ -1096,10 +1122,7 @@ public class Postgres {
      * @return a list of AlertTypes
      */
     public static List<AlertType> findAllAlertTypes() {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         List<AlertType> alertTypeList = new ArrayList<AlertType>();
         try {
             ResultSet rs = getAllFromTable("alert_type");
@@ -1143,10 +1166,7 @@ public class Postgres {
      */
     public static Integer insertAlertType(AlertType type) {
         logger.info("Inserting alert type: " + type.getName());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement insertAlertType = dbConn.prepareStatement("INSERT INTO alert_type(name, description, source) VALUES (?,?,?);");
             insertAlertType.setString(1, type.getName());
@@ -1169,24 +1189,21 @@ public class Postgres {
      */
     public static Integer updateAlertType(AlertType type) {
         logger.info(String.format("Updating AlertType with id = %d with values: %s", type.getId(), type));
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            try {
-                PreparedStatement update = dbConn.prepareStatement("UPDATE alert_type " +
-                        "SET name = ?, description = ?, source = ?" +
-                        "WHERE id = ?");
-                update.setString(1, type.getName());
-                update.setString(2, type.getDescription());
-                update.setString(3, type.getSource());
-                update.setInt(4, type.getId());
-                update.executeUpdate();
+        checkDBConnection();
+        try {
+            PreparedStatement update = dbConn.prepareStatement("UPDATE alert_type " +
+                    "SET name = ?, description = ?, source = ?" +
+                    "WHERE id = ?");
+            update.setString(1, type.getName());
+            update.setString(2, type.getDescription());
+            update.setString(3, type.getSource());
+            update.setInt(4, type.getId());
+            update.executeUpdate();
 
-                return type.getId();
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
-            }
+            return type.getId();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
         }
         return -1;
     }
@@ -1215,22 +1232,19 @@ public class Postgres {
      */
     public static Boolean deleteAlertType(int id) {
         logger.info(String.format("Deleting AlertType with id = %d", id));
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            try {
-                PreparedStatement deleteAlertTypeLookup = dbConn.prepareStatement("DELETE FROM alert_type_lookup WHERE alert_type_id = ?");
-                deleteAlertTypeLookup.setInt(1, id);
-                deleteAlertTypeLookup.executeUpdate();
+        checkDBConnection();
+        try {
+            PreparedStatement deleteAlertTypeLookup = dbConn.prepareStatement("DELETE FROM alert_type_lookup WHERE alert_type_id = ?");
+            deleteAlertTypeLookup.setInt(1, id);
+            deleteAlertTypeLookup.executeUpdate();
 
-                PreparedStatement deleteAlertType = dbConn.prepareStatement("DELETE FROM alert_type WHERE id = ?");
-                deleteAlertType.setInt(1, id);
-                deleteAlertType.executeUpdate();
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
-            }
+            PreparedStatement deleteAlertType = dbConn.prepareStatement("DELETE FROM alert_type WHERE id = ?");
+            deleteAlertType.setInt(1, id);
+            deleteAlertType.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
         }
         return false;
     }
@@ -1260,10 +1274,7 @@ public class Postgres {
         ResultSet rs = null;
         PreparedStatement st = null;
         List<AlertTypeLookup> atlList = new ArrayList<AlertTypeLookup>();
-        if(dbConn == null){
-            logger.severe("Tyring to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try{
             st = dbConn.prepareStatement("Select * from alert_type_lookup WHERE device_type_id=?");
             st.setInt(1, typeId);
@@ -1323,10 +1334,7 @@ public class Postgres {
      */
     public static int insertAlertTypeLookup(AlertTypeLookup atl){
         logger.info("Inserting AlertTypeLookup: " + atl.toString());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement insertAtl = dbConn.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?)");
             insertAtl.setInt(1, atl.getAlertTypeId());
@@ -1348,9 +1356,7 @@ public class Postgres {
      */
     public static int updateAlertTypeLookup(AlertTypeLookup atl){
         logger.info("Updating AlertTypeLookup; atlId: " +atl.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        }
+        checkDBConnection();
         try {
             PreparedStatement updateAtl = dbConn.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ?, variables = ? WHERE id = ?");
             updateAtl.setInt(1, atl.getAlertTypeId());
@@ -1405,10 +1411,7 @@ public class Postgres {
 
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement(String.format("SELECT * FROM command WHERE id = ?"));
             st.setInt(1, id);
@@ -1456,10 +1459,7 @@ public class Postgres {
     public static List<DeviceCommand> findCommandsByPolicyRuleLog(int policyRuleId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
 
@@ -1524,10 +1524,7 @@ public class Postgres {
      */
     public static Integer insertCommand(DeviceCommand command) {
         logger.info("Inserting command: " + command.getName());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement insertCommand = dbConn.prepareStatement("INSERT INTO command(name, device_type_id) VALUES (?,?);");
             insertCommand.setString(1, command.getName());
@@ -1548,9 +1545,7 @@ public class Postgres {
      */
     public static Integer updateCommand(DeviceCommand command) {
         logger.info("Updating command; commandId: " +command.getId()+ " name: " +command.getName());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        }
+        checkDBConnection();
         try {
             PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command SET name = ?, device_type_id = ? WHERE id = ?");
             updatecommand.setString(1, command.getName());
@@ -1610,10 +1605,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<DeviceCommandLookup> lookupList = new ArrayList<DeviceCommandLookup>();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
 
             st = dbConn.prepareStatement("SELECT cl.* FROM command_lookup cl, device d, command c " +
@@ -1653,10 +1645,11 @@ public class Postgres {
      * Extract a Command from the result set of a database query.
      *
      * @param rs ResultSet from a CommandLookup query.
-     * @return The command.
+     * @return The command, or null if it was not found.
      */
     private static DeviceCommandLookup rsToCommandLookup(ResultSet rs) {
         DeviceCommandLookup commandLookup = null;
+        if(rs == null) { return null; }
         try {
             int id = rs.getInt("id");
             int commandId = rs.getInt("command_id");
@@ -1676,10 +1669,7 @@ public class Postgres {
      */
     public static int insertCommandLookup(DeviceCommandLookup commandLookup) {
         logger.info("Inserting command lookup; commandId: "+ commandLookup.getCommandId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement insertCommandLookup =
                     dbConn.prepareStatement("INSERT INTO command_lookup(command_id, policy_rule_id) VALUES (?,?)");
@@ -1718,9 +1708,7 @@ public class Postgres {
 
     public static Integer updateCommandLookup(DeviceCommandLookup commandLookup) {
         logger.info("Updating command lookup; commandId: " +commandLookup.getCommandId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        }
+        checkDBConnection();
         try {
             PreparedStatement updatecommand = dbConn.prepareStatement("UPDATE command_lookup SET command_id = ?, policy_rule_id = ? WHERE id = ?");
             updatecommand.setInt(1, commandLookup.getCommandId());
@@ -1780,10 +1768,7 @@ public class Postgres {
      * @return a list of all Devices in the database.
      */
     public static List<Device> findAllDevices() {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         List<Device> devices = new ArrayList<Device>();
         try {
             ResultSet rs = getAllFromTable("device");
@@ -1814,10 +1799,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<Device> devices = new ArrayList<Device>();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM device WHERE group_id = ?");
             st.setInt(1, groupId);
@@ -1858,10 +1840,7 @@ public class Postgres {
     public static Device findDeviceByDeviceSecurityState(int dssId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try{
             st = dbConn.prepareStatement("SELECT device_id FROM device_security_state WHERE id = ?");
             st.setInt(1, dssId);
@@ -1887,12 +1866,7 @@ public class Postgres {
      * @return the Device associated with the alert
      */
     public static Device findDeviceByAlert(Alert alert) {
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         if (alert.getDeviceId() != null) {
             return findDevice(alert.getDeviceId());
         } else {
@@ -1912,10 +1886,7 @@ public class Postgres {
         ResultSet rs = null;
         List<Device> deviceList = new ArrayList<Device>();
 
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
 
             st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
@@ -1985,10 +1956,7 @@ public class Postgres {
      */
     public static Device insertDevice(Device device) {
         logger.info("Inserting device: " + device);
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
@@ -2078,42 +2046,39 @@ public class Postgres {
      */
     public static Device updateDevice(Device device) {
         logger.info(String.format("Updating Device with id = %d with values: %s", device.getId(), device));
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            try {
-                // Delete existing tags
-                executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
+        checkDBConnection();
+        try {
+            // Delete existing tags
+            executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
-                PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
-                        "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ? " +
-                        "WHERE id = ?");
-                update.setString(1, device.getName());
-                update.setString(2, device.getDescription());
-                update.setInt(3, device.getType().getId());
-                if (device.getGroup() != null)
-                    update.setInt(4, device.getGroup().getId());
-                else
-                    update.setObject(4, null);
-                update.setString(5, device.getIp());
-                update.setInt(6, device.getStatusHistorySize());
-                update.setInt(7, device.getSamplingRate());
+            PreparedStatement update = dbConn.prepareStatement("UPDATE device " +
+                    "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ? " +
+                    "WHERE id = ?");
+            update.setString(1, device.getName());
+            update.setString(2, device.getDescription());
+            update.setInt(3, device.getType().getId());
+            if (device.getGroup() != null)
+                update.setInt(4, device.getGroup().getId());
+            else
+                update.setObject(4, null);
+            update.setString(5, device.getIp());
+            update.setInt(6, device.getStatusHistorySize());
+            update.setInt(7, device.getSamplingRate());
 
-                update.setInt(8, device.getId());
-                update.executeUpdate();
+            update.setInt(8, device.getId());
+            update.executeUpdate();
 
-                // Insert tags into device_tag
-                List<Integer> tagIds = device.getTagIds();
-                if (tagIds != null) {
-                    for (int tagId : tagIds) {
-                        executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
-                    }
+            // Insert tags into device_tag
+            List<Integer> tagIds = device.getTagIds();
+            if (tagIds != null) {
+                for (int tagId : tagIds) {
+                    executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
                 }
-                return device;
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
             }
+            return device;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return null;
     }
@@ -2149,9 +2114,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs;
 
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        }
+        checkDBConnection();
         try {
 
             st = dbConn.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;");
@@ -2198,10 +2161,7 @@ public class Postgres {
     public static List<DeviceStatus> findDeviceStatuses(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ?");
             st.setInt(1, deviceId);
@@ -2244,10 +2204,7 @@ public class Postgres {
     public static List<DeviceStatus> findNDeviceStatuses(int deviceId, int N) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             logger.info("Finding last " + N + "device statuses for device: " + deviceId);
             st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT ?");
@@ -2292,10 +2249,7 @@ public class Postgres {
     public static List<DeviceStatus> findSubsetNDeviceStatuses(int deviceId, int numStatuses, int startingId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             logger.info("Finding "+numStatuses+" previous statuses from id: "+startingId);
             st = dbConn.prepareStatement("SELECT * FROM device_status WHERE id < ? AND device_id = ? ORDER BY id DESC LIMIT ?");
@@ -2338,10 +2292,7 @@ public class Postgres {
     public static List<DeviceStatus> findDeviceStatusesOverTime(int deviceId, Timestamp startingTime, int period, String timeUnit) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             String interval = String.valueOf(period)+" "+timeUnit;
             st = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between (?::timestamp - (?::interval)) and ?::timestamp");
@@ -2390,10 +2341,7 @@ public class Postgres {
     public static Map<Device, DeviceStatus> findDeviceStatusesByType(int typeId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         Map<Device, DeviceStatus> deviceStatusMap = new HashMap<Device, DeviceStatus>();
         try {
             st = dbConn.prepareStatement("SELECT * FROM device WHERE type_id = ?");
@@ -2443,10 +2391,7 @@ public class Postgres {
     public static Map<Device, DeviceStatus> findDeviceStatusesByGroup(int groupId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         Map<Device, DeviceStatus> deviceStatusMap = new HashMap<Device, DeviceStatus>();
         try {
             st = dbConn.prepareStatement("SELECT * FROM device WHERE group_id = ?");
@@ -2535,10 +2480,7 @@ public class Postgres {
      */
     public static Integer insertDeviceStatus(DeviceStatus deviceStatus) {
         logger.info("Inserting device_status: " + deviceStatus.toString());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO device_status(device_id, timestamp, attributes) values(?,?,?)");
@@ -2579,10 +2521,7 @@ public class Postgres {
      */
     public static Integer updateDeviceStatus(DeviceStatus deviceStatus) {
         logger.info("Updating DeviceStatus with id=" + deviceStatus.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("UPDATE device_status SET device_id = ?, attributes = ?, timestamp = ? " +
@@ -2682,10 +2621,7 @@ public class Postgres {
      */
     public static Integer insertGroup(Group group) {
         logger.info("Inserting group: " + group.getName());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO device_group(name)" +
@@ -2707,10 +2643,7 @@ public class Postgres {
      */
     public static Integer updateGroup(Group group) {
         logger.info("Updating Group with id=" + group.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("UPDATE device_group SET name = ?" +
@@ -2769,11 +2702,7 @@ public class Postgres {
      * @return
      */
     public static PolicyRule findPolicyRule(int stateTransId, int policyCondId, int devTypeId) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy_rule WHERE " +
                     "state_trans_id = ? AND " +
@@ -2800,10 +2729,7 @@ public class Postgres {
      * @return
      */
     public static List<PolicyRule> findPolicyRules(int devTypeId) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
 
         try {
             PreparedStatement query = dbConn.prepareStatement("SELECT * " +
@@ -2851,11 +2777,7 @@ public class Postgres {
      * @return Row's id on success. -1 otherwise
      */
     public static Integer insertPolicyRule(PolicyRule policyRule) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?)");
             insert.setInt(1, policyRule.getStateTransId());
@@ -2877,17 +2799,13 @@ public class Postgres {
      * @return The id of the given policy on success. -1 otherwise
      */
     public static Integer updatePolicyRule(PolicyRule policyRule) {
-        if (dbConn == null) {
-           logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-           return -1;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement("UPDATE policy_rule SET " +
                     "state_trans_id = ? " +
-                    "policy_cond_id = ? " +
-                    "device_type_id = ? " +
-                    "sampling_rate = ? " +
+                    ", policy_cond_id = ? " +
+                    ", device_type_id = ? " +
+                    ", sampling_rate = ? " +
                     "WHERE id = ?");
             update.setInt(1, policyRule.getStateTransId());
             update.setInt(2, policyRule.getPolicyCondId());
@@ -2922,13 +2840,10 @@ public class Postgres {
      * @return A PolicyCondition obj. Null otherwise
      */
     public static PolicyCondition findPolicyCondition(int id) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
-
+        checkDBConnection();
         try {
             PolicyCondition policyCondition = rsToPolicyCondition(findById(id,"policy_condition"));
+            if(policyCondition == null) { return null; }
             PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy_condition_alert WHERE policy_cond_id = ?");
             query.setInt(1, policyCondition.getId());
             ResultSet rs = query.executeQuery();
@@ -2941,7 +2856,7 @@ public class Postgres {
 
             return policyCondition;
         } catch (Exception e) {
-            logger.severe("Error converting rs to PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
+            logger.severe("Error finding PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
 
@@ -2955,6 +2870,7 @@ public class Postgres {
      */
     public static PolicyCondition rsToPolicyCondition(ResultSet rs) {
         PolicyCondition policyCondition = null;
+        if(rs == null) { return null; }
         try {
             int id = rs.getInt("id");
             int threshold = rs.getInt("threshold");
@@ -2972,11 +2888,7 @@ public class Postgres {
      * @return
      */
     public static Integer insertPolicyCondition(PolicyCondition policyCondition) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_condition(threshold) VALUES(?)");
             insert.setInt(1, policyCondition.getThreshold());
@@ -3007,11 +2919,7 @@ public class Postgres {
      * @return the condition's id on succes; -1 on failure
      */
     public static Integer updatePolicyCondition(PolicyCondition policyCondition) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
             // Update PolicyCondition table
             PreparedStatement update = dbConn.prepareStatement("UPDATE policy_condition SET threshold = ? WHERE id = ?");
@@ -3084,6 +2992,7 @@ public class Postgres {
      */
     private static PolicyRuleLog rsToPolicyRuleLog(ResultSet rs) {
         PolicyRuleLog inst = null;
+        if(rs == null) { return null; }
         try {
             int id = rs.getInt("id");
             int policyRuleId = rs.getInt("policy_rule_id");
@@ -3104,11 +3013,7 @@ public class Postgres {
      * @return
      */
     public static Integer insertPolicyRuleLog(PolicyRuleLog policyRuleLog) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement insert = dbConn.prepareStatement("INSERT INTO policy_rule_log(policy_rule_id, device_id, timestamp) VALUES(?,?,?)");
             insert.setInt(1, policyRuleLog.getPolicyRuleId());
@@ -3165,11 +3070,7 @@ public class Postgres {
      * @return Row's id on success. -1 otherwise
      */
     public static Integer insertStateTransition(StateTransition trans) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement insert = dbConn.prepareStatement("INSERT INTO state_transition(start_sec_state_id, finish_sec_state_id) VALUES(?,?)");
             insert.setInt(1, trans.getStartStateId());
@@ -3189,11 +3090,7 @@ public class Postgres {
      * @return The id of the given transition on success. -1 otherwise
      */
     public static Integer updateStateTransition(StateTransition trans) {
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement("UPDATE state_transition SET " +
                     "start_sec_state_id = ? " +
@@ -3236,11 +3133,7 @@ public class Postgres {
         DeviceSecurityState dss = null;
 
         logger.info("Finding device security state with id: " + id);
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
-
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
                     "FROM device_security_state dss, security_state ss " +
@@ -3279,10 +3172,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<DeviceSecurityState> stateList = new ArrayList<>();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id");
             rs = st.executeQuery();
@@ -3306,10 +3196,7 @@ public class Postgres {
         ResultSet rs = null;
         DeviceSecurityState ss = new DeviceSecurityState();
 
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
 
         try {
             st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
@@ -3357,26 +3244,19 @@ public class Postgres {
      * @return
      */
     public static int findPreviousDeviceSecurityStateId(Device device) {
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        if(dbConn == null)  {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
-
+        checkDBConnection();
         try {
-            st = dbConn.prepareStatement("SELECT dss.state_id AS state_id " +
+            PreparedStatement st = dbConn.prepareStatement("SELECT dss.state_id AS state_id " +
                     "FROM device_security_state dss " +
                     "WHERE dss.device_id=? AND dss.id < ? " +
                     "ORDER BY dss.id DESC " +
                     "LIMIT 1");
             st.setInt(1, device.getId());
             st.setInt(2, device.getCurrentState().getId());
-            rs = st.executeQuery();
+            ResultSet rs = st.executeQuery();
 
             if(rs.next()){
-                int id = rs.getInt("state_id");
-                return id;
+                return rs.getInt("state_id");
             } else {
                 logger.info("Only 1 device security state entered for device with id: "+device.getId());
                 return -1;
@@ -3400,10 +3280,7 @@ public class Postgres {
         ResultSet rs = null;
         List<DeviceSecurityState> deviceStateList = new ArrayList<DeviceSecurityState>();
 
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
                     "FROM device_security_state dss, security_state ss " +
@@ -3470,10 +3347,7 @@ public class Postgres {
         PreparedStatement insert = null;
         ResultSet rs = null;
 
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             insert = dbConn.prepareStatement
                     ("INSERT INTO device_security_state(device_id, timestamp, state_id) " +
@@ -3574,10 +3448,7 @@ public class Postgres {
      */
     public static Integer insertSecurityState(SecurityState state) {
         logger.info("Inserting SecurityState");
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO security_state(name)" +
@@ -3600,10 +3471,7 @@ public class Postgres {
      */
     public static Integer updateSecurityState(SecurityState state) {
         logger.info("Updating SecurityState with id=" + state.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("UPDATE security_state SET name = ?" +
@@ -3787,10 +3655,7 @@ public class Postgres {
      */
     public static Integer insertTag(Tag tag) {
         logger.info("Inserting Tag: " + tag.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO tag(name)" +
@@ -3812,10 +3677,7 @@ public class Postgres {
      */
     public static Integer updateTag(Tag tag) {
         logger.info("Updating Tag with id=" + tag.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("UPDATE tag SET name = ?" +
@@ -3948,10 +3810,7 @@ public class Postgres {
      */
     public static Integer insertDeviceType(DeviceType type) {
         logger.info("Inserting DeviceType: " + type.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("INSERT INTO device_type(name, policy_file, policy_file_name)" +
@@ -3975,10 +3834,7 @@ public class Postgres {
      */
     public static Integer updateDeviceType(DeviceType type) {
         logger.info("Updating DeviceType with id=" + type.getId());
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return -1;
-        }
+        checkDBConnection();
         try {
             PreparedStatement update = dbConn.prepareStatement
                     ("UPDATE device_type SET name = ?, policy_file = ?, policy_file_name = ?" +
@@ -4051,10 +3907,7 @@ public class Postgres {
     public static List<UmboxImage> findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT ui.id, ui.name, ui.file_name, ul.dag_order " +
                     "FROM umbox_image ui, umbox_lookup ul " +
@@ -4248,10 +4101,7 @@ public class Postgres {
     public static UmboxInstance findUmboxInstance(String alerterId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement(String.format("SELECT * FROM umbox_instance WHERE alerter_id = ?"));
             st.setString(1, alerterId);
@@ -4285,10 +4135,7 @@ public class Postgres {
     public static List<UmboxInstance> findUmboxInstances(int deviceId) {
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?");
             st.setInt(1, deviceId);
@@ -4423,10 +4270,7 @@ public class Postgres {
         logger.info("Finding umboxLookup with id = " + id);
         PreparedStatement st = null;
         ResultSet rs = null;
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM umbox_lookup WHERE id = ?");
             st.setInt(1, id);
@@ -4449,10 +4293,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<UmboxLookup> lookupList = new ArrayList<UmboxLookup>();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d, policy_rule p " +
                     "WHERE ul.policy_rule_id = p.id AND p.device_type_id = d.type_id AND d.id = ?;");
@@ -4543,25 +4384,22 @@ public class Postgres {
      */
     public static Integer updateUmboxLookup(UmboxLookup ul) {
         logger.info(String.format("Updating UmboxLookup with id = %d with values: %s", ul.getId(), ul));
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        } else {
-            try {
-                PreparedStatement update = dbConn.prepareStatement("UPDATE umbox_lookup " +
-                        "SET policy_" +
-                        "rule_id = ?, umbox_image_id = ?, dag_order = ?" +
-                        "WHERE id = ?");
-                update.setInt(1, ul.getPolicyRuleId());
-                update.setInt(2, ul.getUmboxImageId());
-                update.setInt(3, ul.getDagOrder());
-                update.setInt(4, ul.getId());
-                update.executeUpdate();
+        checkDBConnection();
+        try {
+            PreparedStatement update = dbConn.prepareStatement("UPDATE umbox_lookup " +
+                    "SET policy_" +
+                    "rule_id = ?, umbox_image_id = ?, dag_order = ?" +
+                    "WHERE id = ?");
+            update.setInt(1, ul.getPolicyRuleId());
+            update.setInt(2, ul.getUmboxImageId());
+            update.setInt(3, ul.getDagOrder());
+            update.setInt(4, ul.getId());
+            update.executeUpdate();
 
-                return ul.getId();
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe("Error updating UmboxLookup: " + e.getClass().toString() + ": " + e.getMessage());
-            }
+            return ul.getId();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Error updating UmboxLookup: " + e.getClass().toString() + ": " + e.getMessage());
         }
         return -1;
     }
@@ -4614,10 +4452,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<UmboxLog> umboxLogList = new ArrayList<>();
-        if(dbConn == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM umbox_log");
             rs = st.executeQuery();
@@ -4642,10 +4477,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<UmboxLog> umboxLogList = new ArrayList<>();
-        if(dbConn == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM umbox_log WHERE alerter_id = ?");
             st.setString(1, alerter_id);
@@ -4665,10 +4497,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<UmboxLog> logList = new ArrayList<>();
-        if(dbConn == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT log.* FROM umbox_log AS log, umbox_instance AS inst WHERE " +
                     "inst.device_id = ? AND inst.alerter_id = log.alerter_id " +
@@ -4755,10 +4584,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<StageLog> stageLogList = new ArrayList<>();
-        if (dbConn == null) {
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT * FROM stage_log ORDER BY timestamp ASC");
             rs = st.executeQuery();
@@ -4783,10 +4609,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<StageLog> stageLogList = new ArrayList<>();
-        if(dbConn == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-            return null;
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT sl.id, sl.device_sec_state_id, sl.timestamp, sl.action, sl.stage, sl.info " +
                     "FROM stage_log sl, device_security_state dss " +
@@ -4807,9 +4630,7 @@ public class Postgres {
         PreparedStatement st = null;
         ResultSet rs = null;
         List<String> actions = new ArrayList<>();
-        if(dbConn == null){
-            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-        }
+        checkDBConnection();
         try {
             st = dbConn.prepareStatement("SELECT action FROM stage_log WHERE stage=?");
             st.setString(1, StageLog.Stage.FINISH.convert());
@@ -4997,68 +4818,6 @@ public class Postgres {
             return newStatuses;
         } else {
             return null;
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Methods for executing scripts.
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Reads from the specified resource file
-     *
-     * @param fileName the file containing SQL commands to execute
-     */
-    private static void executeSQLResource(String fileName) {
-        System.out.println("Executing script from resource: " + fileName);
-        try {
-            InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
-            executeSQLScript(is);
-        } catch (Exception e) {
-            logger.severe("Error opening file: ");
-            e.printStackTrace();
-        }
-    }
-
-    /***
-     * Executes SQL from the given file.
-     */
-    public static void executeSQLFile(String fileName)
-    {
-        System.out.println("Executing script from file: " + fileName);
-        try {
-            InputStream is = new FileInputStream(fileName);
-            executeSQLScript(is);
-        } catch (Exception e) {
-            logger.severe("Error opening file: ");
-            e.printStackTrace();
-        }
-    }
-
-    /***
-     * Executes SQL from the given input stream.
-     */
-    private static void executeSQLScript(InputStream is)
-    {
-        try {
-            Scanner s = new Scanner(is);
-
-            String line, statement="";
-            while(s.hasNextLine()){
-                line = s.nextLine();
-                if(line.equals("") || line.equals(" ")) {
-                    Postgres.executeCommand(statement);
-                    statement = "";
-                } else {
-                    statement += line;
-                }
-            }
-            if (!statement.equals(""))
-                Postgres.executeCommand(statement);
-
-        } catch (Exception e) {
-            logger.severe("Error executing script: ");
-            e.printStackTrace();
         }
     }
 }

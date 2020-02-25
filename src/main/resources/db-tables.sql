@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS policy_condition(
 
 CREATE TABLE IF NOT EXISTS policy_rule(
     id              serial PRIMARY KEY,
-    state_trans_id   int NOT NULL REFERENCES state_transition(id) ON DELETE CASCADE,
+    state_trans_id  int NOT NULL REFERENCES state_transition(id) ON DELETE CASCADE,
     policy_cond_id  int NOT NULL REFERENCES policy_condition(id) ON DELETE CASCADE,
     device_type_id  int NOT NULL REFERENCES device_type(id)      ON DELETE CASCADE,
     sampling_rate   int NOT NULL,

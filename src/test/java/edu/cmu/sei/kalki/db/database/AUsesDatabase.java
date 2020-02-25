@@ -3,13 +3,17 @@ package edu.cmu.sei.kalki.db.database;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.util.logging.Level;
+
 public abstract class AUsesDatabase {
     // Used to create DB only once, not once per each test class.
     private static boolean hasRun = false;
 
     @BeforeAll
     public static void initializeDB() {
+        //System.out.println("Checking if Test DB has already been setup: " + hasRun);
         if (!hasRun) {
+            System.out.println("Initial Test DB setup.");
             String rootPassword = "kalkipass";  //based on run script
             String dbName = "kalkidb_test";
             String dbUser = "kalkiuser_test";
@@ -17,6 +21,7 @@ public abstract class AUsesDatabase {
 
             try {
                 // Recreate DB and user.
+                Postgres.setLoggingLevel(Level.SEVERE);
                 Postgres.removeDatabase(rootPassword, dbName);
                 Postgres.removeUser(rootPassword, dbUser);
                 Postgres.createUserIfNotExists(rootPassword, dbUser, dbPass);
@@ -25,7 +30,8 @@ public abstract class AUsesDatabase {
                 //initialize test DB
                 Postgres.initialize(dbName, dbUser, dbPass);
             } catch (Exception e) {
-                System.out.println(e);
+                System.out.println("Error with initial test DB setup: " + e.toString());
+                e.printStackTrace();
             }
             hasRun = true;
         }
@@ -33,6 +39,7 @@ public abstract class AUsesDatabase {
 
     @BeforeEach
     public void resetDB() {
+        //System.out.println("Resetting Test DB.");
         Postgres.dropTables();
         Postgres.setupTables();
         insertData();

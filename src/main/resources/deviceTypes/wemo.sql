@@ -6,7 +6,7 @@ INSERT INTO device_type(name) values ('WeMo Insight');
 ----------------------------------------------
 -- Commands that apply to this device type.
 ----------------------------------------------
-INSERT INTO command(name, device_type_id) values ('turn-off', (SELECT id FROM device_type WHERE name='WeMo Insight'));
+INSERT INTO command(name, device_type_id) values ('turn-off', (SELECT dt.id FROM device_type AS dt WHERE dt.name='WeMo Insight'));
 
 ----------------------------------------------
 -- Alert types specifically for this dev type.

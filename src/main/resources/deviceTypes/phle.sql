@@ -6,9 +6,9 @@ INSERT INTO device_type(name) values ('Philips Hue Light Emulator');
 ----------------------------------------------
 -- Commands that apply to this device type.
 ----------------------------------------------
-INSERT INTO command(name, device_type_id) values ('turn-off', (SELECT id FROM device_type WHERE name='Philips Hue Light Emulator'));
+INSERT INTO command(name, device_type_id) values ('turn-on',  (SELECT dt.id FROM device_type AS dt WHERE dt.name = 'Philips Hue Light Emulator'));
 
-INSERT INTO command(name, device_type_id) values ('turn-on', (SELECT id FROM device_type WHERE name='Philips Hue Light Emulator'));
+INSERT INTO command(name, device_type_id) values ('turn-off', (SELECT dt.id FROM device_type AS dt WHERE dt.name = 'Philips Hue Light Emulator'));
 
 ----------------------------------------------
 -- Alert types specifically for this dev type.
