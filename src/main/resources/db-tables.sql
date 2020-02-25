@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS device(
 
 CREATE TABLE IF NOT EXISTS device_tag(
     device_id    int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
-    tag_id       int NOT NULL REFERENCES tag(id),
+    tag_id       int NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
     PRIMARY KEY (device_id, tag_id)
 );
 
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS umbox_instance(
 CREATE TABLE IF NOT EXISTS alert_type_lookup(
     id                 serial PRIMARY KEY,
     variables          hstore,
-    alert_type_id      int REFERENCES alert_type(id),
+    alert_type_id      int REFERENCES alert_type(id) ON DELETE CASCADE,
     device_type_id     int REFERENCES device_type(id)
 );
 
