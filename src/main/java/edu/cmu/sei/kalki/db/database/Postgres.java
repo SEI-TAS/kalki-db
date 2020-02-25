@@ -31,6 +31,7 @@ import org.postgresql.util.HStoreConverter;
 import org.postgresql.util.PSQLException;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.io.InputStream;
@@ -68,7 +69,7 @@ public class Postgres {
                 try { Thread.sleep(1000); } catch(Exception e) {throw e;}
             }
             logger.info("DB connection established.");
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
             logger.severe("Error initializing postgres: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -132,11 +133,7 @@ public class Postgres {
      * WARNING
      */
     public static void setLoggingLevel(Level lvl) {
-        try {
-            logger.setLevel(lvl);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        logger.setLevel(lvl);
     }
 
     /**
@@ -150,7 +147,7 @@ public class Postgres {
             dbConn = DriverManager
                     .getConnection(POSTGRES_URL_SCHEMA + ip + ":" + port + "/" + this.dbName, this.dbUser, this.dbPassword);
             return dbConn;
-        } catch (Exception e) {
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             logger.severe("Error connecting to database : " + e.getClass().getName() + ": " + e.getMessage());
             return null;
@@ -313,14 +310,14 @@ public class Postgres {
         try {
             st = connection.createStatement();
             st.execute(command);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error executing database command: '" + command + "' " +
                     e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
     }
@@ -332,13 +329,8 @@ public class Postgres {
      */
     private static void executeSQLResource(String fileName) {
         logger.info("Executing script from resource: " + fileName);
-        try {
-            InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
-            executeSQLScript(is);
-        } catch (Exception e) {
-            logger.severe("Error opening file: ");
-            e.printStackTrace();
-        }
+        InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
+        executeSQLScript(is);
     }
 
     /***
@@ -350,7 +342,7 @@ public class Postgres {
         try {
             InputStream is = new FileInputStream(fileName);
             executeSQLScript(is);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.severe("Error opening file: ");
             e.printStackTrace();
         }
@@ -361,26 +353,21 @@ public class Postgres {
      */
     private static void executeSQLScript(InputStream is)
     {
-        try {
-            Scanner s = new Scanner(is);
+        Scanner s = new Scanner(is);
 
-            String line, statement="";
-            while(s.hasNextLine()){
-                line = s.nextLine();
-                if(line.equals("") || line.equals(" ")) {
-                    Postgres.executeCommand(statement);
-                    statement = "";
-                } else {
-                    statement += line;
-                }
-            }
-            if (!statement.equals(""))
+        String line, statement="";
+        while(s.hasNextLine()){
+            line = s.nextLine();
+            if(line.equals("") || line.equals(" ")) {
                 Postgres.executeCommand(statement);
-
-        } catch (Exception e) {
-            logger.severe("Error executing script: ");
-            e.printStackTrace();
+                statement = "";
+            } else {
+                statement += line;
+            }
         }
+        if (!statement.equals(""))
+            Postgres.executeCommand(statement);
+
     }
 
     /**
@@ -527,7 +514,7 @@ public class Postgres {
             if (rs.next()) {
                 return rs.getInt(1);
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error getting most recent in table: " + tableName);
         }
@@ -546,7 +533,7 @@ public class Postgres {
         try {
             Statement st = dbConn.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error getting all entries: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -574,7 +561,7 @@ public class Postgres {
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return false;
@@ -622,21 +609,19 @@ public class Postgres {
                 }
             } catch (SQLException e) {
                 logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
-            } catch (Exception e) {
                 e.printStackTrace();
-                logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
             } finally {
                 try {
                     if (rs != null) {
                         rs.close();
                     }
-                } catch (Exception e) {
+                } catch (SQLException e) {
                 }
                 try {
                     if (st != null) {
                         st.close();
                     }
-                } catch (Exception e) {
+                } catch (SQLException e) {
                 }
             }
         }
@@ -664,21 +649,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting all alert histories: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting alert histories: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return alertHistory;
@@ -703,7 +686,7 @@ public class Postgres {
             String info = "";
             try { info = rs.getString("info"); }catch (PSQLException e1) { }
             alert = new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId, info);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Alert: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -825,7 +808,7 @@ public class Postgres {
             }
 
             return alert.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating Alert: " + e.getClass().toString() + ": " + e.getMessage());
         }
@@ -868,7 +851,7 @@ public class Postgres {
                 alertCondition = rsToAlertCondition(rs);
             }
             rs.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error getting all AlertConditions: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -894,7 +877,7 @@ public class Postgres {
                 alertConditionList.add(rsToAlertCondition(rs));
             }
             rs.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error getting all AlertConditions: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -932,13 +915,13 @@ public class Postgres {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return conditionList;
@@ -963,7 +946,7 @@ public class Postgres {
                 variables = HStoreConverter.fromString(rs.getString("variables"));
             }
             cond = new AlertCondition(id, deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error converting rs to Alert:");
             e.printStackTrace();
         }
@@ -1096,21 +1079,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting all alert types: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting alert types: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return alertTypeList;
@@ -1130,7 +1111,7 @@ public class Postgres {
                 alertTypeList.add(rsToAlertType(rs));
             }
             rs.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error getting all AlertTypes: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1151,7 +1132,7 @@ public class Postgres {
             String description = rs.getString("description");
             String source = rs.getString("source");
             type = new AlertType(id, name, description, source);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to AlertType: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1201,7 +1182,7 @@ public class Postgres {
             update.executeUpdate();
 
             return type.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
         }
@@ -1242,7 +1223,7 @@ public class Postgres {
             deleteAlertType.setInt(1, id);
             deleteAlertType.executeUpdate();
             return true;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
         }
@@ -1320,7 +1301,7 @@ public class Postgres {
                 variables = HStoreConverter.fromString(rs.getString("variables"));
             }
             atl = new AlertTypeLookup(id, alertTypeId, deviceTypeId, variables);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to AlertType: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1420,7 +1401,7 @@ public class Postgres {
             if (!rs.next()) {
                 rs = null;
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1474,21 +1455,19 @@ public class Postgres {
             return commands;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all commands for device: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device commands: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -1512,7 +1491,7 @@ public class Postgres {
             deviceTypeId = rs.getInt("device_type_id");
             command = new DeviceCommand(id, name, deviceTypeId);
             return command;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Command name: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1616,7 +1595,7 @@ public class Postgres {
                 lookupList.add(rsToCommandLookup(rs));
             }
             rs.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1655,7 +1634,7 @@ public class Postgres {
             int commandId = rs.getInt("command_id");
             int policyRuleId = rs.getInt("policy_rule_id");
             commandLookup = new DeviceCommandLookup(id, commandId, policyRuleId);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1782,7 +1761,7 @@ public class Postgres {
                 devices.add(d);
             }
             rs.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error getting all Devices: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -1812,21 +1791,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting all devices for group: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return devices;
@@ -1852,7 +1829,7 @@ public class Postgres {
                 d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                 return d;
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error while finding the device with device security state: "+dssId+".");
             logger.severe(e.getMessage());
         }
@@ -1902,21 +1879,19 @@ public class Postgres {
             return deviceList;
         } catch (SQLException e) {
             logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -1941,7 +1916,7 @@ public class Postgres {
             int samplingRate = rs.getInt("sampling_rate");
             int defaultSamplingRate = rs.getInt("default_sampling_rate");
             device = new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2015,7 +1990,7 @@ public class Postgres {
             }
 
             return device;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2076,7 +2051,7 @@ public class Postgres {
                 }
             }
             return device;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2095,12 +2070,10 @@ public class Postgres {
         try {
             deleteById("device", id);
             return true;
-        } catch (Exception e) {
-            logger.severe("Error while deleting device with id: "+id+". "+e.getMessage());
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             return false;
         }
@@ -2174,21 +2147,19 @@ public class Postgres {
             return deviceHistories;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -2219,21 +2190,19 @@ public class Postgres {
             return deviceHistories;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -2271,7 +2240,7 @@ public class Postgres {
             try{
                 if(rs!=null)
                     rs.close();
-            } catch (Exception e) {logger.severe("Error closing result set: "+e.getMessage());}
+            } catch (SQLException e) {logger.severe("Error closing result set: "+e.getMessage());}
             try{
                 if(st!=null)
                     st.close();
@@ -2311,21 +2280,18 @@ public class Postgres {
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error getting device statuses: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -2361,21 +2327,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting devices for type: " + typeId + " " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting devices for type: " + typeId + " " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return deviceStatusMap;
@@ -2411,21 +2375,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting devices for group: " + groupId + " " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting devices for group: " + groupId + " " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return deviceStatusMap;
@@ -2490,7 +2452,7 @@ public class Postgres {
             update.executeUpdate();
 
             return getLatestId("device_status");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting DeviceStatus: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2533,7 +2495,7 @@ public class Postgres {
             update.setInt(4, deviceStatus.getId());
             update.executeUpdate();
             return deviceStatus.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating DeviceStatus: " + e.getClass().getName() + ": " + e.getMessage());
             return -1;
@@ -2588,7 +2550,7 @@ public class Postgres {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return groups;
@@ -2606,7 +2568,7 @@ public class Postgres {
             int id = rs.getInt("id");
             String name = rs.getString("name");
             group = new Group(id, name);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Group: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2629,7 +2591,7 @@ public class Postgres {
             update.setString(1, group.getName());
             update.executeUpdate();
             return getLatestId("device_group");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Group: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -2653,7 +2615,7 @@ public class Postgres {
             update.setInt(2, group.getId());
             update.executeUpdate();
             return group.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating Group: " + e.getClass().getName() + ": " + e.getMessage());
             return -1;
@@ -2715,7 +2677,7 @@ public class Postgres {
             ResultSet rs = query.executeQuery();
             rs.next();
             return rsToPolicyRule(rs);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2743,7 +2705,7 @@ public class Postgres {
                 rules.add(rsToPolicyRule(rs));
             }
             return rules;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2764,7 +2726,7 @@ public class Postgres {
             int devTypeId = rs.getInt("device_type_id");
             int samplingRate = rs.getInt("sampling_rate");
             policyRule = new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error converting rs to PolicyRule: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2786,7 +2748,7 @@ public class Postgres {
             insert.setInt(4, policyRule.getSamplingRate());
             insert.executeUpdate();
             return getLatestId("policy_rule");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error inserting Policy: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2814,7 +2776,7 @@ public class Postgres {
             update.setInt(5, policyRule.getId());
             update.executeUpdate();
             return policyRule.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error updating Policy: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
@@ -2855,7 +2817,7 @@ public class Postgres {
             policyCondition.setAlertTypeIds(alertTypeIds);
 
             return policyCondition;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error finding PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2875,7 +2837,7 @@ public class Postgres {
             int id = rs.getInt("id");
             int threshold = rs.getInt("threshold");
             policyCondition = new PolicyCondition(id, threshold, null);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error converting rs to PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2906,7 +2868,7 @@ public class Postgres {
             }
 
             return policyCondition.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error inserting PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2939,7 +2901,7 @@ public class Postgres {
             }
 
             return policyCondition.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error updating PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2957,7 +2919,7 @@ public class Postgres {
             delete.setInt(1, policyConditionId);
             delete.executeUpdate();
             return true;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error deleting PolicyConditionAlert rows: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -2999,7 +2961,7 @@ public class Postgres {
             int deviceId = rs.getInt("device_id");
             Timestamp timestamp = rs.getTimestamp("timestamp");
             inst = new PolicyRuleLog(id, policyRuleId, deviceId, timestamp);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error converting rs to PolicyRuleLog: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -3021,7 +2983,7 @@ public class Postgres {
             insert.setTimestamp(3, policyRuleLog.getTimestamp());
             insert.executeUpdate();
             return getLatestId("policy_rule_log");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -3057,7 +3019,7 @@ public class Postgres {
             int startSecStateId = rs.getInt("start_sec_state_id");
             int finishSecStateId = rs.getInt("finish_sec_state_id");
             stateTransition = new StateTransition(id, startSecStateId, finishSecStateId);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error converting rs to StateTransition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -3077,7 +3039,7 @@ public class Postgres {
             insert.setInt(2, trans.getFinishStateId());
             insert.executeUpdate();
             return getLatestId("state_transition");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
         }
@@ -3094,14 +3056,14 @@ public class Postgres {
         try {
             PreparedStatement update = dbConn.prepareStatement("UPDATE state_transition SET " +
                     "start_sec_state_id = ? " +
-                    "finish_sec_state_id = ? " +
+                    ", finish_sec_state_id = ? " +
                     "WHERE id = ?");
             update.setInt(1, trans.getStartStateId());
             update.setInt(2, trans.getFinishStateId());
             update.setInt(3, trans.getId());
             update.executeUpdate();
             return trans.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error updating StateTransition: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
@@ -3148,21 +3110,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("SQL exception getting the device state: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device state: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return dss;
@@ -3218,21 +3178,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("SQL exception getting the device state: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device state: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return ss;
@@ -3262,7 +3220,7 @@ public class Postgres {
                 return -1;
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error finding previous device security state for device: "+device.getId());
             e.printStackTrace();
         }
@@ -3294,21 +3252,19 @@ public class Postgres {
             }
         } catch (SQLException e) {
             logger.severe("Sql exception getting all device states: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting device states: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return deviceStateList;
@@ -3329,7 +3285,7 @@ public class Postgres {
             Timestamp timestamp = rs.getTimestamp("timestamp");
             String name = rs.getString("name");
             deviceState = new DeviceSecurityState(id, deviceId, stateId, timestamp, name);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to DeviceSecurityState: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3360,7 +3316,7 @@ public class Postgres {
             if (rs.next()) {
                 return rs.getInt("id");
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting DeviceState: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3415,7 +3371,7 @@ public class Postgres {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return states;
@@ -3433,7 +3389,7 @@ public class Postgres {
             int id = rs.getInt("id");
             String name = rs.getString("name");
             state = new SecurityState(id, name);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to SecurityState: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3456,7 +3412,7 @@ public class Postgres {
             update.setString(1, state.getName());
             update.executeUpdate();
             return getLatestId("security_state");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting SecurityState: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3480,7 +3436,7 @@ public class Postgres {
             update.setInt(2, state.getId());
             update.executeUpdate();
             return state.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating Security: " + e.getClass().getName() + ": " + e.getMessage());
             return -1;
@@ -3559,11 +3515,11 @@ public class Postgres {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -3594,11 +3550,11 @@ public class Postgres {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -3622,7 +3578,7 @@ public class Postgres {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return tags;
@@ -3640,7 +3596,7 @@ public class Postgres {
             int id = rs.getInt("id");
             String name = rs.getString("name");
             tag = new Tag(id, name);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to Tag: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3663,7 +3619,7 @@ public class Postgres {
             update.setString(1, tag.getName());
             update.executeUpdate();
             return getLatestId("tag");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Tag: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3686,7 +3642,7 @@ public class Postgres {
             update.setInt(2, tag.getId());
             update.executeUpdate();
             return tag.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating Tag: " + e.getClass().getName() + ": " + e.getMessage());
             return -1;
@@ -3731,7 +3687,7 @@ public class Postgres {
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return false;
@@ -3775,7 +3731,7 @@ public class Postgres {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return types;
@@ -3795,7 +3751,7 @@ public class Postgres {
             byte[] policyFile = rs.getBytes("policy_file");
             String policyFileName = rs.getString("policy_file_name");
             type = new DeviceType(id, name, policyFile, policyFileName);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3820,7 +3776,7 @@ public class Postgres {
             update.setString(3, type.getPolicyFileName());
             update.executeUpdate();
             return getLatestId("device_type");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3845,7 +3801,7 @@ public class Postgres {
             update.setInt(4, type.getId());
             update.executeUpdate();
             return type.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
             return -1;
@@ -3923,21 +3879,18 @@ public class Postgres {
         } catch (SQLException e) {
             logger.severe("Sql exception getting all UmboxImages: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error getting UmboxImages: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -3977,7 +3930,7 @@ public class Postgres {
             String name = rs.getString("name");
             String fileName = rs.getString("file_name");
             umboxImage = new UmboxImage(id, name, fileName);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -3998,7 +3951,7 @@ public class Postgres {
             String fileName = rs.getString("file_name");
             int dagOrder = rs.getInt("dag_order");
             umboxImage = new UmboxImage(id, name, fileName, dagOrder);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -4026,7 +3979,7 @@ public class Postgres {
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return -1;
@@ -4057,7 +4010,7 @@ public class Postgres {
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return -1;
@@ -4110,17 +4063,17 @@ public class Postgres {
                 return null;
             }
             return rsToUmboxInstance(rs);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) rs.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -4147,21 +4100,19 @@ public class Postgres {
             return umboxInstances;
         } catch (SQLException e) {
             logger.severe("Sql exception getting all UmboxInstances: " + e.getClass().getName() + ": " + e.getMessage());
-        } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Error getting UmboxInstances: " + e.getClass().getName() + ": " + e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
             try {
                 if (st != null) {
                     st.close();
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return null;
@@ -4182,7 +4133,7 @@ public class Postgres {
             int deviceId = rs.getInt("device_id");
             Timestamp startedAt = rs.getTimestamp("started_at");
             umboxInstance = new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxInstance: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -4240,7 +4191,7 @@ public class Postgres {
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return -1;
@@ -4278,7 +4229,7 @@ public class Postgres {
             if (!rs.next()) {
                 return null;
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Exception finding umbox lookup by ID: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -4303,7 +4254,7 @@ public class Postgres {
                 lookupList.add(rsToUmboxLookup(rs));
             }
             rs.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -4346,7 +4297,7 @@ public class Postgres {
             dagOrder = rs.getInt("dag_order");
             umboxLookup = new UmboxLookup(id, policyRuleId, umboxImageId, dagOrder);
             return umboxLookup;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error converting rs to UmboxLookup: " + e.getClass().getName() + ": " + e.getMessage());
         }
@@ -4373,7 +4324,7 @@ public class Postgres {
         } finally {
             try {
                 if (st != null) st.close();
-            } catch (Exception e) {
+            } catch (SQLException e) {
             }
         }
         return -1;
@@ -4397,7 +4348,7 @@ public class Postgres {
             update.executeUpdate();
 
             return ul.getId();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating UmboxLookup: " + e.getClass().toString() + ": " + e.getMessage());
         }
@@ -4459,7 +4410,7 @@ public class Postgres {
             while(rs.next()){
                 umboxLogList.add(rsToUmboxLog(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Exception finding all UmboxLogs "+e.getClass().getName() + ": "+e.getMessage());
             e.printStackTrace();
         }
@@ -4485,7 +4436,7 @@ public class Postgres {
             while(rs.next()){
                 umboxLogList.add(rsToUmboxLog(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Exception finding UmboxLogs for alerter_id="+alerter_id+"; "+e.getClass().getName() + ": "+e.getMessage());
             e.printStackTrace();
         }
@@ -4507,7 +4458,7 @@ public class Postgres {
             while(rs.next()){
                 logList.add(rsToUmboxLog(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Exception finding UmboxLogs for device: "+deviceId+"; "+e.getMessage());
             e.printStackTrace();
         }
@@ -4591,7 +4542,7 @@ public class Postgres {
             while (rs.next()) {
                 stageLogList.add(rsToStageLog(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Exception finding all StageLogs " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
@@ -4638,7 +4589,7 @@ public class Postgres {
             while(rs.next()){
                 actions.add(rs.getString("action"));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             logger.severe("Error getting all actions that finished in stage_log: "+e.getMessage());
         }
         return actions;
