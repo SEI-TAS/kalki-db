@@ -1,3 +1,6 @@
+----------------------------------------------
+-- Device type itself.
+----------------------------------------------
 INSERT INTO device_type(name) values ('Philips Hue Light Emulator');
 
 ----------------------------------------------
@@ -10,7 +13,6 @@ INSERT INTO command(name, device_type_id) values ('turn-on', (SELECT id FROM dev
 ----------------------------------------------
 -- Alert types specifically for this dev type.
 ----------------------------------------------
-
 INSERT INTO alert_type(name, description, source) values('phle-time-on', 'PHLE.on/off = on && !DLC.motion_sense > T minutes', 'Iot Interface');
 
 INSERT INTO alert_type(name, description, source) values('phle-odd-one-out', 'PHLE.on/off = off && PHLE.on/off = ON (∀ PHLE in same group)', 'Iot Interface');
@@ -18,6 +20,9 @@ INSERT INTO alert_type(name, description, source) values('phle-odd-one-out', 'PH
 ----------------------------------------------
 -- Alerts that apply to this device type.
 ----------------------------------------------
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.id FROM alert_type AS at WHERE at.name = 'device-unavailable'), (SELECT id FROM device_type WHERE name = 'Philips Hue Light Emulator'));
+
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.id FROM alert_type AS at WHERE at.name = 'state-reset'), (SELECT id FROM device_type WHERE name = 'Philips Hue Light Emulator'));
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name='brute-force'), (SELECT id FROM device_type WHERE name='Phillips Hue Light Emulator'));
 

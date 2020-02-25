@@ -1,9 +1,15 @@
+----------------------------------------------
+-- Device type itself.
+----------------------------------------------
 INSERT INTO device_type(name) values ('Udoo Neo');
+
+----------------------------------------------
+-- Commands that apply to this device type.
+----------------------------------------------
 
 ----------------------------------------------
 -- Alert types specifically for this dev type.
 ----------------------------------------------
-
 INSERT INTO alert_type(name, description, source) values('unts-abnormal-traffic', 'There is network traffic coming from the device that differs from standard responses.', 'umbox');
 
 INSERT INTO alert_type(name, description, source) values('unts-acceleration', 'unts.acceleration > Z && unts.avgAcceleration > Y', 'Iot Interface');
@@ -25,6 +31,9 @@ INSERT INTO alert_type(name, description, source) values('unts-temperature-avg',
 ----------------------------------------------
 -- Configurations for those alerts.
 ----------------------------------------------
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.id FROM alert_type AS at WHERE at.name = 'device-unavailable'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'));
+
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.id FROM alert_type AS at WHERE at.name = 'state-reset'), (SELECT id FROM device_type WHERE name = 'Udoo Neo'));
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name='brute-force'), (SELECT id FROM device_type WHERE name='Udoo Neo'));
 

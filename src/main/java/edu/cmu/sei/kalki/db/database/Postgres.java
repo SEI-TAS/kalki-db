@@ -379,11 +379,8 @@ public class Postgres {
         executeSQLResource("deviceTypes/unts.sql");
         executeSQLResource("deviceTypes/wemo.sql");
 
-        // Device Type Config for all types
-        executeSQLResource("db-common-alert-type-lookups.sql");
-
         // Device instances in use.
-        // executeSQLResource("db-devices.sql");
+        // executeSQLResource("deviceTypes/db-devices.sql");
     }
 
     /**
@@ -418,27 +415,9 @@ public class Postgres {
         executeSQLResource("db-drop-tables.sql");
     }
 
-    /**
-     * Lists all postgres databases. Primarily for testing.
-     */
-    public static void listAllDatabases() {
-        try {
-            PreparedStatement ps = dbConn
-                    .prepareStatement("SELECT datname FROM pg_database WHERE datistemplate = false;");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                logger.info("Database: " + rs.getString(1));
-            }
-            rs.close();
-            ps.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /*
-        Generic DB Actions
-    */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //    Generic DB Actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a database entry in a given table by id
@@ -482,7 +461,6 @@ public class Postgres {
         try {
             int serialNum = 0;
             Statement stmt = dbConn.createStatement();
-//            String query = String.format("select currval(pg_get_serial_sequence(%s, 'id')", tableName);
             String query = String.format("select currval('%s_id_seq')", tableName);
             ResultSet rs = stmt.executeQuery(query);
             if (rs.next()) {
@@ -510,50 +488,11 @@ public class Postgres {
         try {
             Statement st = dbConn.createStatement();
             rs = st.executeQuery("SELECT * FROM " + tableName);
-            // This line closes the result set too
-//            st.close();
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Error getting all entries: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return rs;
-    }
-
-    /**
-     * Saves given tag/type/group to the database.
-     *
-     * @param name  name of the tag/type/group to be inserted.
-     * @param table one of tag, type, or group where the name should be inserted.
-     * @return auto incremented id
-     */
-    public static Integer addRowToTable(String table, String name) {
-        PreparedStatement st = null;
-        try {
-            st = dbConn.prepareStatement(String.format("INSERT INTO %s (name) VALUES (?)", table));
-            st.setString(1, name);
-            st.executeUpdate();
-
-            int serialNum = 0;
-            Statement stmt = dbConn.createStatement();
-
-            // get the postgresql serial field value with this query
-            String query = String.format("select currval('%s_id_seq')", table);
-            ResultSet rs = stmt.executeQuery(query);
-            if (rs.next()) {
-                serialNum = rs.getInt(1);
-                return serialNum;
-            }
-            stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error adding row to table: " + e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (st != null) st.close();
-            } catch (Exception e) {
-            }
-        }
-        return -1;
     }
 
     /**
@@ -583,9 +522,9 @@ public class Postgres {
         return false;
     }
 
-    /*
-     *      Alert specific actions.
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      Alert specific actions.
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds an Alert from the databse with the given id
@@ -857,9 +796,9 @@ public class Postgres {
     }
 
 
-    /*
-     *      AlertCondition specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      AlertCondition specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds an AlertCondition from the databse with the given id
@@ -1087,9 +1026,9 @@ public class Postgres {
         return deleteById("alert_condition", id);
     }
 
-    /*
-     *      AlertType specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      AlertType specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds an AlertType from the databse with the given id
@@ -1296,9 +1235,9 @@ public class Postgres {
         return false;
     }
 
-    /*
-     *      AlertTypeLookup specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      AlertTypeLookup specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Returns the row from alert_type_lookup with the given id
@@ -1454,9 +1393,9 @@ public class Postgres {
         return deleteById("alert_type_lookup", id);
     }
 
-    /*
-     *      Command specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      Command specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a command based on the given id
@@ -1507,61 +1446,6 @@ public class Postgres {
         }
         return commands;
     }
-
-    //Replaced by findCommandsByPolicyRuleLog
-    /**
-     * Finds commands for device based on the state of triggeringDevice
-     * @param device the device the commands are for
-     * @param triggeringDevice the device that changed state
-     * @return List of commands for device
-     */
-//    public static List<DeviceCommand> findCommandsForGroup(Device device, Device triggeringDevice) {
-//        PreparedStatement st = null;
-//        ResultSet rs = null;
-//        if (dbConn == null) {
-//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-//            return null;
-//        }
-//        try {
-//            List<DeviceCommand> commands = new ArrayList<DeviceCommand>();
-//
-//            int previousStateId = findPreviousDeviceSecurityStateId(triggeringDevice);
-//            if(previousStateId < 0){
-//                return commands;
-//            }
-//            st = dbConn.prepareStatement("SELECT c.id, c.name, c.device_type_id " +
-//                    "FROM command_lookup AS cl, command AS c WHERE c.device_type_id = ? AND cl.current_state_id = ? AND cl.previous_state_id = ? AND cl.device_type_id=? AND c.id = cl.command_id");
-//            st.setInt(1, device.getType().getId());
-//            st.setInt(2, triggeringDevice.getCurrentState().getStateId());
-//            st.setInt(3, previousStateId);
-//            st.setInt(4, triggeringDevice.getType().getId());
-//            rs = st.executeQuery();
-//
-//            while (rs.next()) {
-//                commands.add(rsToCommand(rs));
-//            }
-//            return commands;
-//        } catch (SQLException e) {
-//            logger.severe("Sql exception getting all commands for device: " + e.getClass().getName() + ": " + e.getMessage());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.severe("Error getting device commands: " + e.getClass().getName() + ": " + e.getMessage());
-//        } finally {
-//            try {
-//                if (rs != null) {
-//                    rs.close();
-//                }
-//            } catch (Exception e) {
-//            }
-//            try {
-//                if (st != null) {
-//                    st.close();
-//                }
-//            } catch (Exception e) {
-//            }
-//        }
-//        return null;
-//    }
 
     /**
      * Finds the commands for the device from the policy rule log
@@ -1707,9 +1591,9 @@ public class Postgres {
         return deleteById("command", id);
     }
 
-    /*
-     *      CommandLookup specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       CommandLookup specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a command lookup based on the given id
@@ -1863,9 +1747,9 @@ public class Postgres {
         return deleteById("command_lookup", id);
     }
 
-    /*
-     *       Device specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //        Device specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a Device from the database by its id.
@@ -1966,6 +1850,11 @@ public class Postgres {
         return devices;
     }
 
+    /**
+     * Get a device given a device security state id.
+     * @param dssId
+     * @return
+     */
     public static Device findDeviceByDeviceSecurityState(int dssId) {
         PreparedStatement st = null;
         ResultSet rs = null;
@@ -2281,9 +2170,9 @@ public class Postgres {
         }
     }
 
-    /*
-     *     DeviceStatus specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //     DeviceStatus specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a DeviceStatus from the database by its id.
@@ -2722,9 +2611,9 @@ public class Postgres {
         return deleteById("device_status", id);
     }
 
-    /*
-     *      Group specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       Group specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a Group from the database by its id.
@@ -2811,7 +2700,6 @@ public class Postgres {
         return -1;
     }
 
-
     /**
      * Updates Group with given id to have the parameters of the given Group.
      *
@@ -2865,9 +2753,9 @@ public class Postgres {
         return deleteById("device_group", id);
     }
 
-    /*
-     *      Policy specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       Policy specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static PolicyRule findPolicyRule(int id) {
         return rsToPolicyRule(findById(id, "policy_rule"));
@@ -3024,9 +2912,9 @@ public class Postgres {
         return deleteById("policy_rule", policyRuleId);
     }
 
-    /*
-     *      PolicyCondition specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       PolicyCondition specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Find a PolicyCondition and it's associated AlertType id's
@@ -3177,10 +3065,9 @@ public class Postgres {
         return deleteById("policy_condition", id);
     }
 
-    /*
-     *      Policy rule log specific actions
-     */
-
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      Policy rule log specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Finds a row in the policy_rule_log table with the given id
      * @param id
@@ -3245,9 +3132,9 @@ public class Postgres {
         return deleteById("policy_rule_log", id);
     }
 
-    /*
-     *      StateTransition specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       StateTransition specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static StateTransition findStateTransition(int id) {
         return rsToStateTransition(findById(id, "state_transition"));
@@ -3333,9 +3220,9 @@ public class Postgres {
         return deleteById("state_transition", id);
     }
 
-    /*
-     *      DeviceSecurityState specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      DeviceSecurityState specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds the DeviceSecurityState with the supplied id
@@ -3464,6 +3351,11 @@ public class Postgres {
         return ss;
     }
 
+    /**
+     * Finds the next to last device security state for a device.
+     * @param device
+     * @return
+     */
     public static int findPreviousDeviceSecurityStateId(Device device) {
         PreparedStatement st = null;
         ResultSet rs = null;
@@ -3611,9 +3503,9 @@ public class Postgres {
         return deleteById("device_security_state", id);
     }
 
-    /*
-     *      SecurityState specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       SecurityState specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Search the security_state table for a row with the given id
@@ -3753,9 +3645,9 @@ public class Postgres {
         return deleteById("security_state", id);
     }
 
-    /*
-     *      Tag specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       Tag specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Search the tag table for a row with the given id
@@ -3983,9 +3875,9 @@ public class Postgres {
         return false;
     }
 
-    /*
-     *      DeviceType specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      DeviceType specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a DeviceType from the database by its id.
@@ -4130,9 +4022,9 @@ public class Postgres {
         return deleteById("device_type", id);
     }
 
-    /*
-     *      UmboxImage specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //       UmboxImage specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Find a UmboxImage based on its id
@@ -4344,10 +4236,9 @@ public class Postgres {
         return deleteById("umbox_image", id);
     }
 
-    /*
-     *      UmboxInstance specific actions
-     */
-
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //      UmboxInstance specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Find a umbox instance by its alerter id
      *
@@ -4518,9 +4409,9 @@ public class Postgres {
         return deleteById("umbox_instance", id);
     }
 
-    /*
-     * UmboxLookup functions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // UmboxLookup functions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds a UmboxLookup from the database by its id.
@@ -4699,9 +4590,9 @@ public class Postgres {
         return deleteById("umbox_lookup", id);
     }
 
-    /*
-        UmboxLog specific actions
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //    UmboxLog specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds the row in umbox_log table with given id
@@ -4839,9 +4730,10 @@ public class Postgres {
         }
         return latestId;
     }
-    /*
-        StageLog specific actions
-     */
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // StageLog specific actions
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Finds the row in stage_log for the given id
@@ -4932,26 +4824,6 @@ public class Postgres {
 
     }
 
-//    public static int findTimeBetweenStages(String stageOne, String stageTwo) {
-//        PreparedStatement st = null;
-//        ResultSet rs = null;
-//        List<String> actions = new ArrayList<>();
-//        if(dbConn == null){
-//            logger.severe("Trying to execute commands with null connection. Initialize Postgres first!");
-//        }
-//        try {
-//            st = dbConn.prepareStatement("SELECT action FROM stage_log WHERE stage=?");
-//            st.setString(1, StageLog.Stage.FINISH.convert());
-//            rs = st.executeQuery();
-//            while(rs.next()){
-//                actions.add(rs.getString("action"));
-//            }
-//        } catch (Exception e) {
-//            logger.severe("Error getting all actions that finished in stage_log: "+e.getMessage());
-//        }
-//        return actions;
-//    }
-
     /**
      * Converts a result set to a StageLog object
      * @param rs
@@ -5009,9 +4881,10 @@ public class Postgres {
         return latestId;
     }
 
-    /*
-        Methods used for giving the dashboard new updates
-    */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //    Methods used for giving the dashboard new updates
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     private static List<Integer> newStateIds = Collections.synchronizedList(new ArrayList<Integer>());
     private static List<Integer> newAlertIds = Collections.synchronizedList(new ArrayList<Integer>());
     private static List<Integer> newStatusIds = Collections.synchronizedList(new ArrayList<Integer>());
@@ -5126,6 +4999,10 @@ public class Postgres {
             return null;
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Methods for executing scripts.
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Reads from the specified resource file
