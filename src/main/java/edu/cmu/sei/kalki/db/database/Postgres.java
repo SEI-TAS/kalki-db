@@ -58,13 +58,13 @@ public class Postgres {
 
     public static Connection dbConn = null;
 
-    private Postgres(String ip, String port, String dbName, String dbUser, String dbPassword) {
+    private Postgres(String ip, String port, String newDbName, String newDbUser, String newDbPassword) {
         try {
             //Read ip, port from config file
-            this.dbName = dbName;
-            this.dbUser = dbUser;
-            this.dbPassword = dbPassword;
-            while((this.dbConn = makeConnection(ip, port)) == null) {
+            dbName = newDbName;
+            dbUser = newDbUser;
+            dbPassword = newDbPassword;
+            while((dbConn = makeConnection(ip, port)) == null) {
                 logger.info("Waiting for DB engine to be available...");
                 try { Thread.sleep(1000); } catch(Exception e) {throw e;}
             }
@@ -475,8 +475,28 @@ public class Postgres {
     }
 
     /**
+     * Properly closes a resource set and its parent statement.
+     * @param rs
+     */
+    private static void closeResources(ResultSet rs) {
+        if(rs != null) {
+            try {
+                rs.close();
+            } catch (SQLException e) { }
+
+            try {
+                if(rs.getStatement() != null) {
+                    rs.getStatement().close();
+                }
+            } catch (SQLException e) { }
+        }
+    }
+
+    /**
      * Finds a database entry in a given table by id
-     * TODO: review resource management
+     * NOTE: the RS and PreparedStatement are left open when this function returns so that the RS can be used by the
+     * caller function. Both should be closed by the caller. The statement can be obtained from the RS by calling
+     * rs.getStatement().
      *
      * @param id        id of the entry to find
      * @param tableName name of the table to search
@@ -484,21 +504,20 @@ public class Postgres {
      */
     private static ResultSet findById(int id, String tableName) {
         logger.info(String.format("Finding by id = %d in %s", id, tableName));
-        ResultSet rs = null;
         checkDBConnection();
         try {
             PreparedStatement st = dbConn.prepareStatement(String.format("SELECT * FROM %s WHERE id = ?", tableName));
             st.setInt(1, id);
-            rs = st.executeQuery();
+            ResultSet rs = st.executeQuery();
             // Moves the result set to the first row if it exists. Returns null otherwise.
-            if (!rs.next()) {
-                return null;
+            if (rs.next()) {
+                return rs;
             }
         } catch (Exception e) {
             e.printStackTrace();
             logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return rs;
+        return null;
     }
 
     /**
@@ -574,12 +593,9 @@ public class Postgres {
      */
     public static Alert findAlert(int id) {
         ResultSet rs = findById(id, "alert");
-
-        if (rs == null) {
-            return null;
-        } else {
-            return rsToAlert(rs);
-        }
+        Alert alert = rsToAlert(rs);
+        closeResources(rs);
+        return alert;
     }
 
     /**
@@ -640,6 +656,7 @@ public class Postgres {
      */
     private static Alert rsToAlert(ResultSet rs) {
         Alert alert = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -648,8 +665,7 @@ public class Postgres {
             int deviceStatusId = rs.getInt("device_status_id");
             int alertTypeId = rs.getInt("alert_type_id");
             int deviceId = rs.getInt("device_id");
-            String info = "";
-            try { info = rs.getString("info"); }catch (PSQLException e1) { }
+            String info = rs.getString("info");
             alert = new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId, info);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -989,11 +1005,9 @@ public class Postgres {
      */
     public static AlertType findAlertType(int id) {
         ResultSet rs = findById(id, "alert_type");
-        if (rs == null) {
-            return null;
-        } else {
-            return rsToAlertType(rs);
-        }
+        AlertType alertType = rsToAlertType(rs);
+        closeResources(rs);
+        return alertType;
     }
 
     /**
@@ -1051,6 +1065,7 @@ public class Postgres {
      */
     private static AlertType rsToAlertType(ResultSet rs) {
         AlertType type = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -1158,11 +1173,9 @@ public class Postgres {
      */
     public static AlertTypeLookup findAlertTypeLookup(int id) {
         ResultSet rs = findById(id, "alert_type_lookup");
-        if (rs == null) {
-            return null;
-        } else {
-            return rsToAlertTypeLookup(rs);
-        }
+        AlertTypeLookup alertTypeLookup = rsToAlertTypeLookup(rs);
+        closeResources(rs);
+        return alertTypeLookup;
     }
 
     /**
@@ -1206,6 +1219,7 @@ public class Postgres {
 
     private static AlertTypeLookup rsToAlertTypeLookup(ResultSet rs){
         AlertTypeLookup atl = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             int alertTypeId = rs.getInt("alert_type_id");
@@ -1460,7 +1474,10 @@ public class Postgres {
      */
     public static DeviceCommandLookup findCommandLookup(int id) {
         logger.info("Finding command lookup with id = " + id);
-        return rsToCommandLookup(findById(id, "command_lookup"));
+        ResultSet rs = findById(id, "command_lookup");
+        DeviceCommandLookup deviceCommandLookup = rsToCommandLookup(rs);
+        closeResources(rs);
+        return deviceCommandLookup;
     }
 
     /**
@@ -1607,18 +1624,18 @@ public class Postgres {
     public static Device findDevice(int id) {
         logger.info("Finding device with id = " + id);
         ResultSet rs = findById(id, "device");
-        if (rs == null) {
-            return null;
-        } else {
-            Device device = rsToDevice(rs);
+        Device device = rsToDevice(rs);
+
+        if(device != null) {
             List<Integer> tagIds = findTagIds(device.getId());
             device.setTagIds(tagIds);
 
             DeviceSecurityState ss = findDeviceSecurityStateByDevice(device.getId());
             device.setCurrentState(ss);
-
-            return device;
         }
+
+        closeResources(rs);
+        return device;
     }
 
     /**
@@ -1748,6 +1765,7 @@ public class Postgres {
      */
     private static Device rsToDevice(ResultSet rs) {
         Device device = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -1940,11 +1958,9 @@ public class Postgres {
      */
     public static DeviceStatus findDeviceStatus(int id) {
         ResultSet rs = findById(id, "device_status");
-        if (rs == null) {
-            return null;
-        } else {
-            return rsToDeviceStatus(rs);
-        }
+        DeviceStatus deviceStatus = rsToDeviceStatus(rs);
+        closeResources(rs);
+        return deviceStatus;
     }
 
     /**
@@ -2152,6 +2168,7 @@ public class Postgres {
      */
     private static DeviceStatus rsToDeviceStatus(ResultSet rs) {
         DeviceStatus deviceStatus = null;
+        if(rs == null) return null;
         try {
             int deviceId = rs.getInt("device_id");
             Map<String, String> attributes = HStoreConverter.fromString(rs.getString("attributes"));
@@ -2252,12 +2269,9 @@ public class Postgres {
      */
     public static Group findGroup(int id) {
         ResultSet rs = findById(id, "device_group");
-        if (rs == null) {
-            return null;
-        } else {
-            Group group = rsToGroup(rs);
-            return group;
-        }
+        Group group = rsToGroup(rs);
+        closeResources(rs);
+        return group;
     }
 
     /**
@@ -2292,6 +2306,7 @@ public class Postgres {
      */
     private static Group rsToGroup(ResultSet rs) {
         Group group = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -2378,7 +2393,10 @@ public class Postgres {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static PolicyRule findPolicyRule(int id) {
-        return rsToPolicyRule(findById(id, "policy_rule"));
+        ResultSet rs = findById(id, "policy_rule");
+        PolicyRule policyRule = rsToPolicyRule(rs);
+        closeResources(rs);
+        return policyRule;
     }
 
     /**
@@ -2443,6 +2461,7 @@ public class Postgres {
      */
     public static PolicyRule rsToPolicyRule(ResultSet rs) {
         PolicyRule policyRule = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             int stateTransId = rs.getInt("state_trans_id");
@@ -2526,8 +2545,11 @@ public class Postgres {
     public static PolicyCondition findPolicyCondition(int id) {
         checkDBConnection();
         try {
-            PolicyCondition policyCondition = rsToPolicyCondition(findById(id,"policy_condition"));
+            ResultSet pcrs = findById(id,"policy_condition");
+            PolicyCondition policyCondition = rsToPolicyCondition(pcrs);
+            closeResources(pcrs);
             if(policyCondition == null) { return null; }
+
             List<Integer> alertTypeIds = new ArrayList<>();
             try(PreparedStatement query = dbConn.prepareStatement("SELECT * FROM policy_condition_alert WHERE policy_cond_id = ?")) {
                 query.setInt(1, policyCondition.getId());
@@ -2666,7 +2688,10 @@ public class Postgres {
      * @return
      */
     public static PolicyRuleLog findPolicyRuleLog(int id) {
-        return rsToPolicyRuleLog(findById(id, "policy_rule_log"));
+        ResultSet rs = findById(id, "policy_rule_log");
+        PolicyRuleLog policyRuleLog = rsToPolicyRuleLog(rs);
+        closeResources(rs);
+        return policyRuleLog;
     }
 
     /**
@@ -2725,7 +2750,10 @@ public class Postgres {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static StateTransition findStateTransition(int id) {
-        return rsToStateTransition(findById(id, "state_transition"));
+        ResultSet rs = findById(id, "state_transition");
+        StateTransition stateTransition = rsToStateTransition(rs);
+        closeResources(rs);
+        return stateTransition;
     }
 
     /**
@@ -2735,6 +2763,7 @@ public class Postgres {
      */
     public static StateTransition rsToStateTransition(ResultSet rs) {
         StateTransition stateTransition = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             int startSecStateId = rs.getInt("start_sec_state_id");
@@ -3000,12 +3029,9 @@ public class Postgres {
      */
     public static SecurityState findSecurityState(int id) {
         ResultSet rs = findById(id, "security_state");
-        if (rs == null) {
-            return null;
-        } else {
-            SecurityState state = rsToSecurityState(rs);
-            return state;
-        }
+        SecurityState state = rsToSecurityState(rs);
+        closeResources(rs);
+        return state;
     }
 
     /**
@@ -3040,6 +3066,7 @@ public class Postgres {
      */
     private static SecurityState rsToSecurityState(ResultSet rs) {
         SecurityState state = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -3134,12 +3161,9 @@ public class Postgres {
      */
     public static Tag findTag(int id) {
         ResultSet rs = findById(id, "tag");
-        if (rs == null) {
-            return null;
-        } else {
-            Tag tag = rsToTag(rs);
-            return tag;
-        }
+        Tag tag = rsToTag(rs);
+        closeResources(rs);
+        return tag;
     }
 
     /**
@@ -3222,6 +3246,7 @@ public class Postgres {
      */
     private static Tag rsToTag(ResultSet rs) {
         Tag tag = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -3317,12 +3342,9 @@ public class Postgres {
      */
     public static DeviceType findDeviceType(int id) {
         ResultSet rs = findById(id, "device_type");
-        if (rs == null) {
-            return null;
-        } else {
-            DeviceType type = rsToDeviceType(rs);
-            return type;
-        }
+        DeviceType type = rsToDeviceType(rs);
+        closeResources(rs);
+        return type;
     }
 
     /**
@@ -3357,6 +3379,7 @@ public class Postgres {
      */
     private static DeviceType rsToDeviceType(ResultSet rs) {
         DeviceType type = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -3456,11 +3479,9 @@ public class Postgres {
      */
     public static UmboxImage findUmboxImage(int id) {
         ResultSet rs = findById(id, "umbox_image");
-        if (rs == null) {
-            return null;
-        } else {
-            return rsToUmboxImageNoDagOrder(rs);
-        }
+        UmboxImage umboxImage = rsToUmboxImageNoDagOrder(rs);
+        closeResources(rs);
+        return umboxImage;
     }
 
     /**
@@ -3520,6 +3541,7 @@ public class Postgres {
      */
     private static UmboxImage rsToUmboxImageNoDagOrder(ResultSet rs) {
         UmboxImage umboxImage = null;
+        if(rs == null) return null;
         try {
             int id = rs.getInt("id");
             String name = rs.getString("name");
@@ -3920,7 +3942,9 @@ public class Postgres {
     public static UmboxLog findUmboxLog(int id){
         logger.info("Finding UmboxLog with id = "+id);
         ResultSet rs = findById(id, "umbox_log");
-        return rsToUmboxLog(rs);
+        UmboxLog umboxLog = rsToUmboxLog(rs);
+        closeResources(rs);
+        return umboxLog;
     }
 
     /**
@@ -3994,21 +4018,19 @@ public class Postgres {
      * @return the UmboxLog ojbect representation of the row; Null if an exception is thrown
      */
     public static UmboxLog rsToUmboxLog(ResultSet rs){
-        int id = -1;
-        String alerterId = "";
-        String details = "";
-        Timestamp timestamp = null;
+        UmboxLog umboxLog = null;
+        if(rs == null) return null;
         try {
-            id = rs.getInt("id");
-            alerterId = rs.getString("alerter_id");
-            details = rs.getString("details");
-            timestamp = rs.getTimestamp("timestamp");
-            return new UmboxLog(id, alerterId, details, timestamp);
+            int id = rs.getInt("id");
+            String alerterId = rs.getString("alerter_id");
+            String details = rs.getString("details");
+            Timestamp timestamp = rs.getTimestamp("timestamp");
+            umboxLog = new UmboxLog(id, alerterId, details, timestamp);
         } catch (Exception e){
             logger.severe("Error converting ResultSet to UmboxLog: "+e.getMessage());
             e.printStackTrace();
-            return null;
         }
+        return umboxLog;
     }
 
     /**
@@ -4043,7 +4065,9 @@ public class Postgres {
     public static StageLog findStageLog(int id) {
         logger.info("Finding StageLog with id = " + id);
         ResultSet rs = findById(id, "stage_log");
-        return rsToStageLog(rs);
+        StageLog stageLog = rsToStageLog(rs);
+        closeResources(rs);
+        return stageLog;
     }
 
     /**
@@ -4116,25 +4140,21 @@ public class Postgres {
      * @return
      */
     public static StageLog rsToStageLog(ResultSet rs) {
-        int id = -1;
-        int deviceSecurityStateId = -1;
-        Timestamp timestamp = null;
-        String action = "";
-        String stage = "";
-        String info = "";
+        StageLog stageLog = null;
+        if(rs == null) return null;
         try {
-            id = rs.getInt("id");
-            deviceSecurityStateId = rs.getInt("device_sec_state_id");
-            timestamp = rs.getTimestamp("timestamp");
-            action = rs.getString("action");
-            stage = rs.getString("stage");
-            info = rs.getString("info");
+            int id = rs.getInt("id");
+            int deviceSecurityStateId = rs.getInt("device_sec_state_id");
+            Timestamp timestamp = rs.getTimestamp("timestamp");
+            String action = rs.getString("action");
+            String stage = rs.getString("stage");
+            String info = rs.getString("info");
 
-            return new StageLog(id, deviceSecurityStateId, timestamp, action, stage, info);
+            stageLog = new StageLog(id, deviceSecurityStateId, timestamp, action, stage, info);
         } catch (Exception e){
             logger.severe("Error converting ResultSet to StageLog: "+e.getMessage());
-            return null;
         }
+        return stageLog;
     }
 
     /**
