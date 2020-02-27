@@ -1,7 +1,6 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
@@ -16,8 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class AlertTest extends AUsesDatabase {
     private static DeviceType deviceType;
@@ -35,7 +32,6 @@ public class AlertTest extends AUsesDatabase {
     /*
         Alert Action Tests
      */
-
     @Test
     public void testFindAlert() {
         assertEquals(alertIoT.toString(), AlertDAO.findAlert(alertIoT.getId()).toString());

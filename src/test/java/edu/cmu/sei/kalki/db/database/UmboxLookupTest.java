@@ -1,8 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.UmboxLookupDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class UmboxLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -39,13 +37,13 @@ public class UmboxLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindUmboxLookup() {
-        Assertions.assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
+        Assertions.assertEquals(umboxLookup.toString(), UmboxLookupDAO.findUmboxLookup(umboxLookup.getId()).toString());
     }
 
     @Test
     public void testFindUmboxLookupsByDevice() {
         ArrayList<UmboxLookup> foundLookups =
-                new ArrayList<UmboxLookup>(Postgres.findUmboxLookupsByDevice(device.getId()));
+                new ArrayList<UmboxLookup>(UmboxLookupDAO.findUmboxLookupsByDevice(device.getId()));
 
         assertEquals(1, foundLookups.size());
         assertEquals(umboxLookup.toString(), foundLookups.get(0).toString());
@@ -53,7 +51,7 @@ public class UmboxLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindAllUmboxLookups() {
-        assertEquals(1, Postgres.findAllUmboxLookups().size());
+        assertEquals(1, UmboxLookupDAO.findAllUmboxLookups().size());
     }
 
     @Test
@@ -61,19 +59,19 @@ public class UmboxLookupTest extends AUsesDatabase {
         UmboxLookup newUmboxLookup = new UmboxLookup(policyRule.getId(), deviceType.getId(), umboxImage.getId(), 2);
         newUmboxLookup.insertOrUpdate();
 
-        Assertions.assertEquals(newUmboxLookup.toString(), Postgres.findUmboxLookup(newUmboxLookup.getId()).toString());
+        Assertions.assertEquals(newUmboxLookup.toString(), UmboxLookupDAO.findUmboxLookup(newUmboxLookup.getId()).toString());
 
         umboxLookup.setDagOrder(2);
         umboxLookup.insertOrUpdate();
 
-        Assertions.assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
+        Assertions.assertEquals(umboxLookup.toString(), UmboxLookupDAO.findUmboxLookup(umboxLookup.getId()).toString());
     }
 
     @Test
     public void testDeleteUmboxLookup() {
-        Assertions.assertEquals(umboxLookup.toString(), Postgres.findUmboxLookup(umboxLookup.getId()).toString());
-        Postgres.deleteUmboxLookup(umboxLookup.getId());
-        Assertions.assertEquals(null, Postgres.findUmboxLookup(umboxLookup.getId()));
+        Assertions.assertEquals(umboxLookup.toString(), UmboxLookupDAO.findUmboxLookup(umboxLookup.getId()).toString());
+        UmboxLookupDAO.deleteUmboxLookup(umboxLookup.getId());
+        Assertions.assertEquals(null, UmboxLookupDAO.findUmboxLookup(umboxLookup.getId()));
     }
 
     public void insertData() {

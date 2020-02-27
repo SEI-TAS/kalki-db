@@ -1,16 +1,14 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.PolicyConditionDAO;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.PolicyCondition;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class PolicyConditionTest extends AUsesDatabase {
     private AlertType alertType;
@@ -20,7 +18,7 @@ public class PolicyConditionTest extends AUsesDatabase {
         PolicyCondition policyCondition = new PolicyCondition(1, new ArrayList<Integer>());
         policyCondition.insert();
 
-        PolicyCondition test = Postgres.findPolicyCondition(policyCondition.getId());
+        PolicyCondition test = PolicyConditionDAO.findPolicyCondition(policyCondition.getId());
         assertEquals(policyCondition.toString(), test.toString());
     }
 
@@ -42,7 +40,7 @@ public class PolicyConditionTest extends AUsesDatabase {
         policyCondition.setAlertTypeIds(alertTypeIds);
         policyCondition.setThreshold(2);
 
-        Postgres.updatePolicyCondition(policyCondition);
+        PolicyConditionDAO.updatePolicyCondition(policyCondition);
 
         assertEquals(1, policyCondition.getAlertTypeIds().size());
         assertEquals((int)alertType.getId(), (int)policyCondition.getAlertTypeIds().get(0));
@@ -54,10 +52,10 @@ public class PolicyConditionTest extends AUsesDatabase {
         PolicyCondition policyCondition = new PolicyCondition(1, null);
         policyCondition.insert();
 
-        boolean success = Postgres.deletePolicyCondition(policyCondition.getId());
+        boolean success = PolicyConditionDAO.deletePolicyCondition(policyCondition.getId());
         assert success;
 
-        PolicyCondition cond = Postgres.findPolicyCondition(policyCondition.getId());
+        PolicyCondition cond = PolicyConditionDAO.findPolicyCondition(policyCondition.getId());
         assertEquals(null, cond);
     }
     public void insertData() {

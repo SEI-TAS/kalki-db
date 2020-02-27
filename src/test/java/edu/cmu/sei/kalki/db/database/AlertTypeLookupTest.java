@@ -2,8 +2,9 @@ package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.AlertTypeDAO;
+import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.Device;
@@ -12,8 +13,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class AlertTypeLookupTest extends AUsesDatabase {
     private AlertType alertType;
@@ -34,7 +33,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
         AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
         alertTypeLookup.insert();
 
-        List<AlertTypeLookup> atlList = Postgres.findAlertTypeLookupsByDeviceType(deviceType.getId());
+        List<AlertTypeLookup> atlList = AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(deviceType.getId());
         assertEquals(1, atlList.size());
         assertEquals(deviceType.getId(), atlList.get(0).getDeviceTypeId());
     }
@@ -44,7 +43,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
         AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
         alertTypeLookup.insert();
 
-        List<AlertTypeLookup> atlList = Postgres.findAllAlertTypeLookups();
+        List<AlertTypeLookup> atlList = AlertTypeLookupDAO.findAllAlertTypeLookups();
         assertEquals(1, atlList.size());
         assertEquals(alertTypeLookup.toString(), atlList.get(0).toString());
     }
@@ -66,8 +65,8 @@ public class AlertTypeLookupTest extends AUsesDatabase {
         alertType1.insert();
 
         alertTypeLookup.setAlertTypeId(alertType1.getId());
-        Postgres.updateAlertTypeLookup(alertTypeLookup);
-        Assertions.assertEquals(alertTypeLookup.toString(), Postgres.findAlertTypeLookup(alertTypeLookup.getId()).toString());
+        AlertTypeLookupDAO.updateAlertTypeLookup(alertTypeLookup);
+        Assertions.assertEquals(alertTypeLookup.toString(), AlertTypeLookupDAO.findAlertTypeLookup(alertTypeLookup.getId()).toString());
     }
 
     @Test
@@ -81,8 +80,8 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
         alertTypeLookup.setAlertTypeId(alertType1.getId());
         alertTypeLookup.insertOrUpdate();
-        Assertions.assertEquals(alertTypeLookup.toString(), Postgres.findAlertTypeLookup(alertTypeLookup.getId()).toString());
-        assertEquals(1, Postgres.findAllAlertTypeLookups().size());
+        Assertions.assertEquals(alertTypeLookup.toString(), AlertTypeLookupDAO.findAlertTypeLookup(alertTypeLookup.getId()).toString());
+        assertEquals(1, AlertTypeLookupDAO.findAllAlertTypeLookups().size());
     }
 
     @Test
@@ -90,13 +89,13 @@ public class AlertTypeLookupTest extends AUsesDatabase {
         AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
         alertTypeLookup.insert();
 
-        List<AlertType> atList = Postgres.findAlertTypesByDeviceType(deviceType.getId());
+        List<AlertType> atList = AlertTypeDAO.findAlertTypesByDeviceType(deviceType.getId());
         assertEquals(1, atList.size());
         assertEquals(alertType.toString(), atList.get(0).toString());
 
         DeviceType deviceType1 = new DeviceType(-1, "Test type 1");
         deviceType1.insert();
-        atList = Postgres.findAlertTypesByDeviceType(deviceType1.getId());
+        atList = AlertTypeDAO.findAlertTypesByDeviceType(deviceType1.getId());
         assertEquals(0, atList.size());
     }
 

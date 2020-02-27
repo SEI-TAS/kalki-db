@@ -1,4 +1,4 @@
-package edu.cmu.sei.kalki.db.dashboard;
+package edu.cmu.sei.kalki.db.notifications;
 
 import edu.cmu.sei.kalki.db.listeners.InsertHandler;
 
@@ -14,6 +14,6 @@ public class AlertHandler implements InsertHandler
     @Override
     public void handleNewInsertion(int newItemId) {
         logger.info("Detected new alert inserted with id " + newItemId);
-        NotificationStorage.newAlertId(newItemId);
+        AsyncNotificationStorage.newAlertId(newItemId);
     }
 }

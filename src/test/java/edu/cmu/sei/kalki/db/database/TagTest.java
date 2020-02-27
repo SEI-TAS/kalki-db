@@ -1,8 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.TagDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class TagTest extends AUsesDatabase {
     private static Tag tag;
@@ -27,17 +25,17 @@ public class TagTest extends AUsesDatabase {
 
     @Test
     public void testFindTag() {
-        Assertions.assertEquals(tag.toString(), Postgres.findTag(tag.getId()).toString());
+        Assertions.assertEquals(tag.toString(), TagDAO.findTag(tag.getId()).toString());
     }
 
     @Test
     public void testFindAllTags() {
-        assertEquals(2, Postgres.findAllTags().size());
+        assertEquals(2, TagDAO.findAllTags().size());
     }
 
     @Test
     public void testFindTagsByDevice() {
-        ArrayList<Tag> foundTags = new ArrayList<Tag>(Postgres.findTagsByDevice(device.getId()));
+        ArrayList<Tag> foundTags = new ArrayList<Tag>(TagDAO.findTagsByDevice(device.getId()));
 
         assertEquals(1, foundTags.size());
         assertEquals(tag.toString(), foundTags.get(0).toString());
@@ -45,25 +43,25 @@ public class TagTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateTag() {
-        assertEquals(2, Postgres.findAllTags().size());
+        assertEquals(2, TagDAO.findAllTags().size());
 
         tag.setName("new tag name");
         tag.insertOrUpdate();
 
-        assertEquals(2, Postgres.findAllTags().size());
-        Assertions.assertEquals(tag.toString(), Postgres.findTag(tag.getId()).toString());
+        assertEquals(2, TagDAO.findAllTags().size());
+        Assertions.assertEquals(tag.toString(), TagDAO.findTag(tag.getId()).toString());
 
         Tag newTag = new Tag("Tag3");
         int newId = newTag.insertOrUpdate();
-        assertEquals(3, Postgres.findAllTags().size());
-        Assertions.assertEquals(newTag.toString(), Postgres.findTag(newId).toString());
+        assertEquals(3, TagDAO.findAllTags().size());
+        Assertions.assertEquals(newTag.toString(), TagDAO.findTag(newId).toString());
     }
 
     @Test
     public void testDeleteTag() {
-        Assertions.assertEquals(tag.toString(), Postgres.findTag(tag.getId()).toString());
-        Postgres.deleteTag(tag.getId());
-        Assertions.assertEquals(null, Postgres.findTag(tag.getId()));
+        Assertions.assertEquals(tag.toString(), TagDAO.findTag(tag.getId()).toString());
+        TagDAO.deleteTag(tag.getId());
+        Assertions.assertEquals(null, TagDAO.findTag(tag.getId()));
     }
 
     public void insertData() {

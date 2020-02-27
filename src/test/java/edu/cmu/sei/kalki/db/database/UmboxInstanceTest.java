@@ -1,8 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
@@ -13,8 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-import edu.cmu.sei.kalki.db.models.*;
-
 public class UmboxInstanceTest extends AUsesDatabase {
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
@@ -24,20 +22,19 @@ public class UmboxInstanceTest extends AUsesDatabase {
     private static UmboxImage umboxImage;
     private static UmboxInstance umboxInstance;
 
-
      /*
         Test umbox instance actions
      */
 
     @Test
     public void testFindUmboxInstance() {
-        Assertions.assertEquals(umboxInstance.toString(), Postgres.findUmboxInstance(umboxInstance.getAlerterId()).toString());
+        Assertions.assertEquals(umboxInstance.toString(), UmboxInstanceDAO.findUmboxInstance(umboxInstance.getAlerterId()).toString());
     }
 
     @Test
     public void testFindUmboxInstances() {
         ArrayList<UmboxInstance> foundInstances =
-                new ArrayList<UmboxInstance>(Postgres.findUmboxInstances(device.getId()));
+                new ArrayList<UmboxInstance>(UmboxInstanceDAO.findUmboxInstances(device.getId()));
 
         assertEquals(1, foundInstances.size());
         assertEquals(umboxInstance.toString(), foundInstances.get(0).toString());
@@ -47,32 +44,32 @@ public class UmboxInstanceTest extends AUsesDatabase {
     public void testInsertUmboxInstance() {
         UmboxInstance newUmboxInstance = new UmboxInstance("new alerter id", umboxImage.getId(), device.getId());
 
-        Assertions.assertEquals(null, Postgres.findUmboxInstance(newUmboxInstance.getAlerterId()));
+        Assertions.assertEquals(null, UmboxInstanceDAO.findUmboxInstance(newUmboxInstance.getAlerterId()));
 
         newUmboxInstance.insert();
 
         Assertions.assertEquals(newUmboxInstance.toString(),
-                Postgres.findUmboxInstance(newUmboxInstance.getAlerterId()).toString());
+                UmboxInstanceDAO.findUmboxInstance(newUmboxInstance.getAlerterId()).toString());
     }
 
     @Test
     public void testUpdateUmboxInstance() {
         Assertions.assertEquals(umboxInstance.getAlerterId(),
-                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
+                UmboxInstanceDAO.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
 
         umboxInstance.setAlerterId("changed alerter id");
 
-        Postgres.updateUmboxInstance(umboxInstance);
+        UmboxInstanceDAO.updateUmboxInstance(umboxInstance);
 
         Assertions.assertEquals(umboxInstance.getAlerterId(),
-                Postgres.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
+                UmboxInstanceDAO.findUmboxInstance(umboxInstance.getAlerterId()).getAlerterId());
     }
 
     @Test
     public void testDeleteUmboxInstance() {
-        Assertions.assertEquals(umboxInstance.toString(), Postgres.findUmboxInstance(umboxInstance.getAlerterId()).toString());
-        Postgres.deleteUmboxInstance(umboxInstance.getId());
-        Assertions.assertEquals(null, Postgres.findUmboxInstance(umboxInstance.getAlerterId()));
+        Assertions.assertEquals(umboxInstance.toString(), UmboxInstanceDAO.findUmboxInstance(umboxInstance.getAlerterId()).toString());
+        UmboxInstanceDAO.deleteUmboxInstance(umboxInstance.getId());
+        Assertions.assertEquals(null, UmboxInstanceDAO.findUmboxInstance(umboxInstance.getAlerterId()));
     }
 
     public void insertData() {

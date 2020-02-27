@@ -1,15 +1,13 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.SecurityStateDAO;
 import edu.cmu.sei.kalki.db.models.SecurityState;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class SecurityStateTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -20,42 +18,42 @@ public class SecurityStateTest extends AUsesDatabase {
 
     @Test
     public void testFindSecurityState() {
-        Assertions.assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
+        Assertions.assertEquals(securityState.toString(), SecurityStateDAO.findSecurityState(securityState.getId()).toString());
     }
 
     @Test
     public void testFindAllSecurityStates() {
-        ArrayList<SecurityState> foundSecurityStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        ArrayList<SecurityState> foundSecurityStates = new ArrayList<SecurityState>(SecurityStateDAO.findAllSecurityStates());
         assertEquals(4, foundSecurityStates.size());    //including normal, suspicious, and attack
     }
 
     @Test
     public void testInsertOrUpdateSecurityState() {
-        ArrayList<SecurityState> foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        ArrayList<SecurityState> foundStates = new ArrayList<SecurityState>(SecurityStateDAO.findAllSecurityStates());
         assertEquals(4, foundStates.size());    //including normal, suspicious, and attack
 
         securityState.setName("changed security state");
         securityState.insertOrUpdate();
 
-        foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        foundStates = new ArrayList<SecurityState>(SecurityStateDAO.findAllSecurityStates());
         assertEquals(4, foundStates.size());    //including normal, suspicious, and attack
-        Assertions.assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
+        Assertions.assertEquals(securityState.toString(), SecurityStateDAO.findSecurityState(securityState.getId()).toString());
 
         SecurityState newSecurityState = new SecurityState("new security state");
         int newId = newSecurityState.insertOrUpdate();
 
-        foundStates = new ArrayList<SecurityState>(Postgres.findAllSecurityStates());
+        foundStates = new ArrayList<SecurityState>(SecurityStateDAO.findAllSecurityStates());
         assertEquals(5, foundStates.size());    //including normal, suspicious, and attack
-        Assertions.assertEquals(newSecurityState.toString(), Postgres.findSecurityState(newSecurityState.getId()).toString());
+        Assertions.assertEquals(newSecurityState.toString(), SecurityStateDAO.findSecurityState(newSecurityState.getId()).toString());
     }
 
     @Test
     public void testDeleteSecurityState() {
-        Assertions.assertEquals(securityState.toString(), Postgres.findSecurityState(securityState.getId()).toString());
+        Assertions.assertEquals(securityState.toString(), SecurityStateDAO.findSecurityState(securityState.getId()).toString());
 
-        Postgres.deleteSecurityState(securityState.getId());
+        SecurityStateDAO.deleteSecurityState(securityState.getId());
 
-        Assertions.assertEquals(null, Postgres.findSecurityState(securityState.getId()));
+        Assertions.assertEquals(null, SecurityStateDAO.findSecurityState(securityState.getId()));
     }
 
     public void insertData() {

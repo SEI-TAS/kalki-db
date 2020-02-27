@@ -1,4 +1,4 @@
-package edu.cmu.sei.kalki.db.dashboard;
+package edu.cmu.sei.kalki.db.notifications;
 
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceSecurityStateDAO;
@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 // Used by Dashboard to get new ids.
-public class NotificationStorage
+public class AsyncNotificationStorage
 {
     private static final List<Integer> newStateIds = Collections.synchronizedList(new ArrayList<>());
     private static final List<Integer> newAlertIds = Collections.synchronizedList(new ArrayList<>());

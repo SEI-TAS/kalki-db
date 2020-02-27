@@ -1,8 +1,9 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.PolicyRuleLogDAO;
+import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.PolicyCondition;
 import edu.cmu.sei.kalki.db.models.PolicyRule;
@@ -24,7 +25,7 @@ public class PolicyRuleLogTest extends AUsesDatabase {
         PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId(), device.getId());
         policyRuleLog.insert();
 
-        PolicyRuleLog test = Postgres.findPolicyRuleLog(policyRuleLog.getId());
+        PolicyRuleLog test = PolicyRuleLogDAO.findPolicyRuleLog(policyRuleLog.getId());
         assertEquals(policyRuleLog.toString(), test.toString());
     }
 
@@ -41,10 +42,10 @@ public class PolicyRuleLogTest extends AUsesDatabase {
         PolicyRuleLog policyRuleLog = new PolicyRuleLog(policyRule.getId(), device.getId());
         policyRuleLog.insert();
 
-        boolean success = Postgres.deletePolicyRuleLog(policyRuleLog.getId());
+        boolean success = PolicyRuleLogDAO.deletePolicyRuleLog(policyRuleLog.getId());
         assert success;
 
-        PolicyRuleLog cond = Postgres.findPolicyRuleLog(policyRuleLog.getId());
+        PolicyRuleLog cond = PolicyRuleLogDAO.findPolicyRuleLog(policyRuleLog.getId());
         assertEquals(null, cond);
     }
 
@@ -56,7 +57,7 @@ public class PolicyRuleLogTest extends AUsesDatabase {
         device.insert();
 
         stateTransition = new StateTransition(1, 2);
-        Postgres.insertStateTransition(stateTransition);
+        StateTransitionDAO.insertStateTransition(stateTransition);
 
         policyCondition = new PolicyCondition(1, null);
         policyCondition.insert();

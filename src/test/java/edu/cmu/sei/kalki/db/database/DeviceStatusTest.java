@@ -1,8 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceStatus;
 import edu.cmu.sei.kalki.db.models.DeviceType;
@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class DeviceStatusTest extends AUsesDatabase {
     private static DeviceType deviceType;
@@ -27,18 +25,18 @@ public class DeviceStatusTest extends AUsesDatabase {
    */
     @Test
     public void testFindDeviceStatus() {
-        assertEquals(deviceStatus.toString(), Postgres.findDeviceStatus(deviceStatus.getId()).toString());
+        assertEquals(deviceStatus.toString(), DeviceStatusDAO.findDeviceStatus(deviceStatus.getId()).toString());
     }
 
     @Test
     public void testFindDeviceStatuses() {
         ArrayList<DeviceStatus> foundStatuses =
-                new ArrayList<DeviceStatus>(Postgres.findDeviceStatuses(device.getId()));
+                new ArrayList<DeviceStatus>(DeviceStatusDAO.findDeviceStatuses(device.getId()));
 
         assertEquals(1, foundStatuses.size());
         assertEquals(deviceStatus.toString(), foundStatuses.get(0).toString());
 
-        foundStatuses = new ArrayList<DeviceStatus>(Postgres.findDeviceStatuses(deviceTwo.getId()));
+        foundStatuses = new ArrayList<DeviceStatus>(DeviceStatusDAO.findDeviceStatuses(deviceTwo.getId()));
 
         assertEquals(0, foundStatuses.size());
     }
@@ -46,44 +44,44 @@ public class DeviceStatusTest extends AUsesDatabase {
     @Test
     public void testFindNDeviceStatuses() {
         ArrayList<DeviceStatus> foundStatuses =
-                new ArrayList<DeviceStatus>(Postgres.findNDeviceStatuses(device.getId(), 1));
+                new ArrayList<DeviceStatus>(DeviceStatusDAO.findNDeviceStatuses(device.getId(), 1));
         assertEquals(1, foundStatuses.size());
 
-        foundStatuses = new ArrayList<DeviceStatus>(Postgres.findNDeviceStatuses(deviceTwo.getId(), 0));
+        foundStatuses = new ArrayList<DeviceStatus>(DeviceStatusDAO.findNDeviceStatuses(deviceTwo.getId(), 0));
         assertEquals(0, foundStatuses.size());
     }
 
     @Test
     public void testFindAllDeviceStatuses() {
-        ArrayList<DeviceStatus> foundStatuses = new ArrayList<DeviceStatus>(Postgres.findAllDeviceStatuses());
+        ArrayList<DeviceStatus> foundStatuses = new ArrayList<DeviceStatus>(DeviceStatusDAO.findAllDeviceStatuses());
         assertEquals(1, foundStatuses.size());
         assertEquals(deviceStatus.toString(), foundStatuses.get(0).toString());
     }
 
     @Test
     public void testInsertOrUpdateDeviceStatus() {
-        assertEquals(1, Postgres.findAllDeviceStatuses().size());
+        assertEquals(1, DeviceStatusDAO.findAllDeviceStatuses().size());
 
         deviceStatus.setDeviceId(deviceTwo.getId());
         deviceStatus.insertOrUpdate();
 
-        assertEquals(1, Postgres.findAllDeviceStatuses().size());
+        assertEquals(1, DeviceStatusDAO.findAllDeviceStatuses().size());
 
         DeviceStatus newDeviceStatus = new DeviceStatus(device.getId());
         int newId = newDeviceStatus.insertOrUpdate();
 
-        assertEquals(2, Postgres.findAllDeviceStatuses().size());
-        assertEquals(newDeviceStatus.toString(), Postgres.findDeviceStatus(newId).toString());
+        assertEquals(2, DeviceStatusDAO.findAllDeviceStatuses().size());
+        assertEquals(newDeviceStatus.toString(), DeviceStatusDAO.findDeviceStatus(newId).toString());
     }
 
     @Test
     public void testDeleteDeviceStatus() {
-        assertEquals(1, Postgres.findAllDeviceStatuses().size());
+        assertEquals(1, DeviceStatusDAO.findAllDeviceStatuses().size());
 
-        Postgres.deleteDeviceStatus(deviceStatus.getId());
+        DeviceStatusDAO.deleteDeviceStatus(deviceStatus.getId());
 
-        assertEquals(0, Postgres.findAllDeviceStatuses().size());
-        assertEquals(null, Postgres.findDeviceStatus(deviceStatus.getId()));
+        assertEquals(0, DeviceStatusDAO.findAllDeviceStatuses().size());
+        assertEquals(null, DeviceStatusDAO.findDeviceStatus(deviceStatus.getId()));
     }
 
     public void insertData() {

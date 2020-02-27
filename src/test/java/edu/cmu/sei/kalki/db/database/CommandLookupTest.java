@@ -1,8 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceCommand;
 import edu.cmu.sei.kalki.db.models.DeviceCommandLookup;
@@ -15,8 +15,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class CommandLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -40,13 +38,13 @@ public class CommandLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindAllCommandLookups() {
-        assertEquals(2, Postgres.findAllCommandLookups().size());
+        assertEquals(2, DeviceCommandLookupDAO.findAllCommandLookups().size());
     }
 
     @Test
     public void testFindCommandLookupsByDevice() {
         ArrayList<DeviceCommandLookup> foundLookups =
-                new ArrayList<DeviceCommandLookup>(Postgres.findCommandLookupsByDevice(device.getId()));
+                new ArrayList<DeviceCommandLookup>(DeviceCommandLookupDAO.findCommandLookupsByDevice(device.getId()));
 
         assertEquals(1, foundLookups.size());
         assertEquals(deviceCommandLookup.toString(), foundLookups.get(0).toString());
@@ -55,37 +53,37 @@ public class CommandLookupTest extends AUsesDatabase {
     @Test
     public void testFindCommandLookup() {
         Assertions.assertEquals(deviceCommandLookup.toString(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).toString());
+                DeviceCommandLookupDAO.findCommandLookup(deviceCommandLookup.getId()).toString());
     }
 
     @Test
     public void testInsertOrUpdateCommandLookup() {
-        assertEquals(2, Postgres.findAllCommandLookups().size());
+        assertEquals(2, DeviceCommandLookupDAO.findAllCommandLookups().size());
 
         deviceCommandLookup.setPolicyRuleId(policyRuleTwo.getId());
         deviceCommandLookup.insertOrUpdate();
 
         Assertions.assertEquals(deviceCommandLookup.getPolicyRuleId(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).getPolicyRuleId());
-        assertEquals(2, Postgres.findAllCommandLookups().size());
+                DeviceCommandLookupDAO.findCommandLookup(deviceCommandLookup.getId()).getPolicyRuleId());
+        assertEquals(2, DeviceCommandLookupDAO.findAllCommandLookups().size());
 
         DeviceCommandLookup newLookup =
                 new DeviceCommandLookup(deviceCommand.getId(), policyRuleOne.getId());
 
         int newId = newLookup.insertOrUpdate();
 
-        assertEquals(3, Postgres.findAllCommandLookups().size());
-        Assertions.assertEquals(newLookup.toString(), Postgres.findCommandLookup(newId).toString());
+        assertEquals(3, DeviceCommandLookupDAO.findAllCommandLookups().size());
+        Assertions.assertEquals(newLookup.toString(), DeviceCommandLookupDAO.findCommandLookup(newId).toString());
     }
 
     @Test
     public void testDeleteCommandLookup() {
         Assertions.assertEquals(deviceCommandLookup.toString(),
-                Postgres.findCommandLookup(deviceCommandLookup.getId()).toString());
+                DeviceCommandLookupDAO.findCommandLookup(deviceCommandLookup.getId()).toString());
 
-        Postgres.deleteCommandLookup(deviceCommandLookup.getId());
+        DeviceCommandLookupDAO.deleteCommandLookup(deviceCommandLookup.getId());
 
-        Assertions.assertEquals(null, Postgres.findCommandLookup(deviceCommandLookup.getId()));
+        Assertions.assertEquals(null, DeviceCommandLookupDAO.findCommandLookup(deviceCommandLookup.getId()));
     }
 
     public void insertData() {

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.UmboxLogDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.UmboxImage;
@@ -13,15 +14,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import edu.cmu.sei.kalki.db.models.*;
-
 public class UmboxLogTest extends AUsesDatabase {
     private Device device;
     private DeviceType deviceType;
     private UmboxImage umboxImage;
     private UmboxInstance umboxInstance;
 
-//    private UmboxLog log;
     /*
         Test UmboxLog Actions
      */
@@ -31,7 +29,7 @@ public class UmboxLogTest extends AUsesDatabase {
         UmboxLog log = new UmboxLog(umboxInstance.getAlerterId(), "The details");
         log.insert();
 
-        UmboxLog log1 = Postgres.findUmboxLog(log.getId());
+        UmboxLog log1 = UmboxLogDAO.findUmboxLog(log.getId());
         assertNotNull(log1);
         assertEquals(log.toString(), log1.toString());
     }
@@ -41,7 +39,7 @@ public class UmboxLogTest extends AUsesDatabase {
         UmboxLog log = new UmboxLog(umboxInstance.getAlerterId(), "The details");
         log.insert();
 
-        List<UmboxLog> UmboxLogList = Postgres.findAllUmboxLogs();
+        List<UmboxLog> UmboxLogList = UmboxLogDAO.findAllUmboxLogs();
         assertNotEquals(0, UmboxLogList.size());
     }
 
@@ -50,7 +48,7 @@ public class UmboxLogTest extends AUsesDatabase {
         UmboxLog log = new UmboxLog(umboxInstance.getAlerterId(), "The details");
         log.insert();
 
-        List<UmboxLog> UmboxLogList = Postgres.findAllUmboxLogsForAlerterId(umboxInstance.getAlerterId());
+        List<UmboxLog> UmboxLogList = UmboxLogDAO.findAllUmboxLogsForAlerterId(umboxInstance.getAlerterId());
         assertNotEquals(0, UmboxLogList.size());
     }
 

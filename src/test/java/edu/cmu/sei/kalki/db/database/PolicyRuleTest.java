@@ -1,15 +1,15 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.PolicyConditionDAO;
+import edu.cmu.sei.kalki.db.daos.PolicyRuleDAO;
+import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.PolicyCondition;
 import edu.cmu.sei.kalki.db.models.PolicyRule;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 import org.junit.jupiter.api.Test;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class PolicyRuleTest extends AUsesDatabase {
     private static PolicyRule policyRule;
@@ -19,7 +19,7 @@ public class PolicyRuleTest extends AUsesDatabase {
         policyRule = new PolicyRule(1, 1, 1, 1);
         policyRule.insert();
 
-        PolicyRule test = Postgres.findPolicyRule(policyRule.getId());
+        PolicyRule test = PolicyRuleDAO.findPolicyRule(policyRule.getId());
         assertEquals(policyRule.toString(), test.toString());
     }
 
@@ -28,7 +28,7 @@ public class PolicyRuleTest extends AUsesDatabase {
         policyRule = new PolicyRule(1, 1, 1, 1);
         policyRule.insert();
 
-        PolicyRule test = Postgres.findPolicyRule(1, 1, 1);
+        PolicyRule test = PolicyRuleDAO.findPolicyRule(1, 1, 1);
         assertEquals(policyRule.toString(), test.toString());
     }
 
@@ -45,7 +45,7 @@ public class PolicyRuleTest extends AUsesDatabase {
         policyRule = new PolicyRule(1, 1, 1, 1);
         policyRule.insert();
 
-        boolean success = Postgres.deletePolicyRule(policyRule.getId());
+        boolean success = PolicyRuleDAO.deletePolicyRule(policyRule.getId());
         assertEquals(true, success);
     }
 
@@ -56,7 +56,7 @@ public class PolicyRuleTest extends AUsesDatabase {
         assertEquals(1, policyRule.getSamplingRate());
 
         policyRule.setSamplingRate(2);
-        Postgres.updatePolicyRule(policyRule);
+        PolicyRuleDAO.updatePolicyRule(policyRule);
 
         assertEquals(2, policyRule.getSamplingRate());
     }
@@ -66,9 +66,9 @@ public class PolicyRuleTest extends AUsesDatabase {
         deviceType.insert();
 
         StateTransition stateTransition = new StateTransition(1, 2);
-        Postgres.insertStateTransition(stateTransition);
+        StateTransitionDAO.insertStateTransition(stateTransition);
 
         PolicyCondition policyCondition = new PolicyCondition(1, null);
-        Postgres.insertPolicyCondition(policyCondition);
+        PolicyConditionDAO.insertPolicyCondition(policyCondition);
     }
 }

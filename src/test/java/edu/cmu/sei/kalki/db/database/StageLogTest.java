@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.StageLogDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 import edu.cmu.sei.kalki.db.models.DeviceType;
@@ -12,8 +13,6 @@ import edu.cmu.sei.kalki.db.models.StageLog;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class StageLogTest extends AUsesDatabase {
     private Device device;
@@ -30,7 +29,7 @@ public class StageLogTest extends AUsesDatabase {
         StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.INCREASE_SAMPLE_RATE, StageLog.Stage.TRIGGER, "Info");
         log.insert();
 
-        StageLog log1 = Postgres.findStageLog(log.getId());
+        StageLog log1 = StageLogDAO.findStageLog(log.getId());
         assertNotNull(log1);
         assertEquals(log.toString(), log1.toString());
     }
@@ -40,7 +39,7 @@ public class StageLogTest extends AUsesDatabase {
         StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.SEND_COMMAND, StageLog.Stage.REACT, "Info");
         log.insert();
 
-        List<StageLog> stageLogList = Postgres.findAllStageLogs();
+        List<StageLog> stageLogList = StageLogDAO.findAllStageLogs();
         assertNotEquals(0, stageLogList.size());
     }
 
@@ -49,7 +48,7 @@ public class StageLogTest extends AUsesDatabase {
         StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.DEPLOY_UMBOX, StageLog.Stage.FINISH, "Info");
         log.insert();
 
-        List<StageLog> stageLogList = Postgres.findAllStageLogsForDevice(device.getId());
+        List<StageLog> stageLogList = StageLogDAO.findAllStageLogsForDevice(device.getId());
         assertNotEquals(0, stageLogList.size());
     }
 

@@ -1,8 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.DeviceSecurityStateDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 import edu.cmu.sei.kalki.db.models.DeviceType;
@@ -11,8 +11,6 @@ import edu.cmu.sei.kalki.db.models.SecurityState;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class DeviceSecurityStateTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -29,7 +27,7 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
 
     @Test
     public void testFindDeviceSecurityState() {
-        DeviceSecurityState foundState = Postgres.findDeviceSecurityState(deviceSecurityState.getId());
+        DeviceSecurityState foundState = DeviceSecurityStateDAO.findDeviceSecurityState(deviceSecurityState.getId());
 
         //toStrings are not equal becuase when finding a deviceSecurityState it adds the state name
         assertEquals(deviceSecurityState.getId(), foundState.getId());
@@ -38,7 +36,7 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
 
     @Test
     public void testFindDeviceSecurityStateByDevice() {
-        DeviceSecurityState foundState = Postgres.findDeviceSecurityStateByDevice(device.getId());
+        DeviceSecurityState foundState = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(device.getId());
         assertEquals(deviceSecurityState.getId(), foundState.getId());
         assertEquals(deviceSecurityState.getStateId(), foundState.getStateId());
     }
@@ -46,30 +44,30 @@ public class DeviceSecurityStateTest extends AUsesDatabase {
     @Test
     public void testFindDeviceSecurityStates() {
         ArrayList<DeviceSecurityState> foundStates =
-                new ArrayList<DeviceSecurityState>(Postgres.findDeviceSecurityStates(device.getId()));
+                new ArrayList<DeviceSecurityState>(DeviceSecurityStateDAO.findDeviceSecurityStates(device.getId()));
         assertEquals(1, foundStates.size()); //the default normal state plus the new state
     }
 
     @Test
     public void testInsertDeviceSecurityState() {
-        assertEquals(1, Postgres.findDeviceSecurityStates(device.getId()).size());
+        assertEquals(1, DeviceSecurityStateDAO.findDeviceSecurityStates(device.getId()).size());
 
         DeviceSecurityState newState = new DeviceSecurityState(device.getId(), securityState.getId());
         newState.insert();
 
-        assertEquals(2, Postgres.findDeviceSecurityStates(device.getId()).size());
+        assertEquals(2, DeviceSecurityStateDAO.findDeviceSecurityStates(device.getId()).size());
     }
 
     @Test
     public void testDeleteDeviceSecurityState() {
-        DeviceSecurityState foundState = Postgres.findDeviceSecurityState(deviceSecurityState.getId());
+        DeviceSecurityState foundState = DeviceSecurityStateDAO.findDeviceSecurityState(deviceSecurityState.getId());
 
         assertEquals(deviceSecurityState.getId(), foundState.getId());
         assertEquals(deviceSecurityState.getStateId(), foundState.getStateId());
 
-        Postgres.deleteDeviceSecurityState(deviceSecurityState.getId());
+        DeviceSecurityStateDAO.deleteDeviceSecurityState(deviceSecurityState.getId());
 
-        assertEquals(null, Postgres.findDeviceSecurityState(deviceSecurityState.getId()));
+        assertEquals(null, DeviceSecurityStateDAO.findDeviceSecurityState(deviceSecurityState.getId()));
     }
 
     public void insertData() {

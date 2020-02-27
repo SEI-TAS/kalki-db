@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
+import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
+import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
@@ -21,8 +24,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class DeviceTest extends AUsesDatabase {
     private static SecurityState normalState;
@@ -49,23 +50,23 @@ public class DeviceTest extends AUsesDatabase {
         test.insert();
 
         assertNotNull(test.getCurrentState());
-        assertNotEquals(0, Postgres.findAlertTypeLookupsByDeviceType(test.getType().getId()));
-        assertNotEquals(0, Postgres.findAlertConditionsByDevice(test.getId()).size());
+        assertNotEquals(0, AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(test.getType().getId()));
+        assertNotEquals(0, AlertConditionDAO.findAlertConditionsByDevice(test.getId()).size());
     }
     @Test
     public void testFindDevice() {
-        Assertions.assertEquals(device.getDescription(), Postgres.findDevice(device.getId()).getDescription());
-        Assertions.assertEquals(deviceTwo.getDescription(), Postgres.findDevice(deviceTwo.getId()).getDescription());
+        Assertions.assertEquals(device.getDescription(), DeviceDAO.findDevice(device.getId()).getDescription());
+        Assertions.assertEquals(deviceTwo.getDescription(), DeviceDAO.findDevice(deviceTwo.getId()).getDescription());
     }
 
     @Test
     public void testFindAllDevices() {
-        assertEquals(2, Postgres.findAllDevices().size());
+        assertEquals(2, DeviceDAO.findAllDevices().size());
     }
 
     @Test
     public void testFindDevicesByGroup() {
-        ArrayList<Device> foundDevices = new ArrayList<Device>(Postgres.findDevicesByGroup(group.getId()));
+        ArrayList<Device> foundDevices = new ArrayList<Device>(DeviceDAO.findDevicesByGroup(group.getId()));
 
         assertEquals(1, foundDevices.size());
         assertEquals(deviceTwo.getDescription(), foundDevices.get(0).getDescription());
@@ -73,13 +74,13 @@ public class DeviceTest extends AUsesDatabase {
 
     @Test
     public void testFindDeviceByAlert() {
-        Device foundDevice = Postgres.findDeviceByAlert(alertIoT);
+        Device foundDevice = DeviceDAO.findDeviceByAlert(alertIoT);
         assertEquals(device.toString(), foundDevice.toString());
     }
 
     @Test
     public void testFindDevicesByType() {
-        ArrayList<Device> foundDevices = new ArrayList<Device>(Postgres.findDevicesByType(deviceTypeTwo.getId()));
+        ArrayList<Device> foundDevices = new ArrayList<Device>(DeviceDAO.findDevicesByType(deviceTypeTwo.getId()));
 
         assertEquals(1, foundDevices.size());
         assertEquals(deviceTwo.getDescription(), foundDevices.get(0).getDescription());
@@ -87,27 +88,27 @@ public class DeviceTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateDevice() {
-        assertEquals(2, Postgres.findAllDevices().size());
+        assertEquals(2, DeviceDAO.findAllDevices().size());
 
         device.setDescription("new description");
         device.insertOrUpdate();
 
-        assertEquals(2, Postgres.findAllDevices().size());
+        assertEquals(2, DeviceDAO.findAllDevices().size());
 
         Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2);
         int newId = newDevice.insertOrUpdate();
 
-        assertEquals(3, Postgres.findAllDevices().size());
-        Assertions.assertEquals(newDevice.getDescription(), Postgres.findDevice(newId).getDescription());
+        assertEquals(3, DeviceDAO.findAllDevices().size());
+        Assertions.assertEquals(newDevice.getDescription(), DeviceDAO.findDevice(newId).getDescription());
     }
 
     @Test
     public void testDeleteDevice() {
-        assertNotNull(Postgres.findDevice(deviceTwo.getId()));
+        assertNotNull(DeviceDAO.findDevice(deviceTwo.getId()));
 
-        Postgres.deleteDevice(deviceTwo.getId());
+        DeviceDAO.deleteDevice(deviceTwo.getId());
 
-        Assertions.assertEquals(null, Postgres.findDevice(deviceTwo.getId()));
+        Assertions.assertEquals(null, DeviceDAO.findDevice(deviceTwo.getId()));
     }
 
     @Test

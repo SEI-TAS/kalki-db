@@ -1,8 +1,10 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.DeviceCommandDAO;
+import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
+import edu.cmu.sei.kalki.db.daos.SecurityStateDAO;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceCommand;
 import edu.cmu.sei.kalki.db.models.DeviceCommandLookup;
@@ -16,8 +18,6 @@ import edu.cmu.sei.kalki.db.models.StateTransition;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-
-import edu.cmu.sei.kalki.db.models.*;
 
 public class CommandTest extends AUsesDatabase {
     private static SecurityState securityState;
@@ -43,12 +43,12 @@ public class CommandTest extends AUsesDatabase {
 
     @Test
     public void testFindCommand() {
-        assertEquals(deviceCommand.toString(), Postgres.findCommand(deviceCommand.getId()).toString());
+        assertEquals(deviceCommand.toString(), DeviceCommandDAO.findCommand(deviceCommand.getId()).toString());
     }
 
     @Test
     public void testFindAllCommands() {
-        assertEquals(2, Postgres.findAllCommands().size());
+        assertEquals(2, DeviceCommandDAO.findAllCommands().size());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class CommandTest extends AUsesDatabase {
         device.setCurrentState(deviceSecurityStateTwo);
         device.insertOrUpdate();
 
-        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(Postgres.findCommandsByPolicyRuleLog(policyRuleLog.getId()));
+        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(DeviceCommandDAO.findCommandsByPolicyRuleLog(policyRuleLog.getId()));
 
         assertEquals(2, foundCommands.size());
         assertEquals(deviceCommand.toString(), foundCommands.get(0).toString());
@@ -64,35 +64,35 @@ public class CommandTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateCommand() {
-        assertEquals(2, Postgres.findAllCommands().size());
+        assertEquals(2, DeviceCommandDAO.findAllCommands().size());
 
         deviceCommand.setName("new command");
         deviceCommand.insertOrUpdate();
 
-        assertEquals(deviceCommand.getName(), Postgres.findCommand(deviceCommand.getId()).getName());
-        assertEquals(2, Postgres.findAllCommands().size());
+        assertEquals(deviceCommand.getName(), DeviceCommandDAO.findCommand(deviceCommand.getId()).getName());
+        assertEquals(2, DeviceCommandDAO.findAllCommands().size());
 
         DeviceCommand newCommand = new DeviceCommand("new command 2", deviceType.getId());
 
         int newId = newCommand.insertOrUpdate();
 
-        assertEquals(3, Postgres.findAllCommands().size());
-        assertEquals(newCommand.toString(), Postgres.findCommand(newId).toString());
+        assertEquals(3, DeviceCommandDAO.findAllCommands().size());
+        assertEquals(newCommand.toString(), DeviceCommandDAO.findCommand(newId).toString());
     }
 
     @Test
     public void testDeleteCommand() {
-        assertEquals(deviceCommand.toString(), Postgres.findCommand(deviceCommand.getId()).toString());
+        assertEquals(deviceCommand.toString(), DeviceCommandDAO.findCommand(deviceCommand.getId()).toString());
 
-        Postgres.deleteCommandLookup(deviceCommandLookup.getId());
-        Postgres.deleteCommand(deviceCommand.getId());
+        DeviceCommandLookupDAO.deleteCommandLookup(deviceCommandLookup.getId());
+        DeviceCommandDAO.deleteCommand(deviceCommand.getId());
 
-        assertEquals(null, Postgres.findCommand(deviceCommand.getId()));
+        assertEquals(null, DeviceCommandDAO.findCommand(deviceCommand.getId()));
     }
 
     public void insertData() {
-        securityState = Postgres.findSecurityState(1);
-        securityStateTwo = Postgres.findSecurityState(2);
+        securityState = SecurityStateDAO.findSecurityState(1);
+        securityStateTwo = SecurityStateDAO.findSecurityState(2);
         stateTransition = new StateTransition(securityState.getId(), securityStateTwo.getId());
         stateTransition.insert();
 

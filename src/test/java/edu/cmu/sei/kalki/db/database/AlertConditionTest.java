@@ -1,27 +1,20 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-//import org.junit.jupiter.api.MethodOrder;
-//import org.junit.jupiter.api.Order;
+import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 
-
-import edu.cmu.sei.kalki.db.models.*;
-
-//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AlertConditionTest extends AUsesDatabase {
     private static DeviceType deviceType;
     private static Device device;
@@ -43,7 +36,7 @@ public class AlertConditionTest extends AUsesDatabase {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
         alertCondition.insertOrUpdate();
 
-        AlertCondition ac = Postgres.findAlertCondition(alertCondition.getId());
+        AlertCondition ac = AlertConditionDAO.findAlertCondition(alertCondition.getId());
         assertEquals(alertCondition.getAlertTypeLookupId(), ac.getAlertTypeLookupId());
         assertEquals(alertCondition.getDeviceId(), ac.getDeviceId());
         assertEquals(alertCondition.getVariables(), ac.getVariables());
@@ -55,7 +48,7 @@ public class AlertConditionTest extends AUsesDatabase {
         alertCondition.insertOrUpdate();
         alertCondition.insertOrUpdate();
 
-        ArrayList<AlertCondition> acList = new ArrayList<AlertCondition>(Postgres.findAllAlertConditions());
+        ArrayList<AlertCondition> acList = new ArrayList<AlertCondition>(AlertConditionDAO.findAllAlertConditions());
         assertEquals(2, acList.size());
         assertEquals(alertCondition.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
         assertEquals(alertCondition.getDeviceId(), acList.get(1).getDeviceId());
@@ -64,43 +57,41 @@ public class AlertConditionTest extends AUsesDatabase {
 
     @Test
     public void testInsertAlertConditionForDevice(){
-        Postgres.insertAlertConditionForDevice(device.getId()); //should insert 1
-        List<AlertCondition> acList = Postgres.findAllAlertConditions();
+        AlertConditionDAO.insertAlertConditionForDevice(device.getId()); //should insert 1
+        List<AlertCondition> acList = AlertConditionDAO.findAllAlertConditions();
         assertEquals(1, acList.size());
 
-        Postgres.insertAlertConditionForDevice(device.getId()); //should insert 1
-        acList = Postgres.findAllAlertConditions();
+        AlertConditionDAO.insertAlertConditionForDevice(device.getId()); //should insert 1
+        acList = AlertConditionDAO.findAllAlertConditions();
         assertEquals(2, acList.size()); // 1 device, 1 alert type lookup, 2 inserts by device
 
     }
 
     @Test
     public void testFindAlertConditionsByDevice() {
-        Postgres.insertAlertConditionForDevice(device.getId()); //should insert 1
-        Postgres.insertAlertConditionForDevice(device.getId()); //should insert 1
+        AlertConditionDAO.insertAlertConditionForDevice(device.getId()); //should insert 1
+        AlertConditionDAO.insertAlertConditionForDevice(device.getId()); //should insert 1
 
-        List<AlertCondition> acList = Postgres.findAlertConditionsByDevice(device.getId());
+        List<AlertCondition> acList = AlertConditionDAO.findAlertConditionsByDevice(device.getId());
         assertEquals(1, acList.size()); // should only return newest row
     }
 
     @Test
     public void testUpdateAlertConditionsForDeviceType() {
-        Postgres.insertAlertConditionForDevice(device.getId()); //should insert 1
+        AlertConditionDAO.insertAlertConditionForDevice(device.getId()); //should insert 1
 
         alertTypeLookup.getVariables().replace("test", "testing");
         alertTypeLookup.insertOrUpdate();
 
-        int result = Postgres.updateAlertConditionsForDeviceType(alertTypeLookup);
+        int result = AlertConditionDAO.updateAlertConditionsForDeviceType(alertTypeLookup);
         assertEquals(1, result); // returns 1 on success
 
-        List<AlertCondition> allAlertConditions = Postgres.findAllAlertConditions();
+        List<AlertCondition> allAlertConditions = AlertConditionDAO.findAllAlertConditions();
         assertEquals(2, allAlertConditions.size());
 
-        List<AlertCondition> deviceAlertConditions = Postgres.findAlertConditionsByDevice(device.getId());
+        List<AlertCondition> deviceAlertConditions = AlertConditionDAO.findAlertConditionsByDevice(device.getId());
         assertEquals(alertTypeLookup.getVariables().get("test"), deviceAlertConditions.get(0).getVariables().get("test"));
     }
-
-
 
     public void insertData() {
         // insert device_type
