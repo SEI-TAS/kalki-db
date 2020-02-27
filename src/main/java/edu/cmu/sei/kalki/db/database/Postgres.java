@@ -588,16 +588,15 @@ public class Postgres {
 
     /**
      * Creates an object from a result set, given the class name of the object.
-     * @param className the type of object to create
+     * @param dbObjectClass the class of object to create
      * @param rs the result set of the information
      * @return anb object of the given type with the information.
      */
-    private static Object createFromRs(String className, ResultSet rs) {
+    private static Object createFromRs(Class dbObjectClass, ResultSet rs) {
         try {
-            Class<?> dbObjectClass = Class.forName(MODELS_PACKAGE + className);
             Method method = dbObjectClass.getMethod("createFromRs", ResultSet.class);
             return method.invoke(null, rs);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
             return null;
         }
@@ -607,12 +606,12 @@ public class Postgres {
      * Returns a DB object of the given class, from the given table.
      * @param id DB id of the object to get
      * @param tableName table to get the data from
-     * @param className class name (without package) of the object to return.
+     * @param objectClass class of the object to return.
      * @return
      */
-    private static Object findObject(int id, String tableName, String className) {
+    private static Object findObject(int id, String tableName, Class objectClass) {
         ResultSet rs = findById(id, tableName);
-        Object dbObject = createFromRs(className, rs);
+        Object dbObject = createFromRs(objectClass, rs);
         closeResources(rs);
         return dbObject;
     }
@@ -624,7 +623,7 @@ public class Postgres {
      * @param column
      * @return
      */
-    private static List<?> findObjectsByIntIds(List<Integer> ids, String tableName, String column, String className) {
+    private static List<?> findObjectsByIntIds(List<Integer> ids, String tableName, String column, Class objectClass) {
         if(ids.isEmpty()) {
             throw new RuntimeException("Empty set of ids received.");
         }
@@ -635,7 +634,7 @@ public class Postgres {
         }
         allIds.deleteCharAt(allIds.length() - 1); // Remove trailing comma.
 
-        return findObjectsByIds(allIds.toString(), tableName, column, className);
+        return findObjectsByIds(allIds.toString(), tableName, column, objectClass);
     }
 
     /**
@@ -645,7 +644,7 @@ public class Postgres {
      * @param column
      * @return
      */
-    private static List<?> findObjectsByStringIds(List<String> ids, String tableName, String column, String className) {
+    private static List<?> findObjectsByStringIds(List<String> ids, String tableName, String column, Class objectClass) {
         if(ids.isEmpty()) {
             throw new RuntimeException("Empty set of ids received.");
         }
@@ -656,7 +655,7 @@ public class Postgres {
         }
         allIds.deleteCharAt(allIds.length() - 1); // Remove trailing comma.
 
-        return findObjectsByIds(allIds.toString(), tableName, column, className);
+        return findObjectsByIds(allIds.toString(), tableName, column, objectClass);
     }
 
     /**
@@ -666,14 +665,14 @@ public class Postgres {
      * @param column
      * @return
      */
-    private static List<?> findObjectsByIds(String idList, String tableName, String column, String className) {
+    private static List<?> findObjectsByIds(String idList, String tableName, String column, Class objectClass) {
         checkDBConnection();
         List<Object> allObjects = new ArrayList<>();
         try (PreparedStatement st = dbConn.prepareStatement(String.format("SELECT * FROM %s WHERE %s in (%s)", tableName, column, idList))) {
             System.out.println(st.toString());
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    allObjects.add(createFromRs(className, rs));
+                    allObjects.add(createFromRs(objectClass, rs));
                 }
             }
         } catch (SQLException e) {
@@ -688,12 +687,12 @@ public class Postgres {
      *
      * @return a list of AlertTypes
      */
-    public static List<?> findAll(String tableName, String className) {
+    public static List<?> findAll(String tableName, Class objectClass) {
         List<Object> objectList = new ArrayList<>();
         try {
             ResultSet rs = getAllFromTable(tableName);
             while (rs.next()) {
-                objectList.add(createFromRs(className, rs));
+                objectList.add(createFromRs(objectClass, rs));
             }
             closeResources(rs);
         } catch (SQLException e) {
@@ -711,7 +710,7 @@ public class Postgres {
      * Finds an Alert from the database with the given id.
      */
     public static Alert findAlert(int id) {
-        return (Alert) findObject(id, "alert", "Alert");
+        return (Alert) findObject(id, "alert", Alert.class);
     }
 
     /**
@@ -722,7 +721,7 @@ public class Postgres {
      * alerterId in alerterIds.
      */
     public static List<Alert> findAlerts(List<String> alerterIds) {
-        return (List<Alert>) findObjectsByStringIds(alerterIds, "alert", "alerter_id", "Alert");
+        return (List<Alert>) findObjectsByStringIds(alerterIds, "alert", "alerter_id", Alert.class);
     }
 
     /**
@@ -734,7 +733,7 @@ public class Postgres {
     public static List<Alert> findAlertsByDevice(int deviceId) {
         List<Integer> deviceIds = new ArrayList<>();
         deviceIds.add(deviceId);
-        return (List<Alert>) findObjectsByIntIds(deviceIds, "alert", "device_id", "Alert");
+        return (List<Alert>) findObjectsByIntIds(deviceIds, "alert", "device_id", Alert.class);
     }
 
     /**
@@ -888,7 +887,7 @@ public class Postgres {
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    alertCondition = (AlertCondition) createFromRs("AlertCondition", rs);
+                    alertCondition = (AlertCondition) createFromRs(AlertCondition.class, rs);
                 }
             }
         } catch (SQLException e) {
@@ -911,7 +910,7 @@ public class Postgres {
                                          "WHERE ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    alertConditionList.add((AlertCondition) createFromRs("AlertCondition", rs));
+                    alertConditionList.add((AlertCondition) createFromRs(AlertCondition.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -936,7 +935,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    conditionList.add((AlertCondition) createFromRs("AlertCondition", rs));
+                    conditionList.add((AlertCondition) createFromRs(AlertCondition.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -1039,7 +1038,7 @@ public class Postgres {
      * Finds an AlertType from the dataase with the given id
      */
     public static AlertType findAlertType(int id) {
-        return (AlertType) findObject(id, "alert_type", "AlertType");
+        return (AlertType) findObject(id, "alert_type", AlertType.class);
     }
 
     /**
@@ -1073,7 +1072,7 @@ public class Postgres {
      * @return a list of AlertTypes
      */
     public static List<AlertType> findAllAlertTypes() {
-        return (List<AlertType>) findAll("alert_type", "AlertType");
+        return (List<AlertType>) findAll("alert_type", AlertType.class);
     }
 
     /**
@@ -1170,7 +1169,7 @@ public class Postgres {
      */
     public static AlertTypeLookup findAlertTypeLookup(int id) {
         ResultSet rs = findById(id, "alert_type_lookup");
-        AlertTypeLookup alertTypeLookup = (AlertTypeLookup) createFromRs("AlertTypeLookup",rs);
+        AlertTypeLookup alertTypeLookup = (AlertTypeLookup) createFromRs(AlertTypeLookup.class, rs);
         closeResources(rs);
         return alertTypeLookup;
     }
@@ -1186,7 +1185,7 @@ public class Postgres {
             st.setInt(1, typeId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    atlList.add((AlertTypeLookup) createFromRs("AlertTypeLookup", rs));
+                    atlList.add((AlertTypeLookup) createFromRs(AlertTypeLookup.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -1201,7 +1200,7 @@ public class Postgres {
      * @return A list of AlertTypeLookups
      */
     public static List<AlertTypeLookup> findAllAlertTypeLookups() {
-        return (List<AlertTypeLookup>) findAll("alert_type_lookup", "AlertTypeLookup");
+        return (List<AlertTypeLookup>) findAll("alert_type_lookup", AlertTypeLookup.class);
     }
 
     /**
@@ -1283,7 +1282,7 @@ public class Postgres {
      */
     public static DeviceCommand findCommand(int id) {
         ResultSet rs = findById(id, "command");
-        DeviceCommand deviceCommand = (DeviceCommand) createFromRs("DeviceCommand",rs);
+        DeviceCommand deviceCommand = (DeviceCommand) createFromRs(DeviceCommand.class, rs);
         closeResources(rs);
         return deviceCommand;
     }
@@ -1292,7 +1291,7 @@ public class Postgres {
      * Finds all rows in the command table
      */
     public static List<DeviceCommand> findAllCommands() {
-        return (List<DeviceCommand>) findAll("command", "DeviceCommand");
+        return (List<DeviceCommand>) findAll("command", DeviceCommand.class);
     }
 
     /**
@@ -1309,7 +1308,7 @@ public class Postgres {
             st.setInt(1, policyRuleId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    commands.add((DeviceCommand) createFromRs("DeviceCommand", rs));
+                    commands.add((DeviceCommand) createFromRs(DeviceCommand.class, rs));
                 }
             }
             return commands;
@@ -1395,7 +1394,7 @@ public class Postgres {
     public static DeviceCommandLookup findCommandLookup(int id) {
         logger.info("Finding command lookup with id = " + id);
         ResultSet rs = findById(id, "command_lookup");
-        DeviceCommandLookup deviceCommandLookup = (DeviceCommandLookup) createFromRs("DeviceCommandLookup", rs);
+        DeviceCommandLookup deviceCommandLookup = (DeviceCommandLookup) createFromRs(DeviceCommandLookup.class, rs);
         closeResources(rs);
         return deviceCommandLookup;
     }
@@ -1411,7 +1410,7 @@ public class Postgres {
             st.setInt(1,deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    lookupList.add((DeviceCommandLookup) createFromRs("DeviceCommandLookup", rs));
+                    lookupList.add((DeviceCommandLookup) createFromRs(DeviceCommandLookup.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -1426,7 +1425,7 @@ public class Postgres {
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
-        return (List<DeviceCommandLookup>) findAll("command_lookup", "DeviceCommandLookup");
+        return (List<DeviceCommandLookup>) findAll("command_lookup", DeviceCommandLookup.class);
     }
 
     /**
@@ -1513,7 +1512,7 @@ public class Postgres {
     public static Device findDevice(int id) {
         logger.info("Finding device with id = " + id);
         ResultSet rs = findById(id, "device");
-        Device device = (Device) createFromRs("Device", rs);
+        Device device = (Device) createFromRs(Device.class, rs);
 
         if(device != null) {
             List<Integer> tagIds = findTagIds(device.getId());
@@ -1538,7 +1537,7 @@ public class Postgres {
         try {
             ResultSet rs = getAllFromTable("device");
             while (rs.next()) {
-                Device d = (Device) createFromRs("Device", rs);
+                Device d = (Device) createFromRs(Device.class, rs);
                 List<Integer> tagIds = findTagIds(d.getId());
                 d.setTagIds(tagIds);
                 DeviceSecurityState ss = findDeviceSecurityStateByDevice(d.getId());
@@ -1567,7 +1566,7 @@ public class Postgres {
             st.setInt(1, groupId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device d = (Device) createFromRs("Device", rs);
+                    Device d = (Device) createFromRs(Device.class, rs);
                     d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                     devices.add(d);
                 }
@@ -1633,7 +1632,7 @@ public class Postgres {
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device d = (Device) createFromRs("Device", rs);
+                    Device d = (Device) createFromRs(Device.class, rs);
                     d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                     deviceList.add(d);
                 }
@@ -1687,7 +1686,7 @@ public class Postgres {
                 st.setString(1, "Normal");
                 try (ResultSet rs = st.executeQuery()) {
                     if (rs.next()) {
-                        SecurityState securityState = (SecurityState) createFromRs("SecurityState", rs);
+                        SecurityState securityState = (SecurityState) createFromRs(SecurityState.class, rs);
 
                         DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), securityState.getId(), securityState.getName());
                         normalDeviceState.insert();
@@ -1820,7 +1819,7 @@ public class Postgres {
      */
     public static DeviceStatus findDeviceStatus(int id) {
         ResultSet rs = findById(id, "device_status");
-        DeviceStatus deviceStatus = (DeviceStatus) createFromRs("DeviceStatus", rs);
+        DeviceStatus deviceStatus = (DeviceStatus) createFromRs(DeviceStatus.class, rs);
         closeResources(rs);
         return deviceStatus;
     }
@@ -1838,7 +1837,7 @@ public class Postgres {
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceHistories = new ArrayList<>();
                 while (rs.next()) {
-                    deviceHistories.add((DeviceStatus) createFromRs("DeviceStatus", rs));
+                    deviceHistories.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
                 }
                 return deviceHistories;
             }
@@ -1865,7 +1864,7 @@ public class Postgres {
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceHistories = new ArrayList<>();
                 while (rs.next()) {
-                    deviceHistories.add((DeviceStatus) createFromRs("DeviceStatus", rs));
+                    deviceHistories.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
                 }
                 return deviceHistories;
             }
@@ -1893,7 +1892,7 @@ public class Postgres {
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceStatusList = new ArrayList<>();
                 while (rs.next()) {
-                    deviceStatusList.add((DeviceStatus) createFromRs("DeviceStatus", rs));
+                    deviceStatusList.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
                 }
                 return deviceStatusList;
             }
@@ -1924,7 +1923,7 @@ public class Postgres {
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceHistories = new ArrayList<>();
                 while (rs.next()) {
-                    deviceHistories.add((DeviceStatus) createFromRs("DeviceStatus", rs));
+                    deviceHistories.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
                 }
                 return deviceHistories;
             }
@@ -1949,13 +1948,13 @@ public class Postgres {
             st.setInt(1, typeId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device device = (Device) createFromRs("Device", rs);
+                    Device device = (Device) createFromRs(Device.class, rs);
                     try(PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1")) {
                         statement.setInt(1, device.getId());
                         try(ResultSet resultSet = statement.executeQuery()) {
                             DeviceStatus deviceStatus = null;
                             while (resultSet.next()) {
-                                deviceStatus = (DeviceStatus) createFromRs("DeviceStatus", resultSet);
+                                deviceStatus = (DeviceStatus) createFromRs(DeviceStatus.class, resultSet);
                             }
                             deviceStatusMap.put(device, deviceStatus);
                         }
@@ -1983,13 +1982,13 @@ public class Postgres {
             st.setInt(1, groupId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device device = (Device) createFromRs("Device", rs);
+                    Device device = (Device) createFromRs(Device.class, rs);
                     try(PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1")) {
                         statement.setInt(1, device.getId());
                         try(ResultSet resultSet = statement.executeQuery()) {
                             DeviceStatus deviceStatus = null;
                             while (resultSet.next()) {
-                                deviceStatus = (DeviceStatus) createFromRs("DeviceStatus", resultSet);
+                                deviceStatus = (DeviceStatus) createFromRs(DeviceStatus.class, resultSet);
                             }
                             deviceStatusMap.put(device, deviceStatus);
                         }
@@ -2009,7 +2008,7 @@ public class Postgres {
      * @return a list of all DeviceStatuses in the database.
      */
     public static List<DeviceStatus> findAllDeviceStatuses() {
-        return (List<DeviceStatus>) findAll("device_status", "DeviceStatus");
+        return (List<DeviceStatus>) findAll("device_status", DeviceStatus.class);
     }
 
     /**
@@ -2098,7 +2097,7 @@ public class Postgres {
      */
     public static Group findGroup(int id) {
         ResultSet rs = findById(id, "device_group");
-        Group group = (Group) createFromRs("Group", rs);
+        Group group = (Group) createFromRs(Group.class, rs);
         closeResources(rs);
         return group;
     }
@@ -2109,7 +2108,7 @@ public class Postgres {
      * @return a list of all Groups in the database.
      */
     public static List<Group> findAllGroups() {
-        return (List<Group>) findAll("device_group", "Group");
+        return (List<Group>) findAll("device_group", Group.class);
     }
 
     /**
@@ -2188,7 +2187,7 @@ public class Postgres {
 
     public static PolicyRule findPolicyRule(int id) {
         ResultSet rs = findById(id, "policy_rule");
-        PolicyRule policyRule = (PolicyRule) createFromRs("PolicyRule", rs);
+        PolicyRule policyRule = (PolicyRule) createFromRs(PolicyRule.class, rs);
         closeResources(rs);
         return policyRule;
     }
@@ -2212,7 +2211,7 @@ public class Postgres {
 
             ResultSet rs = query.executeQuery();
             if(rs.next()) {
-                return (PolicyRule) createFromRs("PolicyRule", rs);
+                return (PolicyRule) createFromRs(PolicyRule.class, rs);
             }
         } catch (SQLException e) {
             logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
@@ -2237,7 +2236,7 @@ public class Postgres {
             try(ResultSet rs = query.executeQuery()) {
                 List<PolicyRule> rules = new ArrayList<>();
                 while (rs.next()) {
-                    rules.add((PolicyRule) createFromRs("PolicyRule", rs));
+                    rules.add((PolicyRule) createFromRs(PolicyRule.class, rs));
                 }
                 return rules;
             }
@@ -2318,7 +2317,7 @@ public class Postgres {
         checkDBConnection();
         try {
             ResultSet pcrs = findById(id,"policy_condition");
-            PolicyCondition policyCondition = (PolicyCondition) createFromRs("PolicyCondition", pcrs);
+            PolicyCondition policyCondition = (PolicyCondition) createFromRs(PolicyCondition.class, pcrs);
             closeResources(pcrs);
             if(policyCondition == null) { return null; }
 
@@ -2442,7 +2441,7 @@ public class Postgres {
      */
     public static PolicyRuleLog findPolicyRuleLog(int id) {
         ResultSet rs = findById(id, "policy_rule_log");
-        PolicyRuleLog policyRuleLog = (PolicyRuleLog) createFromRs("PolicyRuleLog", rs);
+        PolicyRuleLog policyRuleLog = (PolicyRuleLog) createFromRs(PolicyRuleLog.class, rs);
         closeResources(rs);
         return policyRuleLog;
     }
@@ -2482,7 +2481,7 @@ public class Postgres {
 
     public static StateTransition findStateTransition(int id) {
         ResultSet rs = findById(id, "state_transition");
-        StateTransition stateTransition = (StateTransition) createFromRs("StateTransition", rs);
+        StateTransition stateTransition = (StateTransition) createFromRs(StateTransition.class, rs);
         closeResources(rs);
         return stateTransition;
     }
@@ -2560,7 +2559,7 @@ public class Postgres {
             st.setInt(1, id);
             try( ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    dss = (DeviceSecurityState) createFromRs("DeviceSecurityState", rs);
+                    dss = (DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs);
                 }
             }
         } catch (SQLException e) {
@@ -2580,7 +2579,7 @@ public class Postgres {
         try(PreparedStatement st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stateList.add((DeviceSecurityState) createFromRs("DeviceSecurityState", rs));
+                    stateList.add((DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs));
                 }
             }
         } catch (Exception e){
@@ -2606,7 +2605,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()){
                 if (rs.next()) {
-                    ss = (DeviceSecurityState) createFromRs("DeviceSecurityState", rs);
+                    ss = (DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs);
                 }
             }
         } catch (SQLException e) {
@@ -2662,7 +2661,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    deviceStateList.add((DeviceSecurityState) createFromRs("DeviceSecurityState", rs));
+                    deviceStateList.add((DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -2722,7 +2721,7 @@ public class Postgres {
      */
     public static SecurityState findSecurityState(int id) {
         ResultSet rs = findById(id, "security_state");
-        SecurityState state = (SecurityState) createFromRs("SecurityState", rs);
+        SecurityState state = (SecurityState) createFromRs(SecurityState.class, rs);
         closeResources(rs);
         return state;
     }
@@ -2733,7 +2732,7 @@ public class Postgres {
      * @return a list of all SecurityStates in the database.
      */
     public static List<SecurityState> findAllSecurityStates() {
-        return (List<SecurityState>) findAll("security_state", "SecurityState");
+        return (List<SecurityState>) findAll("security_state", SecurityState.class);
     }
 
     /**
@@ -2819,7 +2818,7 @@ public class Postgres {
      */
     public static Tag findTag(int id) {
         ResultSet rs = findById(id, "tag");
-        Tag tag = (Tag) createFromRs("Tag", rs);
+        Tag tag = (Tag) createFromRs(Tag.class, rs);
         closeResources(rs);
         return tag;
     }
@@ -2837,7 +2836,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    tags.add((Tag) createFromRs("Tag", rs));
+                    tags.add((Tag) createFromRs(Tag.class, rs));
                 }
             }
             return tags;
@@ -2878,7 +2877,7 @@ public class Postgres {
      * @return a list of all Tags in the database.
      */
     public static List<Tag> findAllTags() {
-        return (List<Tag>) findAll("tag", "Tag");
+        return (List<Tag>) findAll("tag", Tag.class);
     }
 
     /**
@@ -2965,7 +2964,7 @@ public class Postgres {
      */
     public static DeviceType findDeviceType(int id) {
         ResultSet rs = findById(id, "device_type");
-        DeviceType type = (DeviceType) createFromRs("DeviceType", rs);
+        DeviceType type = (DeviceType) createFromRs(DeviceType.class, rs);
         closeResources(rs);
         return type;
     }
@@ -2976,7 +2975,7 @@ public class Postgres {
      * @return a list of all DeviceTypes in the database.
      */
     public static List<DeviceType> findAllDeviceTypes() {
-        return (List<DeviceType>) findAll("device_type", "DeviceType");
+        return (List<DeviceType>) findAll("device_type", DeviceType.class);
     }
 
     /**
@@ -3065,7 +3064,7 @@ public class Postgres {
      */
     public static UmboxImage findUmboxImage(int id) {
         ResultSet rs = findById(id, "umbox_image");
-        UmboxImage umboxImage = (UmboxImage) createFromRs("UmboxImage", rs);
+        UmboxImage umboxImage = (UmboxImage) createFromRs(UmboxImage.class, rs);
         closeResources(rs);
         return umboxImage;
     }
@@ -3088,7 +3087,7 @@ public class Postgres {
             List<UmboxImage> umboxImageList = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxImageList.add((UmboxImage) createFromRs("UmboxImage", rs));
+                    umboxImageList.add((UmboxImage) createFromRs(UmboxImage.class, rs));
                 }
             }
             return umboxImageList;
@@ -3105,7 +3104,7 @@ public class Postgres {
      * @return a list of all UmboxImages in the database.
      */
     public static List<UmboxImage> findAllUmboxImages() {
-        return (List<UmboxImage>) findAll("umbox_image", "UmboxImage");
+        return (List<UmboxImage>) findAll("umbox_image", UmboxImage.class);
     }
 
     /**
@@ -3194,7 +3193,7 @@ public class Postgres {
                 if (!rs.next()) {
                     return null;
                 }
-                return (UmboxInstance) createFromRs("UmboxInstance", rs);
+                return (UmboxInstance) createFromRs(UmboxInstance.class, rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -3216,7 +3215,7 @@ public class Postgres {
             List<UmboxInstance> umboxInstances = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxInstances.add((UmboxInstance) createFromRs("UmboxInstance", rs));
+                    umboxInstances.add((UmboxInstance) createFromRs(UmboxInstance.class, rs));
                 }
             }
             return umboxInstances;
@@ -3301,7 +3300,7 @@ public class Postgres {
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    return (UmboxLookup) createFromRs("UmboxLookup", rs);
+                    return (UmboxLookup) createFromRs(UmboxLookup.class, rs);
                 }
             }
         } catch (SQLException e) {
@@ -3323,7 +3322,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    lookupList.add((UmboxLookup) createFromRs("UmboxLookup", rs));
+                    lookupList.add((UmboxLookup) createFromRs(UmboxLookup.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -3338,7 +3337,7 @@ public class Postgres {
      * Finds all umboxLookup entries
      */
     public static List<UmboxLookup> findAllUmboxLookups() {
-        return (List<UmboxLookup>) findAll("umbox_lookup", "UmboxLookup");
+        return (List<UmboxLookup>) findAll("umbox_lookup", UmboxLookup.class);
     }
 
     /**
@@ -3420,7 +3419,7 @@ public class Postgres {
     public static UmboxLog findUmboxLog(int id){
         logger.info("Finding UmboxLog with id = "+id);
         ResultSet rs = findById(id, "umbox_log");
-        UmboxLog umboxLog = (UmboxLog) createFromRs("UmboxLog", rs);
+        UmboxLog umboxLog = (UmboxLog) createFromRs(UmboxLog.class, rs);
         closeResources(rs);
         return umboxLog;
     }
@@ -3436,7 +3435,7 @@ public class Postgres {
         try(PreparedStatement st = dbConn.prepareStatement("SELECT * FROM umbox_log")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxLogList.add((UmboxLog) createFromRs("UmboxLog", rs));
+                    umboxLogList.add((UmboxLog) createFromRs(UmboxLog.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -3460,7 +3459,7 @@ public class Postgres {
             st.setString(1, alerter_id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxLogList.add((UmboxLog) createFromRs("UmboxLog", rs));
+                    umboxLogList.add((UmboxLog) createFromRs(UmboxLog.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -3480,7 +3479,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    logList.add((UmboxLog) createFromRs("UmboxLog", rs));
+                    logList.add((UmboxLog) createFromRs(UmboxLog.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -3522,7 +3521,7 @@ public class Postgres {
     public static StageLog findStageLog(int id) {
         logger.info("Finding StageLog with id = " + id);
         ResultSet rs = findById(id, "stage_log");
-        StageLog stageLog = (StageLog) createFromRs("StageLog", rs);
+        StageLog stageLog = (StageLog) createFromRs(StageLog.class, rs);
         closeResources(rs);
         return stageLog;
     }
@@ -3538,7 +3537,7 @@ public class Postgres {
         try(PreparedStatement st = dbConn.prepareStatement("SELECT * FROM stage_log ORDER BY timestamp")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stageLogList.add((StageLog) createFromRs("StageLog", rs));
+                    stageLogList.add((StageLog) createFromRs(StageLog.class, rs));
                 }
             }
         } catch (SQLException e) {
@@ -3564,7 +3563,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stageLogList.add((StageLog) createFromRs("StageLog", rs));
+                    stageLogList.add((StageLog) createFromRs(StageLog.class, rs));
                 }
             }
         } catch (Exception e){

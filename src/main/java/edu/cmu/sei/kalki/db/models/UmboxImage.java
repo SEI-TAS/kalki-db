@@ -46,8 +46,14 @@ public class UmboxImage {
         int id = rs.getInt("id");
         String name = rs.getString("name");
         String fileName = rs.getString("file_name");
-        int dagOrder = rs.getInt("dag_order");
-        return new UmboxImage(id, name, fileName, dagOrder);
+        try {
+            // Only if it contains dagOrder.
+            int dagOrder = rs.getInt("dag_order");
+            return new UmboxImage(id, name, fileName, dagOrder);
+        } catch (SQLException ignore) {
+            return new UmboxImage(id, name, fileName);
+        }
+
     }
 
     public int getId() {
