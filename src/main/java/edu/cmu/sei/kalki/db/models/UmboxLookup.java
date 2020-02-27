@@ -1,9 +1,10 @@
 package edu.cmu.sei.kalki.db.models;
 
+import edu.cmu.sei.kalki.db.daos.UmboxLookupDAO;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.cmu.sei.kalki.db.database.Postgres;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,12 +86,12 @@ public class UmboxLookup {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertUmboxLookup(this);
+        this.id = UmboxLookupDAO.insertUmboxLookup(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateUmboxLookup(this);
+        this.id = UmboxLookupDAO.insertOrUpdateUmboxLookup(this);
         return this.id;
     }
 }

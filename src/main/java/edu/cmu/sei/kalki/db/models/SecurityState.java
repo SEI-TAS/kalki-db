@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.SecurityStateDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -54,12 +54,12 @@ public class SecurityState {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertSecurityState(this);
+        this.id = SecurityStateDAO.insertSecurityState(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateSecurityState(this);
+        this.id = SecurityStateDAO.insertOrUpdateSecurityState(this);
         return this.id;
     }
 

@@ -1,10 +1,8 @@
 package edu.cmu.sei.kalki.db.models;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -76,25 +74,6 @@ public class Alert {
         this.info = info;
     }
 
-    /**
-     * Extract an Alert from the result set of a database query.
-     *
-     * @param rs ResultSet from a Alert query.
-     * @return The Alert that was found.
-     */
-    public static Alert createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        String name = rs.getString("name");
-        Timestamp timestamp = rs.getTimestamp("timestamp");
-        String alerterId = rs.getString("alerter_id");
-        int deviceStatusId = rs.getInt("device_status_id");
-        int alertTypeId = rs.getInt("alert_type_id");
-        int deviceId = rs.getInt("device_id");
-        String info = rs.getString("info");
-        return new Alert(id, name, timestamp, alerterId, deviceId, deviceStatusId, alertTypeId, info);
-    }
-
     public int getId() {
         return id;
     }
@@ -148,7 +127,7 @@ public class Alert {
     public void setInfo(String info ) { this.info = info; }
 
     public Integer insert() {
-        this.id = Postgres.insertAlert(this);
+        this.id = AlertDAO.insertAlert(this);
         return this.id;
     }
 

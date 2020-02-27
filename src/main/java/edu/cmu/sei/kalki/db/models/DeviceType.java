@@ -1,6 +1,7 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -84,12 +85,12 @@ public class DeviceType {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertDeviceType(this);
+        this.id = DeviceTypeDAO.insertDeviceType(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateDeviceType(this);
+        this.id = DeviceTypeDAO.insertOrUpdateDeviceType(this);
         return this.id;
     }
 

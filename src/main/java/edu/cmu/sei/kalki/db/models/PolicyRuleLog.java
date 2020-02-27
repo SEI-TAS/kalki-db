@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.PolicyRuleLogDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -77,7 +77,7 @@ public class PolicyRuleLog
     }
 
     public void insert() {
-        int id = Postgres.insertPolicyRuleLog(this);
+        int id = PolicyRuleLogDAO.insertPolicyRuleLog(this);
         if(id>0)
             this.id = id;
     }

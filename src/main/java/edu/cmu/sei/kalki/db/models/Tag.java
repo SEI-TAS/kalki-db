@@ -1,6 +1,7 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.TagDAO;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,12 +56,12 @@ public class Tag {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertTag(this);
+        this.id = TagDAO.insertTag(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateTag(this);
+        this.id = TagDAO.insertOrUpdateTag(this);
         return this.id;
     }
 

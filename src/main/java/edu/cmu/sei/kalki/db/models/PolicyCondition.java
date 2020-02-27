@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.PolicyConditionDAO;
 
 public class PolicyCondition {
     private int id;
@@ -64,7 +64,7 @@ public class PolicyCondition {
     }
 
     public void insert(){
-        int id = Postgres.insertPolicyCondition(this);
+        int id = PolicyConditionDAO.insertPolicyCondition(this);
         if(id > 0)
             this.id = id;
     }

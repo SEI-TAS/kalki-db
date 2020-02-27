@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.PolicyRuleDAO;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -87,7 +87,7 @@ public class PolicyRule
     }
 
     public void insert() {
-        int id = Postgres.insertPolicyRule(this);
+        int id = PolicyRuleDAO.insertPolicyRule(this);
         if(id > 0)
             this.id = id;
     }

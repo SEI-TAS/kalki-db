@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.DeviceCommandDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -66,12 +66,12 @@ public class DeviceCommand {
     }
 
     public int insert() {
-        this.id = Postgres.insertCommand(this);
+        this.id = DeviceCommandDAO.insertCommand(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateCommand(this);
+        this.id = DeviceCommandDAO.insertOrUpdateCommand(this);
         return this.id;
     }
 

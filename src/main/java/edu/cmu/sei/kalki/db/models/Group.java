@@ -1,6 +1,7 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.GroupDAO;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,12 +56,12 @@ public class Group {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertGroup(this);
+        this.id = GroupDAO.insertGroup(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateGroup(this);
+        this.id = GroupDAO.insertOrUpdateGroup(this);
         return this.id;
     }
 

@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import edu.cmu.sei.kalki.db.daos.DeviceSecurityStateDAO;
 import edu.cmu.sei.kalki.db.database.Postgres;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -105,7 +106,7 @@ public class DeviceSecurityState {
     }
 
     public Integer insert(){
-        this.id = Postgres.insertDeviceSecurityState(this);
+        this.id = DeviceSecurityStateDAO.insertDeviceSecurityState(this);
         return this.id;
     }
 

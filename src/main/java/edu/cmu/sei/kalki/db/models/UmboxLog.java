@@ -3,7 +3,8 @@ package edu.cmu.sei.kalki.db.models;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import edu.cmu.sei.kalki.db.database.Postgres;
+
+import edu.cmu.sei.kalki.db.daos.UmboxLogDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -76,9 +77,9 @@ public class UmboxLog {
     }
 
     public void insert() {
-        this.id = Postgres.insertUmboxLog(this);
+        this.id = UmboxLogDAO.insertUmboxLog(this);
 
-        UmboxLog temp = Postgres.findUmboxLog(this.id);
+        UmboxLog temp = UmboxLogDAO.findUmboxLog(this.id);
         this.timestamp = temp.getTimestamp();
     }
 

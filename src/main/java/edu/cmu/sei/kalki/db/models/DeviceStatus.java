@@ -1,5 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
-import edu.cmu.sei.kalki.db.database.Postgres;
+
+import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -77,16 +78,16 @@ public class DeviceStatus {
     public void setDeviceId(int id) { this.deviceId = id; }
 
     public Integer insert(){
-        this.id = Postgres.insertDeviceStatus(this);
+        this.id = DeviceStatusDAO.insertDeviceStatus(this);
         return this.id;
     }
 
     public Integer update(){
-        return Postgres.updateDeviceStatus(this);
+        return DeviceStatusDAO.updateDeviceStatus(this);
     }
 
     public Integer insertOrUpdate(){
-        this.id = Postgres.insertOrUpdateDeviceStatus(this);
+        this.id = DeviceStatusDAO.insertOrUpdateDeviceStatus(this);
         return this.id;
     }
 

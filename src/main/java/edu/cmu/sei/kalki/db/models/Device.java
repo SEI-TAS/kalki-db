@@ -1,5 +1,10 @@
 package edu.cmu.sei.kalki.db.models;
-import edu.cmu.sei.kalki.db.database.Postgres;
+
+import edu.cmu.sei.kalki.db.daos.DeviceDAO;
+import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
+import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
+import edu.cmu.sei.kalki.db.daos.GroupDAO;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,8 +64,8 @@ public class Device {
         this.name = name;
         this.description = description;
         try {
-            this.type = Postgres.findDeviceType(typeId);
-            this.group = Postgres.findGroup(groupId);
+            this.type = DeviceTypeDAO.findDeviceType(typeId);
+            this.group = GroupDAO.findGroup(groupId);
         } catch (Exception e) {
             System.out.println("ERROR initializing Device: "+name);
             e.printStackTrace();
@@ -77,8 +82,8 @@ public class Device {
         this.description = description;
         this.name = name;
         try {
-            this.type = Postgres.findDeviceType(typeId);
-            this.group = Postgres.findGroup(groupId);
+            this.type = DeviceTypeDAO.findDeviceType(typeId);
+            this.group = GroupDAO.findGroup(groupId);
         } catch (Exception e) {
             System.out.println("ERROR initializing Device: "+name);
             e.printStackTrace();
@@ -203,21 +208,21 @@ public class Device {
     }
 
     public Integer insert(){
-        Device data = Postgres.insertDevice(this);
+        Device data = DeviceDAO.insertDevice(this);
         setCurrentState(data.getCurrentState());
         setId(data.getId());
         return this.id;
     }
 
     public Integer insertOrUpdate(){
-        Device data = Postgres.insertOrUpdateDevice(this);
+        Device data = DeviceDAO.insertOrUpdateDevice(this);
         setCurrentState(data.getCurrentState());
         setId(data.getId());
         return this.id;
     }
 
     public void resetSecurityState() {
-        Postgres.resetSecurityState(this.id);
+        DeviceDAO.resetSecurityState(this.id);
     }
 
     public String toString() {
@@ -230,14 +235,14 @@ public class Device {
     }
 
     public List<DeviceStatus> lastNSamples(int N){
-        return Postgres.findNDeviceStatuses(this.id, N);
+        return DeviceStatusDAO.findNDeviceStatuses(this.id, N);
     }
 
     public List<DeviceStatus> samplesOverTime(Timestamp startingTime, int duration, String timeUnit){
-        return Postgres.findDeviceStatusesOverTime(this.id, startingTime, duration, timeUnit);
+        return DeviceStatusDAO.findDeviceStatusesOverTime(this.id, startingTime, duration, timeUnit);
     }
 
-    public Map<Device, DeviceStatus> statusesOfSameType() { return Postgres.findDeviceStatusesByType(this.type.getId()); }
+    public Map<Device, DeviceStatus> statusesOfSameType() { return DeviceStatusDAO.findDeviceStatusesByType(this.type.getId()); }
 
-    public Map<Device, DeviceStatus> statusesOfSameGroup() { return Postgres.findDeviceStatusesByGroup(this.group.getId()); }
+    public Map<Device, DeviceStatus> statusesOfSameGroup() { return DeviceStatusDAO.findDeviceStatusesByGroup(this.group.getId()); }
 }

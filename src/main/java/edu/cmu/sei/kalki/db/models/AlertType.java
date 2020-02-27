@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.AlertTypeDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -80,12 +80,12 @@ public class AlertType {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertAlertType(this);
+        this.id = AlertTypeDAO.insertAlertType(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateAlertType(this);
+        this.id = AlertTypeDAO.insertOrUpdateAlertType(this);
         return this.id;
     }
 

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
@@ -111,11 +112,11 @@ public class DeviceTest extends AUsesDatabase {
 
     @Test
     public void testResetSecurityState() {
-        List<Alert> foundAlerts = Postgres.findAlertsByDevice(deviceTwo.getId());
+        List<Alert> foundAlerts = AlertDAO.findAlertsByDevice(deviceTwo.getId());
         assertEquals(0, foundAlerts.size());
 
         deviceTwo.resetSecurityState();
-        foundAlerts = Postgres.findAlertsByDevice(deviceTwo.getId());
+        foundAlerts = AlertDAO.findAlertsByDevice(deviceTwo.getId());
 //        assertEquals(1, foundAlerts.size());
 //        assertEquals(deviceTwo.getCurrentState().toString(), newState.toString());
     }

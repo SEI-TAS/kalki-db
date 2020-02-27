@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -79,12 +79,12 @@ public class AlertTypeLookup {
     }
 
     public int insert() {
-        setId(Postgres.insertAlertTypeLookup(this));
+        setId(AlertTypeLookupDAO.insertAlertTypeLookup(this));
         return getId();
     }
 
     public int insertOrUpdate() {
-        setId(Postgres.insertOrUpdateAlertTypeLookup(this));
+        setId(AlertTypeLookupDAO.insertOrUpdateAlertTypeLookup(this));
         return getId();
     }
 

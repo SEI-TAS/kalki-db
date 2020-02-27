@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.database;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.Device;
@@ -37,7 +38,7 @@ public class AlertTest extends AUsesDatabase {
 
     @Test
     public void testFindAlert() {
-        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+        assertEquals(alertIoT.toString(), AlertDAO.findAlert(alertIoT.getId()).toString());
     }
 
     @Test
@@ -45,7 +46,7 @@ public class AlertTest extends AUsesDatabase {
         ArrayList<String> alerterIds = new ArrayList<String>();
         alerterIds.add(umboxInstance.getAlerterId());
 
-        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlerts(alerterIds));
+        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(AlertDAO.findAlerts(alerterIds));
 
         assertEquals(1, foundAlerts.size());
         assertEquals(alertUmBox.toString(), foundAlerts.get(0).toString());
@@ -53,47 +54,47 @@ public class AlertTest extends AUsesDatabase {
 
     @Test
     public void testFindAlertsByDevice() {
-        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(device.getId()));
+        ArrayList<Alert> foundAlerts = new ArrayList<Alert>(AlertDAO.findAlertsByDevice(device.getId()));
 
         assertEquals(2, foundAlerts.size());
 
-        foundAlerts = new ArrayList<Alert>(Postgres.findAlertsByDevice(deviceTwo.getId()));
+        foundAlerts = new ArrayList<Alert>(AlertDAO.findAlertsByDevice(deviceTwo.getId()));
         assertEquals(0, foundAlerts.size());
     }
 
     @Test
     public void testInsertAlert() {
         Alert newAlert = new Alert(alertType.getName(), umboxInstance.getAlerterId(), alertType.getId(), "");
-        assertEquals(null, Postgres.findAlert(3));
+        assertEquals(null, AlertDAO.findAlert(3));
 
         newAlert.insert();
 
-        assertEquals(newAlert.toString(), Postgres.findAlert(3).toString());
+        assertEquals(newAlert.toString(), AlertDAO.findAlert(3).toString());
 
         newAlert = new Alert(alertType.getName(), deviceStatus.getId(), alertType.getId(), "");
-        assertEquals(null, Postgres.findAlert(4));
+        assertEquals(null, AlertDAO.findAlert(4));
 
         newAlert.insert();
 
-        assertEquals(newAlert.toString(), Postgres.findAlert(4).toString());
+        assertEquals(newAlert.toString(), AlertDAO.findAlert(4).toString());
     }
 
     @Test
     public void testUpdateAlert() {
-        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+        assertEquals(alertIoT.toString(), AlertDAO.findAlert(alertIoT.getId()).toString());
 
         alertIoT.setName("new iot alert name");
-        Postgres.updateAlert(alertIoT);
+        AlertDAO.updateAlert(alertIoT);
 
-        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+        assertEquals(alertIoT.toString(), AlertDAO.findAlert(alertIoT.getId()).toString());
     }
 
     @Test
     public void testDeleteAlert() {
-        assertEquals(alertIoT.toString(), Postgres.findAlert(alertIoT.getId()).toString());
+        assertEquals(alertIoT.toString(), AlertDAO.findAlert(alertIoT.getId()).toString());
 
-        Postgres.deleteAlert(alertIoT.getId());
-        assertEquals(null, Postgres.findAlert(alertIoT.getId()));
+        AlertDAO.deleteAlert(alertIoT.getId());
+        assertEquals(null, AlertDAO.findAlert(alertIoT.getId()));
     }
 
     public void insertData() {

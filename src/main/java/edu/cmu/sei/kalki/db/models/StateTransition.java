@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -64,7 +64,7 @@ public class StateTransition {
     }
 
     public void insert(){
-        int id = Postgres.insertStateTransition(this);
+        int id = StateTransitionDAO.insertStateTransition(this);
         if(id>0)
             this.id = id;
     }

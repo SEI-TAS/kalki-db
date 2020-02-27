@@ -3,7 +3,7 @@ package edu.cmu.sei.kalki.db.models;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.UmboxImageDAO;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -97,12 +97,12 @@ public class UmboxImage {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertUmboxImage(this);
+        this.id = UmboxImageDAO.insertUmboxImage(this);
         return this.id;
     }
 
     public Integer insertOrUpdate() {
-        this.id = Postgres.insertOrUpdateUmboxImage(this);
+        this.id = UmboxImageDAO.insertOrUpdateUmboxImage(this);
         return this.id;
     }
 }

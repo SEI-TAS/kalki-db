@@ -1,6 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -105,7 +105,7 @@ public class AlertCondition {
     }
 
     public Integer insertOrUpdate() {
-        setId(Postgres.insertAlertCondition(this));
+        setId(AlertConditionDAO.insertAlertCondition(this));
         return getId();
     }
 

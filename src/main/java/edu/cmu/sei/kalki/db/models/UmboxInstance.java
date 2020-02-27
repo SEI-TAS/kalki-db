@@ -3,7 +3,9 @@ package edu.cmu.sei.kalki.db.models;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import edu.cmu.sei.kalki.db.database.Postgres;
+
+import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -95,7 +97,7 @@ public class UmboxInstance {
     }
 
     public Integer insert() {
-        this.id = Postgres.insertUmboxInstance(this);
+        this.id = UmboxInstanceDAO.insertUmboxInstance(this);
         return this.id;
     }
 

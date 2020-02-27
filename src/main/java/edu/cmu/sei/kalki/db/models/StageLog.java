@@ -4,12 +4,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.daos.StageLogDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 
 public class StageLog {
     private int id;
@@ -115,9 +114,9 @@ public class StageLog {
     }
 
     public void insert() {
-        this.id = Postgres.insertStageLog(this);
+        this.id = StageLogDAO.insertStageLog(this);
 
-        StageLog temp = Postgres.findStageLog(id);
+        StageLog temp = StageLogDAO.findStageLog(id);
         setTimestamp(temp.getTimestamp());
     }
 

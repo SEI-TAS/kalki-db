@@ -1,10 +1,11 @@
-package edu.cmu.sei.kalki.db.listeners;
+package edu.cmu.sei.kalki.db.dashboard;
 
-import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.listeners.InsertHandler;
 
 import java.util.logging.Logger;
 
-public class StatusHandler implements InsertHandler {
+public class StatusHandler implements InsertHandler
+{
     private static Logger logger = Logger.getLogger("myLogger");
 
     public StatusHandler() {
@@ -13,6 +14,6 @@ public class StatusHandler implements InsertHandler {
     @Override
     public void handleNewInsertion(int newItemId) {
         logger.info("Detected new status inserted with id " + newItemId);
-        Postgres.newStatusId(newItemId);
+        NotificationStorage.newStatusId(newItemId);
     }
 }
