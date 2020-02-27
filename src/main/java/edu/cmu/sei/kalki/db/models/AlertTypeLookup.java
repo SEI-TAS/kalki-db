@@ -2,10 +2,13 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.postgresql.util.HStoreConverter;
 
 public class AlertTypeLookup {
     private int id;
@@ -26,6 +29,21 @@ public class AlertTypeLookup {
     public AlertTypeLookup(int id, int alertTypeId, int deviceTypeId, Map<String, String> variables) {
         this(alertTypeId, deviceTypeId, variables);
         this.id = id;
+    }
+
+    /**
+     * Extract an AlertTypeLookup from the result set of a database query.
+     */
+    public static AlertTypeLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int alertTypeId = rs.getInt("alert_type_id");
+        int deviceTypeId = rs.getInt("device_type_id");
+        Map<String, String> variables = null;
+        if (rs.getString("variables") != null) {
+            variables = HStoreConverter.fromString(rs.getString("variables"));
+        }
+        return new AlertTypeLookup(id, alertTypeId, deviceTypeId, variables);
     }
 
     public int getId() {

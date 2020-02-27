@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class AlertType {
     private int id;
     private String name;
@@ -28,6 +31,20 @@ public class AlertType {
         this.name = name;
         this.description = description;
         this.source = source;
+    }
+
+    /**
+     * Extract an AlertType from the result set of a database query.
+     * @param rs ResultSet from a AlertType query.
+     * @return The AlertType that was found.
+     */
+    public static AlertType createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String description = rs.getString("description");
+        String source = rs.getString("source");
+        return new AlertType(id, name, description, source);
     }
 
     public int getId() {
