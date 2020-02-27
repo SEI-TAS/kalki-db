@@ -6,11 +6,25 @@ import edu.cmu.sei.kalki.db.models.UmboxLog;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UmboxLogDAO extends DAO
 {
+
+    /**
+     * Converts a row from the umbox_log table to a UmboxLog object
+     */
+    public static UmboxLog createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String alerterId = rs.getString("alerter_id");
+        String details = rs.getString("details");
+        Timestamp timestamp = rs.getTimestamp("timestamp");
+        return new UmboxLog(id, alerterId, details, timestamp);
+    }
+
     /**
      * Finds the row in umbox_log table with given id
      * @param id
@@ -19,7 +33,13 @@ public class UmboxLogDAO extends DAO
     public static UmboxLog findUmboxLog(int id){
         logger.info("Finding UmboxLog with id = "+id);
         ResultSet rs = findById(id, "umbox_log");
-        UmboxLog umboxLog = (UmboxLog) createFromRs(UmboxLog.class, rs);
+        UmboxLog umboxLog = null;
+        try {
+            umboxLog = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return umboxLog;
     }
@@ -34,7 +54,7 @@ public class UmboxLogDAO extends DAO
         try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM umbox_log")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxLogList.add((UmboxLog) createFromRs(UmboxLog.class, rs));
+                    umboxLogList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -57,7 +77,7 @@ public class UmboxLogDAO extends DAO
             st.setString(1, alerter_id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxLogList.add((UmboxLog) createFromRs(UmboxLog.class, rs));
+                    umboxLogList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -76,7 +96,7 @@ public class UmboxLogDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    logList.add((UmboxLog) createFromRs(UmboxLog.class, rs));
+                    logList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {

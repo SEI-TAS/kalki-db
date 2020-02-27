@@ -1,7 +1,5 @@
 package edu.cmu.sei.kalki.db.models;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.StageLogDAO;
@@ -49,20 +47,6 @@ public class StageLog {
         this.action = action;
         this.stage = stage;
         this.info = info;
-    }
-
-    /**
-     * Converts a result set to a StageLog object
-     */
-    public static StageLog createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        int deviceSecurityStateId = rs.getInt("device_sec_state_id");
-        Timestamp timestamp = rs.getTimestamp("timestamp");
-        String action = rs.getString("action");
-        String stage = rs.getString("stage");
-        String info = rs.getString("info");
-        return new StageLog(id, deviceSecurityStateId, timestamp, action, stage, info);
     }
 
     public void setId(int id) {

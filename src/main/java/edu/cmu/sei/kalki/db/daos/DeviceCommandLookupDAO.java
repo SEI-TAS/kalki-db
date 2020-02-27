@@ -12,12 +12,29 @@ import java.util.List;
 public class DeviceCommandLookupDAO extends DAO
 {
     /**
+     * Extract a Command from the result set of a database query.
+     */
+    public static DeviceCommandLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) { return null; }
+        int id = rs.getInt("id");
+        int commandId = rs.getInt("command_id");
+        int policyRuleId = rs.getInt("policy_rule_id");
+        return new DeviceCommandLookup(id, commandId, policyRuleId);
+    }
+
+    /**
      * Finds a command lookup based on the given id
      */
     public static DeviceCommandLookup findCommandLookup(int id) {
         logger.info("Finding command lookup with id = " + id);
         ResultSet rs = findById(id, "command_lookup");
-        DeviceCommandLookup deviceCommandLookup = (DeviceCommandLookup) createFromRs(DeviceCommandLookup.class, rs);
+        DeviceCommandLookup deviceCommandLookup = null;
+        try {
+            deviceCommandLookup = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return deviceCommandLookup;
     }
@@ -32,7 +49,7 @@ public class DeviceCommandLookupDAO extends DAO
             st.setInt(1,deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    lookupList.add((DeviceCommandLookup) createFromRs(DeviceCommandLookup.class, rs));
+                    lookupList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -47,7 +64,7 @@ public class DeviceCommandLookupDAO extends DAO
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
-        return (List<DeviceCommandLookup>) findAll("command_lookup", DeviceCommandLookup.class);
+        return (List<DeviceCommandLookup>) findAll("command_lookup", DeviceCommandLookupDAO.class);
     }
 
     /**

@@ -9,12 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.sql.Timestamp;
-
 
 public class Device {
 
@@ -92,23 +89,6 @@ public class Device {
         this.samplingRate = samplingRate;
         this.defaultSamplingRate = defaultSamplingRate;
         this.ip = ip;
-    }
-
-    /**
-     * Extract a Device from the result set of a database query.
-     */
-    public static Device createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        String name = rs.getString("name");
-        String description = rs.getString("description");
-        int typeId = rs.getInt("type_id");
-        int groupId = rs.getInt("group_id");
-        String ip = rs.getString("ip_address");
-        int statusHistorySize = rs.getInt("status_history_size");
-        int samplingRate = rs.getInt("sampling_rate");
-        int defaultSamplingRate = rs.getInt("default_sampling_rate");
-        return new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
     }
 
     public int getId() {

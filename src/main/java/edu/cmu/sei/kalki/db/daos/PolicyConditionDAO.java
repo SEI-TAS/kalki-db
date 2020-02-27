@@ -12,6 +12,16 @@ import java.util.List;
 public class PolicyConditionDAO extends DAO
 {
     /**
+     * Converts a ResultSet obj to a PolicyCondition
+     */
+    public static PolicyCondition createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) { return null; }
+        int id = rs.getInt("id");
+        int threshold = rs.getInt("threshold");
+        return new PolicyCondition(id, threshold, null);
+    }
+    
+    /**
      * Find a PolicyCondition and it's associated AlertType id's
      * @param id
      * @return A PolicyCondition obj. Null otherwise
@@ -19,7 +29,7 @@ public class PolicyConditionDAO extends DAO
     public static PolicyCondition findPolicyCondition(int id) {
         try {
             ResultSet pcrs = findById(id,"policy_condition");
-            PolicyCondition policyCondition = (PolicyCondition) createFromRs(PolicyCondition.class, pcrs);
+            PolicyCondition policyCondition = createFromRs(pcrs);
             closeResources(pcrs);
             if(policyCondition == null) { return null; }
 

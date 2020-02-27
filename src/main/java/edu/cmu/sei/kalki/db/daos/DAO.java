@@ -63,7 +63,36 @@ public class DAO
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Exception finding by int: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+
+    /**
+     * Finds a database entry in a given table and column, plus key.
+     * NOTE: the RS and PreparedStatement are left open when this function returns so that the RS can be used by the
+     * caller function. Both should be closed by the caller. The statement can be obtained from the RS by calling
+     * rs.getStatement().
+     *
+     * @param key       id or key of the entry to find
+     * @param column    the column to look for
+     * @param tableName name of the table to search
+     * @return the resultset of the query if something is found, null otherwise
+     */
+    protected static ResultSet findByString(String key, String tableName, String column) {
+        logger.info(String.format("Finding by key = %s in column %s in table %s", key, column, tableName));
+        try {
+            PreparedStatement st = Postgres.prepareStatement(String.format("SELECT * FROM %s WHERE %s = ?", tableName, column));
+            st.setString(1, key);
+            ResultSet rs = st.executeQuery();
+            // Moves the result set to the first row if it exists. Returns null otherwise.
+            if (rs.next()) {
+                return rs;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.severe("Exception finding by string: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return null;
     }

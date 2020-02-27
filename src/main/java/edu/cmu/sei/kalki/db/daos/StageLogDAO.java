@@ -13,6 +13,20 @@ import java.util.List;
 public class StageLogDAO extends DAO
 {
     /**
+     * Converts a result set to a StageLog object
+     */
+    public static StageLog createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int deviceSecurityStateId = rs.getInt("device_sec_state_id");
+        Timestamp timestamp = rs.getTimestamp("timestamp");
+        String action = rs.getString("action");
+        String stage = rs.getString("stage");
+        String info = rs.getString("info");
+        return new StageLog(id, deviceSecurityStateId, timestamp, action, stage, info);
+    }
+    
+    /**
      * Finds the row in stage_log for the given id
      * @param id
      * @return StageLog representing row with given id
@@ -20,7 +34,13 @@ public class StageLogDAO extends DAO
     public static StageLog findStageLog(int id) {
         logger.info("Finding StageLog with id = " + id);
         ResultSet rs = findById(id, "stage_log");
-        StageLog stageLog = (StageLog) createFromRs(StageLog.class, rs);
+        StageLog stageLog = null;
+        try {
+            stageLog = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return stageLog;
     }
@@ -35,7 +55,7 @@ public class StageLogDAO extends DAO
         try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM stage_log ORDER BY timestamp")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stageLogList.add((StageLog) createFromRs(StageLog.class, rs));
+                    stageLogList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -60,7 +80,7 @@ public class StageLogDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stageLogList.add((StageLog) createFromRs(StageLog.class, rs));
+                    stageLogList.add(createFromRs(rs));
                 }
             }
         } catch (Exception e){

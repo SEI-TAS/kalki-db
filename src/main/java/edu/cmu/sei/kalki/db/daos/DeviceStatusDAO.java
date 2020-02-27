@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceStatus;
+import org.postgresql.util.HStoreConverter;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,6 +17,18 @@ import java.util.Map;
 public class DeviceStatusDAO extends DAO
 {
     /**
+     * Extract a DeviceStatus from the result set of a database query.
+     */
+    public static DeviceStatus createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int deviceId = rs.getInt("device_id");
+        Map<String, String> attributes = HStoreConverter.fromString(rs.getString("attributes"));
+        Timestamp timestamp = rs.getTimestamp("timestamp");
+        int statusId = rs.getInt("id");
+        return new DeviceStatus(deviceId, attributes, timestamp, statusId);
+    }
+    
+    /**
      * Finds a DeviceStatus from the database by its id.
      *
      * @param id id of the DeviceStatus to find.
@@ -23,7 +36,13 @@ public class DeviceStatusDAO extends DAO
      */
     public static DeviceStatus findDeviceStatus(int id) {
         ResultSet rs = findById(id, "device_status");
-        DeviceStatus deviceStatus = (DeviceStatus) createFromRs(DeviceStatus.class, rs);
+        DeviceStatus deviceStatus = null;
+        try {
+            deviceStatus = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return deviceStatus;
     }
@@ -40,7 +59,7 @@ public class DeviceStatusDAO extends DAO
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceHistories = new ArrayList<>();
                 while (rs.next()) {
-                    deviceHistories.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
+                    deviceHistories.add(createFromRs(rs));
                 }
                 return deviceHistories;
             }
@@ -66,7 +85,7 @@ public class DeviceStatusDAO extends DAO
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceHistories = new ArrayList<>();
                 while (rs.next()) {
-                    deviceHistories.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
+                    deviceHistories.add(createFromRs(rs));
                 }
                 return deviceHistories;
             }
@@ -93,7 +112,7 @@ public class DeviceStatusDAO extends DAO
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceStatusList = new ArrayList<>();
                 while (rs.next()) {
-                    deviceStatusList.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
+                    deviceStatusList.add(createFromRs(rs));
                 }
                 return deviceStatusList;
             }
@@ -123,7 +142,7 @@ public class DeviceStatusDAO extends DAO
             try(ResultSet rs = st.executeQuery()) {
                 List<DeviceStatus> deviceHistories = new ArrayList<>();
                 while (rs.next()) {
-                    deviceHistories.add((DeviceStatus) createFromRs(DeviceStatus.class, rs));
+                    deviceHistories.add(createFromRs(rs));
                 }
                 return deviceHistories;
             }
@@ -143,26 +162,12 @@ public class DeviceStatusDAO extends DAO
 
     public static Map<Device, DeviceStatus> findDeviceStatusesByType(int typeId) {
         Map<Device, DeviceStatus> deviceStatusMap = new HashMap<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device WHERE type_id = ?")) {
-            st.setInt(1, typeId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    Device device = (Device) createFromRs(Device.class, rs);
-                    try(PreparedStatement statement = Postgres.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1")) {
-                        statement.setInt(1, device.getId());
-                        try(ResultSet resultSet = statement.executeQuery()) {
-                            DeviceStatus deviceStatus = null;
-                            while (resultSet.next()) {
-                                deviceStatus = (DeviceStatus) createFromRs(DeviceStatus.class, resultSet);
-                            }
-                            deviceStatusMap.put(device, deviceStatus);
-                        }
-                    }
-                }
+        List<Device> devices = DeviceDAO.findDevicesByType(typeId);
+        for (Device device : devices) {
+            List<DeviceStatus> statuses = findNDeviceStatuses(device.getId(), 1);
+            for(DeviceStatus deviceStatus : statuses) {
+                deviceStatusMap.put(device, deviceStatus);
             }
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting devices for type: " + typeId + " " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
         }
         return deviceStatusMap;
     }
@@ -176,26 +181,12 @@ public class DeviceStatusDAO extends DAO
 
     public static Map<Device, DeviceStatus> findDeviceStatusesByGroup(int groupId) {
         Map<Device, DeviceStatus> deviceStatusMap = new HashMap<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device WHERE group_id = ?")) {
-            st.setInt(1, groupId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    Device device = (Device) createFromRs(Device.class, rs);
-                    try(PreparedStatement statement = Postgres.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1")) {
-                        statement.setInt(1, device.getId());
-                        try(ResultSet resultSet = statement.executeQuery()) {
-                            DeviceStatus deviceStatus = null;
-                            while (resultSet.next()) {
-                                deviceStatus = (DeviceStatus) createFromRs(DeviceStatus.class, resultSet);
-                            }
-                            deviceStatusMap.put(device, deviceStatus);
-                        }
-                    }
-                }
+        List<Device> devices = DeviceDAO.findDevicesByGroup(groupId);
+        for (Device device : devices) {
+            List<DeviceStatus> statuses = findNDeviceStatuses(device.getId(), 1);
+            for(DeviceStatus deviceStatus : statuses) {
+                deviceStatusMap.put(device, deviceStatus);
             }
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting devices for group: " + groupId + " " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
         }
         return deviceStatusMap;
     }
@@ -206,7 +197,7 @@ public class DeviceStatusDAO extends DAO
      * @return a list of all DeviceStatuses in the database.
      */
     public static List<DeviceStatus> findAllDeviceStatuses() {
-        return (List<DeviceStatus>) findAll("device_status", DeviceStatus.class);
+        return (List<DeviceStatus>) findAll("device_status", DeviceStatusDAO.class);
     }
 
     /**

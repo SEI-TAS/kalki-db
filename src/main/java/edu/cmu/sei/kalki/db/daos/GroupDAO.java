@@ -11,6 +11,16 @@ import java.util.List;
 public class GroupDAO extends DAO
 {
     /**
+     * Extract a Group from the result set of a database query.
+     */
+    public static Group createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        return new Group(id, name);
+    }
+
+    /**
      * Finds a Group from the database by its id.
      *
      * @param id id of the Group to find.
@@ -18,7 +28,13 @@ public class GroupDAO extends DAO
      */
     public static Group findGroup(int id) {
         ResultSet rs = findById(id, "device_group");
-        Group group = (Group) createFromRs(Group.class, rs);
+        Group group = null;
+        try {
+            group = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return group;
     }
@@ -29,7 +45,7 @@ public class GroupDAO extends DAO
      * @return a list of all Groups in the database.
      */
     public static List<Group> findAllGroups() {
-        return (List<Group>) findAll("device_group", Group.class);
+        return (List<Group>) findAll("device_group", GroupDAO.class);
     }
 
     /**

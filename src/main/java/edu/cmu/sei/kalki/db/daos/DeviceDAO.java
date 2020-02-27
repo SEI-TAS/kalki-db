@@ -15,6 +15,22 @@ import java.util.NoSuchElementException;
 
 public class DeviceDAO extends DAO
 {
+    /**
+     * Extract a Device from the result set of a database query.
+     */
+    public static Device createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String description = rs.getString("description");
+        int typeId = rs.getInt("type_id");
+        int groupId = rs.getInt("group_id");
+        String ip = rs.getString("ip_address");
+        int statusHistorySize = rs.getInt("status_history_size");
+        int samplingRate = rs.getInt("sampling_rate");
+        int defaultSamplingRate = rs.getInt("default_sampling_rate");
+        return new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
+    }
 
     /**
      * Finds a Device from the database by its id.
@@ -25,7 +41,13 @@ public class DeviceDAO extends DAO
     public static Device findDevice(int id) {
         logger.info("Finding device with id = " + id);
         ResultSet rs = findById(id, "device");
-        Device device = (Device) createFromRs(Device.class, rs);
+        Device device = null;
+        try {
+            device = createFromRs( rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
 
         if(device != null) {
             List<Integer> tagIds = TagDAO.findTagIds(device.getId());
@@ -49,7 +71,7 @@ public class DeviceDAO extends DAO
         try {
             ResultSet rs = getAllFromTable("device");
             while (rs.next()) {
-                Device d = (Device) createFromRs(Device.class, rs);
+                Device d = createFromRs( rs);
                 List<Integer> tagIds = TagDAO.findTagIds(d.getId());
                 d.setTagIds(tagIds);
                 DeviceSecurityState ss = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId());
@@ -77,7 +99,7 @@ public class DeviceDAO extends DAO
             st.setInt(1, groupId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device d = (Device) createFromRs(Device.class, rs);
+                    Device d = createFromRs( rs);
                     d.setCurrentState(DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId()));
                     devices.add(d);
                 }
@@ -131,8 +153,8 @@ public class DeviceDAO extends DAO
     /**
      * Finds the Device related to the given DeviceType id
      *
-     * @param the Alert
-     * @return the Device associated with the alert
+     * @param int id of the type
+     * @return the Devices associated with the type
      */
     public static List<Device> findDevicesByType(int id) {
         List<Device> deviceList = new ArrayList<>();
@@ -140,7 +162,7 @@ public class DeviceDAO extends DAO
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device d = (Device) createFromRs(Device.class, rs);
+                    Device d = createFromRs( rs);
                     d.setCurrentState(DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId()));
                     deviceList.add(d);
                 }
@@ -189,23 +211,13 @@ public class DeviceDAO extends DAO
 
         if(currentState == null) {
             // Give the device a normal security state if it is not specified
-            try (PreparedStatement st = Postgres.prepareStatement("SELECT * FROM security_state WHERE name = ?;")) {
-                st.setString(1, "Normal");
-                try (ResultSet rs = st.executeQuery()) {
-                    if (rs.next()) {
-                        SecurityState securityState = (SecurityState) createFromRs(SecurityState.class, rs);
-
-                        DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), securityState.getId(), securityState.getName());
-                        normalDeviceState.insert();
-
-                        device.setCurrentState(normalDeviceState);
-                    } else {
-                        throw new NoSuchElementException("No normal security state has been added to the database");
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                logger.severe("Error inserting Device: " + e.getClass().getName() + ": " + e.getMessage());
+            SecurityState securityState = SecurityStateDAO.findByName("Normal");
+            if (securityState != null) {
+                DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), securityState.getId(), securityState.getName());
+                normalDeviceState.insert();
+                device.setCurrentState(normalDeviceState);
+            } else {
+                throw new NoSuchElementException("No normal security state has been added to the database");
             }
 
             // Insert tags into device_tag

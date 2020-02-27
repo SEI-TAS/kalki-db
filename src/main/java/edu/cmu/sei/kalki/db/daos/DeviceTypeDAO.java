@@ -11,6 +11,18 @@ import java.util.List;
 public class DeviceTypeDAO extends DAO
 {
     /**
+     * Extract a DeviceType from the result set of a database query.
+     */
+    public static DeviceType createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        byte[] policyFile = rs.getBytes("policy_file");
+        String policyFileName = rs.getString("policy_file_name");
+        return new DeviceType(id, name, policyFile, policyFileName);
+    }
+
+    /**
      * Finds a DeviceType from the database by its id.
      *
      * @param id id of the DeviceType to find.
@@ -18,7 +30,13 @@ public class DeviceTypeDAO extends DAO
      */
     public static DeviceType findDeviceType(int id) {
         ResultSet rs = findById(id, "device_type");
-        DeviceType type = (DeviceType) createFromRs(DeviceType.class, rs);
+        DeviceType type = null;
+        try {
+            type = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return type;
     }
@@ -29,7 +47,7 @@ public class DeviceTypeDAO extends DAO
      * @return a list of all DeviceTypes in the database.
      */
     public static List<DeviceType> findAllDeviceTypes() {
-        return (List<DeviceType>) findAll("device_type", DeviceType.class);
+        return (List<DeviceType>) findAll("device_type", DeviceTypeDAO.class);
     }
 
     /**

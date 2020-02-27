@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 import edu.cmu.sei.kalki.db.daos.PolicyConditionDAO;
@@ -27,16 +25,6 @@ public class PolicyCondition {
     public PolicyCondition(int id, int threshold, List<Integer> alertTypeIds) {
         this(threshold, alertTypeIds);
         this.id = id;
-    }
-
-    /**
-     * Converts a ResultSet obj to a PolicyCondition
-     */
-    public static PolicyCondition createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) { return null; }
-        int id = rs.getInt("id");
-        int threshold = rs.getInt("threshold");
-        return new PolicyCondition(id, threshold, null);
     }
 
     public int getId() {

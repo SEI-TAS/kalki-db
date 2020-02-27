@@ -6,9 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 public class DeviceCommand {
     private int id;
     private String name;
@@ -28,17 +25,6 @@ public class DeviceCommand {
         this.id = id;
         this.name = name;
         this.deviceTypeId = deviceTypeId;
-    }
-
-    /**
-     * Extract a Command name from the result set of a database query.
-     */
-    public static DeviceCommand createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        String name = rs.getString("name");
-        int deviceTypeId = rs.getInt("device_type_id");
-        return new DeviceCommand(id, name, deviceTypeId);
     }
 
     public int getId() {

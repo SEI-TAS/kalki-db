@@ -11,13 +11,29 @@ import java.util.List;
 
 public class DeviceCommandDAO extends DAO
 {
+    /**
+     * Extract a Command name from the result set of a database query.
+     */
+    public static DeviceCommand createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        int deviceTypeId = rs.getInt("device_type_id");
+        return new DeviceCommand(id, name, deviceTypeId);
+    }
 
     /**
      * Finds a command based on the given id
      */
     public static DeviceCommand findCommand(int id) {
         ResultSet rs = findById(id, "command");
-        DeviceCommand deviceCommand = (DeviceCommand) createFromRs(DeviceCommand.class, rs);
+        DeviceCommand deviceCommand = null;
+        try {
+            deviceCommand = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return deviceCommand;
     }
@@ -26,7 +42,7 @@ public class DeviceCommandDAO extends DAO
      * Finds all rows in the command table
      */
     public static List<DeviceCommand> findAllCommands() {
-        return (List<DeviceCommand>) findAll("command", DeviceCommand.class);
+        return (List<DeviceCommand>) findAll("command", DeviceCommandDAO.class);
     }
 
     /**
@@ -42,7 +58,7 @@ public class DeviceCommandDAO extends DAO
             st.setInt(1, policyRuleId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    commands.add((DeviceCommand) createFromRs(DeviceCommand.class, rs));
+                    commands.add(createFromRs(rs));
                 }
             }
             return commands;

@@ -9,9 +9,26 @@ import java.sql.SQLException;
 
 public class StateTransitionDAO extends DAO
 {
+    /**
+     * Converts a ResultSet obj to a StateTransition
+     */
+    public static StateTransition createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int startSecStateId = rs.getInt("start_sec_state_id");
+        int finishSecStateId = rs.getInt("finish_sec_state_id");
+        return new StateTransition(id, startSecStateId, finishSecStateId);
+    }
+    
     public static StateTransition findStateTransition(int id) {
         ResultSet rs = findById(id, "state_transition");
-        StateTransition stateTransition = (StateTransition) createFromRs(StateTransition.class, rs);
+        StateTransition stateTransition = null;
+        try {
+            stateTransition = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return stateTransition;
     }

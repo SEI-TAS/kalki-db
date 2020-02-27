@@ -12,6 +12,16 @@ import java.util.List;
 public class TagDAO extends DAO
 {
     /**
+     * Extract a Tag from the result set of a database query.
+     */
+    public static Tag createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        return new Tag(id, name);
+    }
+    
+    /**
      * Search the tag table for a row with the given id
      *
      * @param id The id of the tag
@@ -19,7 +29,13 @@ public class TagDAO extends DAO
      */
     public static Tag findTag(int id) {
         ResultSet rs = findById(id, "tag");
-        Tag tag = (Tag) createFromRs(Tag.class, rs);
+        Tag tag = null;
+        try {
+            tag = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return tag;
     }
@@ -37,7 +53,7 @@ public class TagDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    tags.add((Tag) createFromRs(Tag.class, rs));
+                    tags.add(createFromRs(rs));
                 }
             }
             return tags;
@@ -78,7 +94,7 @@ public class TagDAO extends DAO
      * @return a list of all Tags in the database.
      */
     public static List<Tag> findAllTags() {
-        return (List<Tag>) findAll("tag", Tag.class);
+        return (List<Tag>) findAll("tag", TagDAO.class);
     }
 
     /**

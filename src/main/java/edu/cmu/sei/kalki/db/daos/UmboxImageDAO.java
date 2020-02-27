@@ -12,6 +12,24 @@ import java.util.List;
 public class UmboxImageDAO extends DAO
 {
     /**
+     * Extract a UmboxImage from the result set of a database query that includes umbox_lookup.
+     */
+    public static UmboxImage createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String fileName = rs.getString("file_name");
+        try {
+            // Only if it contains dagOrder.
+            int dagOrder = rs.getInt("dag_order");
+            return new UmboxImage(id, name, fileName, dagOrder);
+        } catch (SQLException ignore) {
+            return new UmboxImage(id, name, fileName);
+        }
+
+    }
+    
+    /**
      * Find a UmboxImage based on its id
      *
      * @param id ID of the desired UmboxImage
@@ -19,7 +37,13 @@ public class UmboxImageDAO extends DAO
      */
     public static UmboxImage findUmboxImage(int id) {
         ResultSet rs = findById(id, "umbox_image");
-        UmboxImage umboxImage = (UmboxImage) createFromRs(UmboxImage.class, rs);
+        UmboxImage umboxImage = null;
+        try {
+            umboxImage = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return umboxImage;
     }
@@ -41,7 +65,7 @@ public class UmboxImageDAO extends DAO
             List<UmboxImage> umboxImageList = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxImageList.add((UmboxImage) createFromRs(UmboxImage.class, rs));
+                    umboxImageList.add(createFromRs(rs));
                 }
             }
             return umboxImageList;
@@ -58,7 +82,7 @@ public class UmboxImageDAO extends DAO
      * @return a list of all UmboxImages in the database.
      */
     public static List<UmboxImage> findAllUmboxImages() {
-        return (List<UmboxImage>) findAll("umbox_image", UmboxImage.class);
+        return (List<UmboxImage>) findAll("umbox_image", UmboxImageDAO.class);
     }
 
     /**

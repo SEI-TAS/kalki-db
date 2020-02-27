@@ -2,15 +2,31 @@ package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
+import org.postgresql.util.HStoreConverter;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AlertTypeLookupDAO extends DAO
 {
+    /**
+     * Extract an AlertTypeLookup from the result set of a database query.
+     */
+    public static AlertTypeLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int alertTypeId = rs.getInt("alert_type_id");
+        int deviceTypeId = rs.getInt("device_type_id");
+        Map<String, String> variables = null;
+        if (rs.getString("variables") != null) {
+            variables = HStoreConverter.fromString(rs.getString("variables"));
+        }
+        return new AlertTypeLookup(id, alertTypeId, deviceTypeId, variables);
+    }
 
     /**
      * Returns the row from alert_type_lookup with the given id
@@ -18,7 +34,13 @@ public class AlertTypeLookupDAO extends DAO
      */
     public static AlertTypeLookup findAlertTypeLookup(int id) {
         ResultSet rs = findById(id, "alert_type_lookup");
-        AlertTypeLookup alertTypeLookup = (AlertTypeLookup) createFromRs(AlertTypeLookup.class, rs);
+        AlertTypeLookup alertTypeLookup = null;
+        try {
+            alertTypeLookup = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object.");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return alertTypeLookup;
     }
@@ -33,7 +55,7 @@ public class AlertTypeLookupDAO extends DAO
             st.setInt(1, typeId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    atlList.add((AlertTypeLookup) createFromRs(AlertTypeLookup.class, rs));
+                    atlList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -48,7 +70,7 @@ public class AlertTypeLookupDAO extends DAO
      * @return A list of AlertTypeLookups
      */
     public static List<AlertTypeLookup> findAllAlertTypeLookups() {
-        return (List<AlertTypeLookup>) findAll("alert_type_lookup", AlertTypeLookup.class);
+        return (List<AlertTypeLookup>) findAll("alert_type_lookup", AlertTypeLookupDAO.class);
     }
 
     /**

@@ -12,10 +12,24 @@ import java.util.List;
 public class AlertTypeDAO extends DAO
 {
     /**
+     * Extract an AlertType from the result set of a database query.
+     * @param rs ResultSet from a AlertType query.
+     * @return The AlertType that was found.
+     */
+    public static AlertType createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String description = rs.getString("description");
+        String source = rs.getString("source");
+        return new AlertType(id, name, description, source);
+    }
+
+    /**
      * Finds an AlertType from the dataase with the given id
      */
     public static AlertType findAlertType(int id) {
-        return (AlertType) findObject(id, "alert_type", AlertType.class);
+        return (AlertType) findObject(id, "alert_type", AlertTypeDAO.class);
     }
 
     /**
@@ -32,7 +46,7 @@ public class AlertTypeDAO extends DAO
             st.setInt(1, deviceTypeId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    alertTypeList.add(AlertType.createFromRs(rs));
+                    alertTypeList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -48,7 +62,7 @@ public class AlertTypeDAO extends DAO
      * @return a list of AlertTypes
      */
     public static List<AlertType> findAllAlertTypes() {
-        return (List<AlertType>) findAll("alert_type", AlertType.class);
+        return (List<AlertType>) findAll("alert_type", AlertTypeDAO.class);
     }
 
     /**

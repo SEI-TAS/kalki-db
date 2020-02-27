@@ -4,15 +4,35 @@ import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.Device;
+import org.postgresql.util.HStoreConverter;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AlertConditionDAO extends DAO
 {
+
+    /**
+     * Extract an AlertCondition from the result set of a database query.
+     */
+    public static AlertCondition createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int deviceId = rs.getInt("device_id");
+        String deviceName = rs.getString("device_name");
+        int alertTypeLookupId = rs.getInt("alert_type_lookup_id");
+        String alertTypeName = rs.getString("alert_type_name");
+        Map<String, String> variables = null;
+        if (rs.getString("variables") != null) {
+            variables = HStoreConverter.fromString(rs.getString("variables"));
+        }
+        return new AlertCondition(id, deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
+    }
+
     /**
      * Finds an AlertCondition from the database with the given id
      *
@@ -27,7 +47,7 @@ public class AlertConditionDAO extends DAO
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    alertCondition = (AlertCondition) createFromRs(AlertCondition.class, rs);
+                    alertCondition = createFromRs(rs);
                 }
             }
         } catch (SQLException e) {
@@ -49,7 +69,7 @@ public class AlertConditionDAO extends DAO
                 "WHERE ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    alertConditionList.add((AlertCondition) createFromRs(AlertCondition.class, rs));
+                    alertConditionList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -73,7 +93,7 @@ public class AlertConditionDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    conditionList.add((AlertCondition) createFromRs(AlertCondition.class, rs));
+                    conditionList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {

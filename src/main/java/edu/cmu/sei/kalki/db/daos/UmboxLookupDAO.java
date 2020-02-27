@@ -11,6 +11,17 @@ import java.util.List;
 
 public class UmboxLookupDAO extends DAO
 {
+    /**
+     * Extract a UmboxLookup from the result set of a database query.
+     */
+    public static UmboxLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int policyRuleId = rs.getInt("policy_rule_id");
+        int umboxImageId = rs.getInt("umbox_image_id");
+        int dagOrder = rs.getInt("dag_order");
+        return new UmboxLookup(id, policyRuleId, umboxImageId, dagOrder);
+    }
 
     /**
      * Finds a UmboxLookup from the database by its id.
@@ -24,7 +35,7 @@ public class UmboxLookupDAO extends DAO
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    return (UmboxLookup) createFromRs(UmboxLookup.class, rs);
+                    return createFromRs(rs);
                 }
             }
         } catch (SQLException e) {
@@ -45,7 +56,7 @@ public class UmboxLookupDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    lookupList.add((UmboxLookup) createFromRs(UmboxLookup.class, rs));
+                    lookupList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
@@ -60,7 +71,7 @@ public class UmboxLookupDAO extends DAO
      * Finds all umboxLookup entries
      */
     public static List<UmboxLookup> findAllUmboxLookups() {
-        return (List<UmboxLookup>) findAll("umbox_lookup", UmboxLookup.class);
+        return (List<UmboxLookup>) findAll("umbox_lookup", UmboxLookupDAO.class);
     }
 
     /**

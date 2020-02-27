@@ -5,9 +5,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.cmu.sei.kalki.db.daos.UmboxImageDAO;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 public class UmboxImage {
 
     private int id;
@@ -37,23 +34,6 @@ public class UmboxImage {
         this.name = name;
         this.fileName = fileName;
         this.dagOrder = dagOrder;
-    }
-
-    /**
-     * Extract a UmboxImage from the result set of a database query that includes umbox_lookup.
-     */
-    public static UmboxImage createFromRs(ResultSet rs) throws SQLException {
-        int id = rs.getInt("id");
-        String name = rs.getString("name");
-        String fileName = rs.getString("file_name");
-        try {
-            // Only if it contains dagOrder.
-            int dagOrder = rs.getInt("dag_order");
-            return new UmboxImage(id, name, fileName, dagOrder);
-        } catch (SQLException ignore) {
-            return new UmboxImage(id, name, fileName);
-        }
-
     }
 
     public int getId() {

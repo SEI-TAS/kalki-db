@@ -11,6 +11,16 @@ import java.util.List;
 public class SecurityStateDAO extends DAO
 {
     /**
+     * Take a ResultSet from a DB query and convert to the java object
+     */
+    public static SecurityState createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        return new SecurityState(id, name);
+    }
+    
+    /**
      * Search the security_state table for a row with the given id
      *
      * @param id The id of the security state
@@ -18,7 +28,31 @@ public class SecurityStateDAO extends DAO
      */
     public static SecurityState findSecurityState(int id) {
         ResultSet rs = findById(id, "security_state");
-        SecurityState state = (SecurityState) createFromRs(SecurityState.class, rs);
+        SecurityState state = null;
+        try {
+            state = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
+        closeResources(rs);
+        return state;
+    }
+
+    /**
+     * Finds by state name.
+     * @param name
+     * @return
+     */
+    public static SecurityState findByName(String name) {
+        ResultSet rs = findByString(name, "security_state", "name");
+        SecurityState state = null;
+        try {
+            state = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return state;
     }
@@ -29,7 +63,7 @@ public class SecurityStateDAO extends DAO
      * @return a list of all SecurityStates in the database.
      */
     public static List<SecurityState> findAllSecurityStates() {
-        return (List<SecurityState>) findAll("security_state", SecurityState.class);
+        return (List<SecurityState>) findAll("security_state", SecurityStateDAO.class);
     }
 
     /**

@@ -6,9 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import edu.cmu.sei.kalki.db.daos.PolicyRuleDAO;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 public class PolicyRule
 {
     private int id;
@@ -31,19 +28,6 @@ public class PolicyRule
     public PolicyRule(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate){
         this(stateTransId, policyCondId, devTypeId, samplingRate);
         this.id = id;
-    }
-
-    /**
-     * Converts a ResultSet obj to a Policy
-     */
-    public static PolicyRule createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        int stateTransId = rs.getInt("state_trans_id");
-        int policyCondId = rs.getInt("policy_cond_id");
-        int devTypeId = rs.getInt("device_type_id");
-        int samplingRate = rs.getInt("sampling_rate");
-        return new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
     }
 
     public int getId() {

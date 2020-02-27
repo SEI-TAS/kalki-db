@@ -11,9 +11,28 @@ import java.util.List;
 
 public class PolicyRuleDAO extends DAO
 {
+    /**
+     * Converts a ResultSet obj to a Policy
+     */
+    public static PolicyRule createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int stateTransId = rs.getInt("state_trans_id");
+        int policyCondId = rs.getInt("policy_cond_id");
+        int devTypeId = rs.getInt("device_type_id");
+        int samplingRate = rs.getInt("sampling_rate");
+        return new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
+    }
+    
     public static PolicyRule findPolicyRule(int id) {
         ResultSet rs = findById(id, "policy_rule");
-        PolicyRule policyRule = (PolicyRule) createFromRs(PolicyRule.class, rs);
+        PolicyRule policyRule = null;
+        try {
+            policyRule = createFromRs(rs);
+        } catch (SQLException e) {
+            logger.severe("Sql exception creating object");
+            e.printStackTrace();
+        }
         closeResources(rs);
         return policyRule;
     }
@@ -36,7 +55,7 @@ public class PolicyRuleDAO extends DAO
 
             ResultSet rs = query.executeQuery();
             if(rs.next()) {
-                return (PolicyRule) createFromRs(PolicyRule.class, rs);
+                return createFromRs(rs);
             }
         } catch (SQLException e) {
             logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
@@ -60,7 +79,7 @@ public class PolicyRuleDAO extends DAO
             try(ResultSet rs = query.executeQuery()) {
                 List<PolicyRule> rules = new ArrayList<>();
                 while (rs.next()) {
-                    rules.add((PolicyRule) createFromRs(PolicyRule.class, rs));
+                    rules.add(createFromRs(rs));
                 }
                 return rules;
             }

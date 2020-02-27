@@ -6,9 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 public class Tag {
 
     private int id;
@@ -27,16 +24,6 @@ public class Tag {
     public Tag(int id, String name) {
         this.id = id;
         this.name = name;
-    }
-
-    /**
-     * Extract a Tag from the result set of a database query.
-     */
-    public static Tag createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        String name = rs.getString("name");
-        return new Tag(id, name);
     }
 
     public int getId() {

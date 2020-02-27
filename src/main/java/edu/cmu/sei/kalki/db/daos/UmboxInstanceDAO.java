@@ -6,11 +6,25 @@ import edu.cmu.sei.kalki.db.models.UmboxInstance;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UmboxInstanceDAO extends DAO
 {
+    /**
+     * Extract a UmboxInstance from the result set of a database query.
+     */
+    public static UmboxInstance createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String alerterId = rs.getString("alerter_id");
+        int imageId = rs.getInt("umbox_image_id");
+        int deviceId = rs.getInt("device_id");
+        Timestamp startedAt = rs.getTimestamp("started_at");
+        return new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
+    }
+
     /**
      * Find a umbox instance by its alerter id
      *
@@ -24,7 +38,7 @@ public class UmboxInstanceDAO extends DAO
                 if (!rs.next()) {
                     return null;
                 }
-                return (UmboxInstance) createFromRs(UmboxInstance.class, rs);
+                return createFromRs(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -45,7 +59,7 @@ public class UmboxInstanceDAO extends DAO
             List<UmboxInstance> umboxInstances = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxInstances.add((UmboxInstance) createFromRs(UmboxInstance.class, rs));
+                    umboxInstances.add(createFromRs(rs));
                 }
             }
             return umboxInstances;

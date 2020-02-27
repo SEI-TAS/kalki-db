@@ -2,14 +2,11 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.postgresql.util.HStoreConverter;
 
 public class AlertCondition {
     private int id;
@@ -39,23 +36,6 @@ public class AlertCondition {
     public AlertCondition(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
         this(deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
         this.id = id;
-    }
-
-    /**
-     * Extract an AlertCondition from the result set of a database query.
-     */
-    public static AlertCondition createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        int deviceId = rs.getInt("device_id");
-        String deviceName = rs.getString("device_name");
-        int alertTypeLookupId = rs.getInt("alert_type_lookup_id");
-        String alertTypeName = rs.getString("alert_type_name");
-        Map<String, String> variables = null;
-        if (rs.getString("variables") != null) {
-            variables = HStoreConverter.fromString(rs.getString("variables"));
-        }
-        return new AlertCondition(id, deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
     }
 
     public int getId() {

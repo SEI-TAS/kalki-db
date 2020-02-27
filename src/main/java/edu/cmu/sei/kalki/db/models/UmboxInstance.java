@@ -1,7 +1,5 @@
 package edu.cmu.sei.kalki.db.models;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
@@ -45,19 +43,6 @@ public class UmboxInstance {
         this.umboxImageId = umboxImageId;
         this.deviceId = deviceId;
         this.startedAt = startedAt;
-    }
-
-    /**
-     * Extract a UmboxInstance from the result set of a database query.
-     */
-    public static UmboxInstance createFromRs(ResultSet rs) throws SQLException {
-        if(rs == null) return null;
-        int id = rs.getInt("id");
-        String alerterId = rs.getString("alerter_id");
-        int imageId = rs.getInt("umbox_image_id");
-        int deviceId = rs.getInt("device_id");
-        Timestamp startedAt = rs.getTimestamp("started_at");
-        return new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
     }
 
     public int getId() {

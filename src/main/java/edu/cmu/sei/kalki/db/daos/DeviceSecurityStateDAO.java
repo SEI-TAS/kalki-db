@@ -7,12 +7,25 @@ import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DeviceSecurityStateDAO extends DAO
 {
-
+    /**
+     * Extract a DeviceSecurityState from the result set of a database query.
+     */
+    public static DeviceSecurityState createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int deviceId = rs.getInt("device_id");
+        int stateId = rs.getInt("state_id");
+        Timestamp timestamp = rs.getTimestamp("timestamp");
+        String name = rs.getString("name");
+        return new DeviceSecurityState(id, deviceId, stateId, timestamp, name);
+    }
+    
     /**
      * Finds the DeviceSecurityState with the supplied id
      *
@@ -30,7 +43,7 @@ public class DeviceSecurityStateDAO extends DAO
             st.setInt(1, id);
             try( ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    dss = (DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs);
+                    dss = createFromRs(rs);
                 }
             }
         } catch (SQLException e) {
@@ -49,7 +62,7 @@ public class DeviceSecurityStateDAO extends DAO
         try(PreparedStatement st = Postgres.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stateList.add((DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs));
+                    stateList.add(createFromRs(rs));
                 }
             }
         } catch (Exception e){
@@ -74,7 +87,7 @@ public class DeviceSecurityStateDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()){
                 if (rs.next()) {
-                    ss = (DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs);
+                    ss = createFromRs(rs);
                 }
             }
         } catch (SQLException e) {
@@ -127,7 +140,7 @@ public class DeviceSecurityStateDAO extends DAO
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    deviceStateList.add((DeviceSecurityState) createFromRs(DeviceSecurityState.class, rs));
+                    deviceStateList.add(createFromRs(rs));
                 }
             }
         } catch (SQLException e) {
