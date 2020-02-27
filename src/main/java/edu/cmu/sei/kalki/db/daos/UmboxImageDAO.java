@@ -26,7 +26,6 @@ public class UmboxImageDAO extends DAO
         } catch (SQLException ignore) {
             return new UmboxImage(id, name, fileName);
         }
-
     }
     
     /**

@@ -68,7 +68,6 @@ public class DAO
         return null;
     }
 
-
     /**
      * Finds a database entry in a given table and column, plus key.
      * NOTE: the RS and PreparedStatement are left open when this function returns so that the RS can be used by the
