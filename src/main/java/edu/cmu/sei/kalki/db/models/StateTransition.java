@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class StateTransition {
     private int id;
     private int startStateId;
@@ -23,6 +26,17 @@ public class StateTransition {
     public StateTransition(int id, int startStateId, int finishStateId) {
         this(startStateId, finishStateId);
         this.id = id;
+    }
+
+    /**
+     * Converts a ResultSet obj to a Policy
+     */
+    public static StateTransition createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int startSecStateId = rs.getInt("start_sec_state_id");
+        int finishSecStateId = rs.getInt("finish_sec_state_id");
+        return new StateTransition(id, startSecStateId, finishSecStateId);
     }
 
     public int getId() {

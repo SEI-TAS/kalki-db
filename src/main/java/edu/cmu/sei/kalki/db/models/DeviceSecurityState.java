@@ -1,5 +1,7 @@
 package edu.cmu.sei.kalki.db.models;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
@@ -49,6 +51,19 @@ public class DeviceSecurityState {
         this.stateId = stateId;
         this.timestamp = timestamp;
         this.name = name;
+    }
+
+    /**
+     * Extract a DeviceSecurityState from the result set of a database query.
+     */
+    public static DeviceSecurityState createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int deviceId = rs.getInt("device_id");
+        int stateId = rs.getInt("state_id");
+        Timestamp timestamp = rs.getTimestamp("timestamp");
+        String name = rs.getString("name");
+        return new DeviceSecurityState(id, deviceId, stateId, timestamp, name);
     }
 
     public int getId() { return  id; }

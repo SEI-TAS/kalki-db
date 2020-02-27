@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.cmu.sei.kalki.db.database.Postgres;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class UmboxLookup {
 
     private int id;
@@ -27,6 +30,18 @@ public class UmboxLookup {
     public UmboxLookup(int id, Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
         this(policyRuleId, umboxImageId, dagOrder);
         this.id = id;
+    }
+
+    /**
+     * Extract a UmboxLookup from the result set of a database query.
+     */
+    public static UmboxLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int policyRuleId = rs.getInt("policy_rule_id");
+        int umboxImageId = rs.getInt("umbox_image_id");
+        int dagOrder = rs.getInt("dag_order");
+        return new UmboxLookup(id, policyRuleId, umboxImageId, dagOrder);
     }
 
     public int getId() {

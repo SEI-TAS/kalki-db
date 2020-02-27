@@ -1,5 +1,7 @@
 package edu.cmu.sei.kalki.db.models;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import edu.cmu.sei.kalki.db.database.Postgres;
 
@@ -27,6 +29,18 @@ public class UmboxLog {
         this.alerter_id = alerter_id;
         this.details = details;
         this.timestamp = timestamp;
+    }
+
+    /**
+     * Converts a row from the umbox_log table to a UmboxLog object
+     */
+    public static UmboxLog createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String alerterId = rs.getString("alerter_id");
+        String details = rs.getString("details");
+        Timestamp timestamp = rs.getTimestamp("timestamp");
+        return new UmboxLog(id, alerterId, details, timestamp);
     }
 
     public int getId() {

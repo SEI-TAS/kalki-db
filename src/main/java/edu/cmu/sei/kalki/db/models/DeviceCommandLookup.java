@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class DeviceCommandLookup {
     private int id;
     private int commandId;
@@ -24,6 +27,17 @@ public class DeviceCommandLookup {
     public DeviceCommandLookup(int id, int commandId, int policyRuleId) {
         this(commandId, policyRuleId);
         this.id = id;
+    }
+
+    /**
+     * Extract a Command from the result set of a database query.
+     */
+    public static DeviceCommandLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) { return null; }
+        int id = rs.getInt("id");
+        int commandId = rs.getInt("command_id");
+        int policyRuleId = rs.getInt("policy_rule_id");
+        return new DeviceCommandLookup(id, commandId, policyRuleId);
     }
 
     public int getId() {

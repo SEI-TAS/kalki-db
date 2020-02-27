@@ -1395,7 +1395,7 @@ public class Postgres {
     public static DeviceCommandLookup findCommandLookup(int id) {
         logger.info("Finding command lookup with id = " + id);
         ResultSet rs = findById(id, "command_lookup");
-        DeviceCommandLookup deviceCommandLookup = rsToCommandLookup(rs);
+        DeviceCommandLookup deviceCommandLookup = (DeviceCommandLookup) createFromRs("DeviceCommandLookup", rs);
         closeResources(rs);
         return deviceCommandLookup;
     }
@@ -1411,7 +1411,7 @@ public class Postgres {
             st.setInt(1,deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    lookupList.add(rsToCommandLookup(rs));
+                    lookupList.add((DeviceCommandLookup) createFromRs("DeviceCommandLookup", rs));
                 }
             }
         } catch (SQLException e) {
@@ -1427,27 +1427,6 @@ public class Postgres {
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
         return (List<DeviceCommandLookup>) findAll("command_lookup", "DeviceCommandLookup");
-    }
-
-    /**
-     * Extract a Command from the result set of a database query.
-     *
-     * @param rs ResultSet from a CommandLookup query.
-     * @return The command, or null if it was not found.
-     */
-    private static DeviceCommandLookup rsToCommandLookup(ResultSet rs) {
-        DeviceCommandLookup commandLookup = null;
-        if(rs == null) { return null; }
-        try {
-            int id = rs.getInt("id");
-            int commandId = rs.getInt("command_id");
-            int policyRuleId = rs.getInt("policy_rule_id");
-            commandLookup = new DeviceCommandLookup(id, commandId, policyRuleId);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to CommandLookup name: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return commandLookup;
     }
 
     /**
@@ -1534,7 +1513,7 @@ public class Postgres {
     public static Device findDevice(int id) {
         logger.info("Finding device with id = " + id);
         ResultSet rs = findById(id, "device");
-        Device device = rsToDevice(rs);
+        Device device = (Device) createFromRs("Device", rs);
 
         if(device != null) {
             List<Integer> tagIds = findTagIds(device.getId());
@@ -1559,7 +1538,7 @@ public class Postgres {
         try {
             ResultSet rs = getAllFromTable("device");
             while (rs.next()) {
-                Device d = rsToDevice(rs);
+                Device d = (Device) createFromRs("Device", rs);
                 List<Integer> tagIds = findTagIds(d.getId());
                 d.setTagIds(tagIds);
                 DeviceSecurityState ss = findDeviceSecurityStateByDevice(d.getId());
@@ -1588,7 +1567,7 @@ public class Postgres {
             st.setInt(1, groupId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device d = rsToDevice(rs);
+                    Device d = (Device) createFromRs("Device", rs);
                     d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                     devices.add(d);
                 }
@@ -1654,7 +1633,7 @@ public class Postgres {
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device d = rsToDevice(rs);
+                    Device d = (Device) createFromRs("Device", rs);
                     d.setCurrentState(findDeviceSecurityStateByDevice(d.getId()));
                     deviceList.add(d);
                 }
@@ -1665,33 +1644,6 @@ public class Postgres {
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * Extract a Device from the result set of a database query.
-     *
-     * @param rs ResultSet from a Device query.
-     * @return The Device that was found.
-     */
-    private static Device rsToDevice(ResultSet rs) {
-        Device device = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            String description = rs.getString("description");
-            int typeId = rs.getInt("type_id");
-            int groupId = rs.getInt("group_id");
-            String ip = rs.getString("ip_address");
-            int statusHistorySize = rs.getInt("status_history_size");
-            int samplingRate = rs.getInt("sampling_rate");
-            int defaultSamplingRate = rs.getInt("default_sampling_rate");
-            device = new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to Device: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return device;
     }
 
     /**
@@ -1735,7 +1687,7 @@ public class Postgres {
                 st.setString(1, "Normal");
                 try (ResultSet rs = st.executeQuery()) {
                     if (rs.next()) {
-                        SecurityState securityState = rsToSecurityState(rs);
+                        SecurityState securityState = (SecurityState) createFromRs("SecurityState", rs);
 
                         DeviceSecurityState normalDeviceState = new DeviceSecurityState(device.getId(), securityState.getId(), securityState.getName());
                         normalDeviceState.insert();
@@ -1997,7 +1949,7 @@ public class Postgres {
             st.setInt(1, typeId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device device = rsToDevice(rs);
+                    Device device = (Device) createFromRs("Device", rs);
                     try(PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1")) {
                         statement.setInt(1, device.getId());
                         try(ResultSet resultSet = statement.executeQuery()) {
@@ -2031,7 +1983,7 @@ public class Postgres {
             st.setInt(1, groupId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    Device device = rsToDevice(rs);
+                    Device device = (Device) createFromRs("Device", rs);
                     try(PreparedStatement statement = dbConn.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT 1")) {
                         statement.setInt(1, device.getId());
                         try(ResultSet resultSet = statement.executeQuery()) {
@@ -2146,7 +2098,7 @@ public class Postgres {
      */
     public static Group findGroup(int id) {
         ResultSet rs = findById(id, "device_group");
-        Group group = rsToGroup(rs);
+        Group group = (Group) createFromRs("Group", rs);
         closeResources(rs);
         return group;
     }
@@ -2158,26 +2110,6 @@ public class Postgres {
      */
     public static List<Group> findAllGroups() {
         return (List<Group>) findAll("device_group", "Group");
-    }
-
-    /**
-     * Extract a Group from the result set of a database query.
-     *
-     * @param rs ResultSet from a Group query.
-     * @return The first Group in rs.
-     */
-    private static Group rsToGroup(ResultSet rs) {
-        Group group = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            group = new Group(id, name);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to Group: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return group;
     }
 
     /**
@@ -2256,7 +2188,7 @@ public class Postgres {
 
     public static PolicyRule findPolicyRule(int id) {
         ResultSet rs = findById(id, "policy_rule");
-        PolicyRule policyRule = rsToPolicyRule(rs);
+        PolicyRule policyRule = (PolicyRule) createFromRs("PolicyRule", rs);
         closeResources(rs);
         return policyRule;
     }
@@ -2280,7 +2212,7 @@ public class Postgres {
 
             ResultSet rs = query.executeQuery();
             if(rs.next()) {
-                return rsToPolicyRule(rs);
+                return (PolicyRule) createFromRs("PolicyRule", rs);
             }
         } catch (SQLException e) {
             logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
@@ -2305,7 +2237,7 @@ public class Postgres {
             try(ResultSet rs = query.executeQuery()) {
                 List<PolicyRule> rules = new ArrayList<>();
                 while (rs.next()) {
-                    rules.add(rsToPolicyRule(rs));
+                    rules.add((PolicyRule) createFromRs("PolicyRule", rs));
                 }
                 return rules;
             }
@@ -2314,28 +2246,6 @@ public class Postgres {
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * Converts a ResultSet obj to a Policy
-     * @param rs Result set of a query to the policy table
-     * @return The object representing the query result
-     */
-    public static PolicyRule rsToPolicyRule(ResultSet rs) {
-        PolicyRule policyRule = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            int stateTransId = rs.getInt("state_trans_id");
-            int policyCondId = rs.getInt("policy_cond_id");
-            int devTypeId = rs.getInt("device_type_id");
-            int samplingRate = rs.getInt("sampling_rate");
-            policyRule = new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
-        } catch (SQLException e) {
-            logger.severe("Error converting rs to PolicyRule: "+e.getClass().getName() +": "+e.getMessage());
-            e.printStackTrace();
-        }
-        return policyRule;
     }
 
     /**
@@ -2408,7 +2318,7 @@ public class Postgres {
         checkDBConnection();
         try {
             ResultSet pcrs = findById(id,"policy_condition");
-            PolicyCondition policyCondition = rsToPolicyCondition(pcrs);
+            PolicyCondition policyCondition = (PolicyCondition) createFromRs("PolicyCondition", pcrs);
             closeResources(pcrs);
             if(policyCondition == null) { return null; }
 
@@ -2430,25 +2340,6 @@ public class Postgres {
         }
 
         return null;
-    }
-
-    /**
-     * Converts a ResultSet obj to a PolicyCondition
-     * @param rs Result set of a query to the policy table
-     * @return The object representing the query result
-     */
-    public static PolicyCondition rsToPolicyCondition(ResultSet rs) {
-        PolicyCondition policyCondition = null;
-        if(rs == null) { return null; }
-        try {
-            int id = rs.getInt("id");
-            int threshold = rs.getInt("threshold");
-            policyCondition = new PolicyCondition(id, threshold, null);
-        } catch (SQLException e) {
-            logger.severe("Error converting rs to PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
-            e.printStackTrace();
-        }
-        return policyCondition;
     }
 
     /**
@@ -2551,31 +2442,9 @@ public class Postgres {
      */
     public static PolicyRuleLog findPolicyRuleLog(int id) {
         ResultSet rs = findById(id, "policy_rule_log");
-        PolicyRuleLog policyRuleLog = rsToPolicyRuleLog(rs);
+        PolicyRuleLog policyRuleLog = (PolicyRuleLog) createFromRs("PolicyRuleLog", rs);
         closeResources(rs);
         return policyRuleLog;
-    }
-
-    /**
-     * Converts a ResultSet from a query on policy rule log to a java PolicyRuleLog
-     * @param rs
-     * @return
-     */
-    private static PolicyRuleLog rsToPolicyRuleLog(ResultSet rs) {
-        PolicyRuleLog inst = null;
-        if(rs == null) { return null; }
-        try {
-            int id = rs.getInt("id");
-            int policyRuleId = rs.getInt("policy_rule_id");
-            int deviceId = rs.getInt("device_id");
-            Timestamp timestamp = rs.getTimestamp("timestamp");
-            inst = new PolicyRuleLog(id, policyRuleId, deviceId, timestamp);
-        } catch (SQLException e) {
-            logger.severe("Error converting rs to PolicyRuleLog: "+e.getClass().getName() +": "+e.getMessage());
-            e.printStackTrace();
-        }
-
-        return inst;
     }
 
     /**
@@ -2613,28 +2482,8 @@ public class Postgres {
 
     public static StateTransition findStateTransition(int id) {
         ResultSet rs = findById(id, "state_transition");
-        StateTransition stateTransition = rsToStateTransition(rs);
+        StateTransition stateTransition = (StateTransition) createFromRs("StateTransition", rs);
         closeResources(rs);
-        return stateTransition;
-    }
-
-    /**
-     * Converts a ResultSet obj to a Policy
-     * @param rs Result set of a query to the policy table
-     * @return The object representing the query result
-     */
-    public static StateTransition rsToStateTransition(ResultSet rs) {
-        StateTransition stateTransition = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            int startSecStateId = rs.getInt("start_sec_state_id");
-            int finishSecStateId = rs.getInt("finish_sec_state_id");
-            stateTransition = new StateTransition(id, startSecStateId, finishSecStateId);
-        } catch (SQLException e) {
-            logger.severe("Error converting rs to StateTransition: "+e.getClass().getName() +": "+e.getMessage());
-            e.printStackTrace();
-        }
         return stateTransition;
     }
 
@@ -2711,7 +2560,7 @@ public class Postgres {
             st.setInt(1, id);
             try( ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    dss = rsToDeviceSecurityState(rs);
+                    dss = (DeviceSecurityState) createFromRs("DeviceSecurityState", rs);
                 }
             }
         } catch (SQLException e) {
@@ -2731,7 +2580,7 @@ public class Postgres {
         try(PreparedStatement st = dbConn.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stateList.add(rsToDeviceSecurityState(rs));
+                    stateList.add((DeviceSecurityState) createFromRs("DeviceSecurityState", rs));
                 }
             }
         } catch (Exception e){
@@ -2757,7 +2606,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()){
                 if (rs.next()) {
-                    ss = rsToDeviceSecurityState(rs);
+                    ss = (DeviceSecurityState) createFromRs("DeviceSecurityState", rs);
                 }
             }
         } catch (SQLException e) {
@@ -2813,7 +2662,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    deviceStateList.add(rsToDeviceSecurityState(rs));
+                    deviceStateList.add((DeviceSecurityState) createFromRs("DeviceSecurityState", rs));
                 }
             }
         } catch (SQLException e) {
@@ -2821,28 +2670,6 @@ public class Postgres {
             e.printStackTrace();
         }
         return deviceStateList;
-    }
-
-    /**
-     * Extract a DeviceSecurityState from the result set of a database query.
-     *
-     * @param rs ResultSet from a DeviceState query.
-     * @return The DeviceSecurityState that was found.
-     */
-    private static DeviceSecurityState rsToDeviceSecurityState(ResultSet rs) {
-        DeviceSecurityState deviceState = null;
-        try {
-            int id = rs.getInt("id");
-            int deviceId = rs.getInt("device_id");
-            int stateId = rs.getInt("state_id");
-            Timestamp timestamp = rs.getTimestamp("timestamp");
-            String name = rs.getString("name");
-            deviceState = new DeviceSecurityState(id, deviceId, stateId, timestamp, name);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to DeviceSecurityState: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return deviceState;
     }
 
     /**
@@ -2895,7 +2722,7 @@ public class Postgres {
      */
     public static SecurityState findSecurityState(int id) {
         ResultSet rs = findById(id, "security_state");
-        SecurityState state = rsToSecurityState(rs);
+        SecurityState state = (SecurityState) createFromRs("SecurityState", rs);
         closeResources(rs);
         return state;
     }
@@ -2907,26 +2734,6 @@ public class Postgres {
      */
     public static List<SecurityState> findAllSecurityStates() {
         return (List<SecurityState>) findAll("security_state", "SecurityState");
-    }
-
-    /**
-     * Take a ResultSet from a DB query and convert to the java object
-     *
-     * @param rs
-     * @return
-     */
-    private static SecurityState rsToSecurityState(ResultSet rs) {
-        SecurityState state = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            state = new SecurityState(id, name);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to SecurityState: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return state;
     }
 
     /**
@@ -3012,7 +2819,7 @@ public class Postgres {
      */
     public static Tag findTag(int id) {
         ResultSet rs = findById(id, "tag");
-        Tag tag = rsToTag(rs);
+        Tag tag = (Tag) createFromRs("Tag", rs);
         closeResources(rs);
         return tag;
     }
@@ -3030,7 +2837,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    tags.add(rsToTag(rs));
+                    tags.add((Tag) createFromRs("Tag", rs));
                 }
             }
             return tags;
@@ -3072,26 +2879,6 @@ public class Postgres {
      */
     public static List<Tag> findAllTags() {
         return (List<Tag>) findAll("tag", "Tag");
-    }
-
-    /**
-     * Extract a Tag from the result set of a database query.
-     *
-     * @param rs ResultSet from a Tag query.
-     * @return The first Tag in rs.
-     */
-    private static Tag rsToTag(ResultSet rs) {
-        Tag tag = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            tag = new Tag(id, name);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to Tag: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return tag;
     }
 
     /**
@@ -3178,7 +2965,7 @@ public class Postgres {
      */
     public static DeviceType findDeviceType(int id) {
         ResultSet rs = findById(id, "device_type");
-        DeviceType type = rsToDeviceType(rs);
+        DeviceType type = (DeviceType) createFromRs("DeviceType", rs);
         closeResources(rs);
         return type;
     }
@@ -3190,28 +2977,6 @@ public class Postgres {
      */
     public static List<DeviceType> findAllDeviceTypes() {
         return (List<DeviceType>) findAll("device_type", "DeviceType");
-    }
-
-    /**
-     * Extract a DeviceType from the result set of a database query.
-     *
-     * @param rs ResultSet from a DeviceType query.
-     * @return The first DeviceType in rs.
-     */
-    private static DeviceType rsToDeviceType(ResultSet rs) {
-        DeviceType type = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            byte[] policyFile = rs.getBytes("policy_file");
-            String policyFileName = rs.getString("policy_file_name");
-            type = new DeviceType(id, name, policyFile, policyFileName);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return type;
     }
 
     /**
@@ -3300,7 +3065,7 @@ public class Postgres {
      */
     public static UmboxImage findUmboxImage(int id) {
         ResultSet rs = findById(id, "umbox_image");
-        UmboxImage umboxImage = rsToUmboxImageNoDagOrder(rs);
+        UmboxImage umboxImage = (UmboxImage) createFromRs("UmboxImage", rs);
         closeResources(rs);
         return umboxImage;
     }
@@ -3323,7 +3088,7 @@ public class Postgres {
             List<UmboxImage> umboxImageList = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxImageList.add(rsToUmboxImage(rs));
+                    umboxImageList.add((UmboxImage) createFromRs("UmboxImage", rs));
                 }
             }
             return umboxImageList;
@@ -3341,48 +3106,6 @@ public class Postgres {
      */
     public static List<UmboxImage> findAllUmboxImages() {
         return (List<UmboxImage>) findAll("umbox_image", "UmboxImage");
-    }
-
-    /**
-     * Extract a UmboxImage from the result set of a database query that DOES NOT include umbox_lookup.
-     *
-     * @param rs ResultSet from a UmboxImage query.
-     * @return The first UmboxImage in rs.
-     */
-    private static UmboxImage rsToUmboxImageNoDagOrder(ResultSet rs) {
-        UmboxImage umboxImage = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            String fileName = rs.getString("file_name");
-            umboxImage = new UmboxImage(id, name, fileName);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return umboxImage;
-    }
-
-    /**
-     * Extract a UmboxImage from the result set of a database query that includes umbox_lookup.
-     *
-     * @param rs ResultSet from a UmboxImage query.
-     * @return The first UmboxImage in rs.
-     */
-    private static UmboxImage rsToUmboxImage(ResultSet rs) {
-        UmboxImage umboxImage = null;
-        try {
-            int id = rs.getInt("id");
-            String name = rs.getString("name");
-            String fileName = rs.getString("file_name");
-            int dagOrder = rs.getInt("dag_order");
-            umboxImage = new UmboxImage(id, name, fileName, dagOrder);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to UmboxImage: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return umboxImage;
     }
 
     /**
@@ -3471,7 +3194,7 @@ public class Postgres {
                 if (!rs.next()) {
                     return null;
                 }
-                return rsToUmboxInstance(rs);
+                return (UmboxInstance) createFromRs("UmboxInstance", rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -3493,7 +3216,7 @@ public class Postgres {
             List<UmboxInstance> umboxInstances = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxInstances.add(rsToUmboxInstance(rs));
+                    umboxInstances.add((UmboxInstance) createFromRs("UmboxInstance", rs));
                 }
             }
             return umboxInstances;
@@ -3502,28 +3225,6 @@ public class Postgres {
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * Extract a UmboxInstance from the result set of a database query.
-     *
-     * @param rs ResultSet from a UmboxInstance query.
-     * @return The UmboxInstance that was found.
-     */
-    private static UmboxInstance rsToUmboxInstance(ResultSet rs) {
-        UmboxInstance umboxInstance = null;
-        try {
-            int id = rs.getInt("id");
-            String alerterId = rs.getString("alerter_id");
-            int imageId = rs.getInt("umbox_image_id");
-            int deviceId = rs.getInt("device_id");
-            Timestamp startedAt = rs.getTimestamp("started_at");
-            umboxInstance = new UmboxInstance(id, alerterId, imageId, deviceId, startedAt);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to UmboxInstance: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return umboxInstance;
     }
 
     /**
@@ -3600,7 +3301,7 @@ public class Postgres {
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    return rsToUmboxLookup(rs);
+                    return (UmboxLookup) createFromRs("UmboxLookup", rs);
                 }
             }
         } catch (SQLException e) {
@@ -3622,7 +3323,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    lookupList.add(rsToUmboxLookup(rs));
+                    lookupList.add((UmboxLookup) createFromRs("UmboxLookup", rs));
                 }
             }
         } catch (SQLException e) {
@@ -3638,23 +3339,6 @@ public class Postgres {
      */
     public static List<UmboxLookup> findAllUmboxLookups() {
         return (List<UmboxLookup>) findAll("umbox_lookup", "UmboxLookup");
-    }
-
-    /**
-     * Extract a UmboxLookup from the result set of a database query.
-     */
-    private static UmboxLookup rsToUmboxLookup(ResultSet rs) {
-        try {
-            int id = rs.getInt("id");
-            int policyRuleId = rs.getInt("policy_rule_id");
-            int umboxImageId = rs.getInt("umbox_image_id");
-            int dagOrder = rs.getInt("dag_order");
-            return new UmboxLookup(id, policyRuleId, umboxImageId, dagOrder);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error converting rs to UmboxLookup: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return null;
     }
 
     /**
@@ -3736,7 +3420,7 @@ public class Postgres {
     public static UmboxLog findUmboxLog(int id){
         logger.info("Finding UmboxLog with id = "+id);
         ResultSet rs = findById(id, "umbox_log");
-        UmboxLog umboxLog = rsToUmboxLog(rs);
+        UmboxLog umboxLog = (UmboxLog) createFromRs("UmboxLog", rs);
         closeResources(rs);
         return umboxLog;
     }
@@ -3752,7 +3436,7 @@ public class Postgres {
         try(PreparedStatement st = dbConn.prepareStatement("SELECT * FROM umbox_log")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxLogList.add(rsToUmboxLog(rs));
+                    umboxLogList.add((UmboxLog) createFromRs("UmboxLog", rs));
                 }
             }
         } catch (SQLException e) {
@@ -3776,7 +3460,7 @@ public class Postgres {
             st.setString(1, alerter_id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    umboxLogList.add(rsToUmboxLog(rs));
+                    umboxLogList.add((UmboxLog) createFromRs("UmboxLog", rs));
                 }
             }
         } catch (SQLException e) {
@@ -3796,7 +3480,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    logList.add(rsToUmboxLog(rs));
+                    logList.add((UmboxLog) createFromRs("UmboxLog", rs));
                 }
             }
         } catch (SQLException e) {
@@ -3804,27 +3488,6 @@ public class Postgres {
             e.printStackTrace();
         }
         return logList;
-    }
-
-    /**
-     * Converts a row from the umbox_log table to a UmboxLog object
-     * @param rs The ResultSet representing the row in the table
-     * @return the UmboxLog ojbect representation of the row; Null if an exception is thrown
-     */
-    public static UmboxLog rsToUmboxLog(ResultSet rs){
-        UmboxLog umboxLog = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            String alerterId = rs.getString("alerter_id");
-            String details = rs.getString("details");
-            Timestamp timestamp = rs.getTimestamp("timestamp");
-            umboxLog = new UmboxLog(id, alerterId, details, timestamp);
-        } catch (Exception e){
-            logger.severe("Error converting ResultSet to UmboxLog: "+e.getMessage());
-            e.printStackTrace();
-        }
-        return umboxLog;
     }
 
     /**
@@ -3859,7 +3522,7 @@ public class Postgres {
     public static StageLog findStageLog(int id) {
         logger.info("Finding StageLog with id = " + id);
         ResultSet rs = findById(id, "stage_log");
-        StageLog stageLog = rsToStageLog(rs);
+        StageLog stageLog = (StageLog) createFromRs("StageLog", rs);
         closeResources(rs);
         return stageLog;
     }
@@ -3875,7 +3538,7 @@ public class Postgres {
         try(PreparedStatement st = dbConn.prepareStatement("SELECT * FROM stage_log ORDER BY timestamp")) {
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stageLogList.add(rsToStageLog(rs));
+                    stageLogList.add((StageLog) createFromRs("StageLog", rs));
                 }
             }
         } catch (SQLException e) {
@@ -3901,7 +3564,7 @@ public class Postgres {
             st.setInt(1, deviceId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
-                    stageLogList.add(rsToStageLog(rs));
+                    stageLogList.add((StageLog) createFromRs("StageLog", rs));
                 }
             }
         } catch (Exception e){
@@ -3926,29 +3589,6 @@ public class Postgres {
         }
         return actions;
 
-    }
-
-    /**
-     * Converts a result set to a StageLog object
-     * @param rs
-     * @return
-     */
-    public static StageLog rsToStageLog(ResultSet rs) {
-        StageLog stageLog = null;
-        if(rs == null) return null;
-        try {
-            int id = rs.getInt("id");
-            int deviceSecurityStateId = rs.getInt("device_sec_state_id");
-            Timestamp timestamp = rs.getTimestamp("timestamp");
-            String action = rs.getString("action");
-            String stage = rs.getString("stage");
-            String info = rs.getString("info");
-
-            stageLog = new StageLog(id, deviceSecurityStateId, timestamp, action, stage, info);
-        } catch (Exception e){
-            logger.severe("Error converting ResultSet to StageLog: "+e.getMessage());
-        }
-        return stageLog;
     }
 
     /**

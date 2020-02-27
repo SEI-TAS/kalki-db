@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class DeviceType {
 
     private int id;
@@ -34,6 +37,18 @@ public class DeviceType {
         this.name = name;
         this.policyFile = policyFile;
         this.policyFileName = policyFileName;
+    }
+
+    /**
+     * Extract a DeviceType from the result set of a database query.
+     */
+    public static DeviceType createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        byte[] policyFile = rs.getBytes("policy_file");
+        String policyFileName = rs.getString("policy_file_name");
+        return new DeviceType(id, name, policyFile, policyFileName);
     }
 
     public int getId() {
