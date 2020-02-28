@@ -197,3 +197,5 @@ gradle-app.setting
 # Other stuff
 *.iml
 .idea/
+
+sql/device_types/to_load/*

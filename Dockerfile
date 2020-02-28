@@ -9,4 +9,4 @@ ENV POSTGRES_DB=kalkidb
 ADD sql/init /docker-entrypoint-initdb.d/
 
 # Copy device type scripts to be automatically executed by PG entrypoint.
-ADD sql/device_types /docker-entrypoint-initdb.d/
+ADD sql/device_types/to_load /docker-entrypoint-initdb.d/
