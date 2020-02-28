@@ -1,14 +1,21 @@
 #!/bin/bash
 
-# Select here which device types to load.
-declare -a TO_LOAD=("dlc" "phle" "unts" "wemo")
+SCRIPT_FOLDER="sql/device_types"
+TO_LOAD_FOLDER="${SCRIPT_FOLDER}/to_load"
 
-# Copies all device types to be loaded to temp folder.
-rm sql/device_types/to_load/*
-for TYPE in "${TO_LOAD[@]}"
-do
-	cp "sql/device_types/1-${TYPE}.sql" "sql/device_types/to_load/"
-done
+# Copy only device types to be loaded into temp folder.
+rm ${TO_LOAD_FOLDER}/*.*
+if [ "$#" -lt 1 ]
+then
+  # If no argument given, copy all device types.
+  cp ${SCRIPT_FOLDER}/*.sql ${TO_LOAD_FOLDER}/
+else
+  # Copies all device types passed as parameters to temp folder.
+  for TYPE in "$@"
+  do
+    cp "${SCRIPT_FOLDER}/1-${TYPE}.sql" "${TO_LOAD_FOLDER}/"
+  done
+fi
 
 docker container stop kalki-postgres
 docker build -t kalki/kalki-postgres .
