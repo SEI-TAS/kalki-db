@@ -459,19 +459,29 @@ public class Postgres {
      */
     private static void executeSQLScript(InputStream is)
     {
-        Scanner s = new Scanner(is);
-
+        Scanner scanner = new Scanner(is);
         String line;
         StringBuilder statement = new StringBuilder();
-        while(s.hasNextLine()){
-            line = s.nextLine();
-            if(line.equals("") || line.equals(" ")) {
+        while(scanner.hasNextLine()){
+            line = scanner.nextLine();
+
+            // Ignore comments.
+            if(line.startsWith("--")) {
+                continue;
+            }
+
+            // Check if an empty line is reached.
+            if(line.trim().isEmpty()) {
+                // When an empty line is found, execute statements accumulated so far and reset.
                 Postgres.executeCommand(statement.toString());
                 statement = new StringBuilder();
             } else {
+                // If the current line was not empty, add it to the accumulated statements.
                 statement.append(line);
             }
         }
+
+        // In case script did not end with an empty line, execute remaining lines.
         if (!statement.toString().equals(""))
             Postgres.executeCommand(statement.toString());
     }
