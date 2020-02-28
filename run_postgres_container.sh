@@ -4,7 +4,8 @@ SCRIPT_FOLDER="sql/device_types"
 TO_LOAD_FOLDER="${SCRIPT_FOLDER}/to_load"
 
 # Copy only device types to be loaded into temp folder.
-rm ${TO_LOAD_FOLDER}/*.*
+rm -r ${TO_LOAD_FOLDER}
+mkdir ${TO_LOAD_FOLDER}
 if [ "$#" -lt 1 ]
 then
   # If no argument given, copy all device types.
