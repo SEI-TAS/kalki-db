@@ -103,7 +103,6 @@ public class Postgres {
         if (postgresInstance == null) {
             logger.info("Initializing database");
             postgresInstance = new Postgres(ip, port, dbName, dbUser, dbPassword);
-            Postgres.setupDatabase();
         } else {
             logger.info("Database already initialized");
         }
@@ -279,96 +278,19 @@ public class Postgres {
     }
 
     /**
-     * First time database setup.
-     * Creates necessary extensions, databases, and tables. Also inserts default device types.
-     */
-    public static void setupDatabase()
-    {
-        setupTables();
-        setupDefaultDeviceTypes();
-    }
-
-    /**
-     * First time database setup.
-     * Creates necessary extensions, tables, and initial data.
-     */
-    public static void setupTables() {
-        int numTables = getTableCount();
-        logger.info("Current number of tables: " + numTables);
-        if(numTables != 0) {
-            logger.info("Database has been setup already.");
-            return;
-        }
-
-        // Extensions to support compound fields.
-        createHstoreExtension();
-
-        // DB tables and triggers.
-        executeSQLResource("db-tables.sql");
-        executeSQLResource("db-triggers.sql");
-
-        // DB initial data.
-        executeSQLResource("db-security-states.sql");
-        executeSQLResource("db-common-alert-types.sql");
-    }
-
-    /**
-     * Add the hstore extension to the postgres database.
-     */
-    private static void createHstoreExtension() {
-        logger.info("Adding hstore extension.");
-        executeCommand("CREATE EXTENSION IF NOT EXISTS hstore;");
-    }
-
-    /**
-     * Inserts default device types and their information.
-     */
-    private static void setupDefaultDeviceTypes() {
-        // Device Type Specific configuration
-        executeSQLResource("deviceTypes/dlc.sql");
-        executeSQLResource("deviceTypes/phle.sql");
-        executeSQLResource("deviceTypes/unts.sql");
-        executeSQLResource("deviceTypes/wemo.sql");
-
-        // Device instances in use.
-        // executeSQLResource("deviceTypes/db-devices.sql");
-    }
-
-    /**
-     * Drops and recreates all tables.
+     * Resets structure and default data to DB.
      */
     public static void resetDatabase() {
-        logger.info("Resetting Database.");
-        dropTables();
-        setupDatabase();
-    }
-
-    /**
-     * Returns the amount of tables in the DB.
-     * @return
-     */
-    private static int getTableCount() {
-        checkDBConnection();
-        try {
-            PreparedStatement st = dbConn.prepareStatement("SELECT COUNT(table_name) FROM information_schema.tables WHERE table_schema='public'");
-            ResultSet rs = st.executeQuery();
-            if(rs.next()){
-                int count = rs.getInt("count");
-                rs.close();
-                return count;
-            }
-        } catch (SQLException e){
-            logger.severe("There was an getting the current table count: "+ e.getMessage());
-        }
-        return -1;
-    }
-
-    /**
-     * Drops all tables from the database.
-     */
-    public static void dropTables() {
         logger.info("Dropping tables.");
         executeSQLResource("db-drop-tables.sql");
+
+        // DB tables and triggers.
+        executeSQLFile("sql/init/0-1-tables.sql");
+        executeSQLFile("sql/init/0-2-triggers.sql");
+
+        // DB initial data.
+        executeSQLFile("sql/init/0-3-security-states.sql");
+        executeSQLFile("sql/init/0-4-common-alert-types.sql");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

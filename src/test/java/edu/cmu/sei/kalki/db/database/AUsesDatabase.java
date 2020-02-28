@@ -14,7 +14,7 @@ public abstract class AUsesDatabase {
         //System.out.println("Checking if Test DB has already been setup: " + hasRun);
         if (!hasRun) {
             System.out.println("Initial Test DB setup.");
-            String rootPassword = "kalkipass";  //based on run script
+            String rootPassword = "kalkipass";
             String dbName = "kalkidb_test";
             String dbUser = "kalkiuser_test";
             String dbPass = "kalkipass";
@@ -40,8 +40,7 @@ public abstract class AUsesDatabase {
     @BeforeEach
     public void resetDB() {
         //System.out.println("Resetting Test DB.");
-        Postgres.dropTables();
-        Postgres.setupTables();
+        Postgres.resetDatabase();
         insertData();
     }
 
