@@ -74,7 +74,7 @@ public class UmboxImageDAO extends DAO
      * @return a list of all UmboxImages in the database.
      */
     public static List<UmboxImage> findAllUmboxImages() {
-        return (List<UmboxImage>) findObjects("umbox_image", UmboxImageDAO.class);
+        return (List<UmboxImage>) findObjectsByTable("umbox_image", UmboxImageDAO.class);
     }
 
     /**

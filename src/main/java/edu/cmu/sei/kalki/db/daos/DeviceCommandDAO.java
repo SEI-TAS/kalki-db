@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DeviceCommandDAO extends DAO
@@ -34,7 +33,7 @@ public class DeviceCommandDAO extends DAO
      * Finds all rows in the command table
      */
     public static List<DeviceCommand> findAllCommands() {
-        return (List<DeviceCommand>) findObjects("command", DeviceCommandDAO.class);
+        return (List<DeviceCommand>) findObjectsByTable("command", DeviceCommandDAO.class);
     }
 
     /**

@@ -74,7 +74,7 @@ public class TagDAO extends DAO
      * @return a list of all Tags in the database.
      */
     public static List<Tag> findAllTags() {
-        return (List<Tag>) findObjects("tag", TagDAO.class);
+        return (List<Tag>) findObjectsByTable("tag", TagDAO.class);
     }
 
     /**

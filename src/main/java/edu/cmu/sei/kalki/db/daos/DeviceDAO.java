@@ -57,22 +57,13 @@ public class DeviceDAO extends DAO
      * @return a list of all Devices in the database.
      */
     public static List<Device> findAllDevices() {
-        List<Device> devices = new ArrayList<>();
-        try {
-            ResultSet rs = findAllFromTable("device");
-            while (rs.next()) {
-                Device d = createFromRs( rs);
-                List<Integer> tagIds = TagDAO.findTagIds(d.getId());
-                d.setTagIds(tagIds);
-                DeviceSecurityState ss = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId());
-                d.setCurrentState(ss);
-
-                devices.add(d);
-            }
-            rs.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error getting all Devices: " + e.getClass().getName() + ": " + e.getMessage());
+        List<Device> devices = (List<Device>) findObjectsByTable("device", DeviceDAO.class);
+        for(Device device : devices) {
+            List<Integer> tagIds = TagDAO.findTagIds(device.getId());
+            device.setTagIds(tagIds);
+            DeviceSecurityState ss = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(device.getId());
+            device.setCurrentState(ss);
+            devices.add(device);
         }
         return devices;
     }

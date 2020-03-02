@@ -41,7 +41,7 @@ public class DeviceCommandLookupDAO extends DAO
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
-        return (List<DeviceCommandLookup>) findObjects("command_lookup", DeviceCommandLookupDAO.class);
+        return (List<DeviceCommandLookup>) findObjectsByTable("command_lookup", DeviceCommandLookupDAO.class);
     }
 
     /**

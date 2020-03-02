@@ -47,7 +47,7 @@ public class SecurityStateDAO extends DAO
      * @return a list of all SecurityStates in the database.
      */
     public static List<SecurityState> findAllSecurityStates() {
-        return (List<SecurityState>) findObjects("security_state", SecurityStateDAO.class);
+        return (List<SecurityState>) findObjectsByTable("security_state", SecurityStateDAO.class);
     }
 
     /**

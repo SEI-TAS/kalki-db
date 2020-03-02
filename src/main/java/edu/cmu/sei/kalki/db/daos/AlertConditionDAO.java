@@ -65,22 +65,10 @@ public class AlertConditionDAO extends DAO
      * @return a list of all most recent AlertConditions in the database related to the given device
      */
     public static List<AlertCondition> findAlertConditionsByDevice(int deviceId) {
-        List<AlertCondition> conditionList = new ArrayList<>();
-        try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
+        String query = "SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
                 "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl " +
-                "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id")) {
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    conditionList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting all alert conditions: ");
-            e.printStackTrace();
-        }
-        return conditionList;
+                "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id";
+        return (List<AlertCondition>) findObjectByIdAndQuery(deviceId, query, AlertConditionDAO.class);
     }
 
     /**

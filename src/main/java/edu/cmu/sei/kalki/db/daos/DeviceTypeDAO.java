@@ -39,7 +39,7 @@ public class DeviceTypeDAO extends DAO
      * @return a list of all DeviceTypes in the database.
      */
     public static List<DeviceType> findAllDeviceTypes() {
-        return (List<DeviceType>) findObjects("device_type", DeviceTypeDAO.class);
+        return (List<DeviceType>) findObjectsByTable("device_type", DeviceTypeDAO.class);
     }
 
     /**

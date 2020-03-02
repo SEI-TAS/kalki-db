@@ -180,7 +180,7 @@ public class DeviceStatusDAO extends DAO
      * @return a list of all DeviceStatuses in the database.
      */
     public static List<DeviceStatus> findAllDeviceStatuses() {
-        return (List<DeviceStatus>) findObjects("device_status", DeviceStatusDAO.class);
+        return (List<DeviceStatus>) findObjectsByTable("device_status", DeviceStatusDAO.class);
     }
 
     /**

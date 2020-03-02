@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UmboxLookupDAO extends DAO
@@ -47,7 +46,7 @@ public class UmboxLookupDAO extends DAO
      * Finds all umboxLookup entries
      */
     public static List<UmboxLookup> findAllUmboxLookups() {
-        return (List<UmboxLookup>) findObjects("umbox_lookup", UmboxLookupDAO.class);
+        return (List<UmboxLookup>) findObjectsByTable("umbox_lookup", UmboxLookupDAO.class);
     }
 
     /**

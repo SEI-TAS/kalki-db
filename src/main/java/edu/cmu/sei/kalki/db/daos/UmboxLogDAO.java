@@ -40,7 +40,7 @@ public class UmboxLogDAO extends DAO
      * @return List of UmboxLogs in the umbox_log table
      */
     public static List<UmboxLog> findAllUmboxLogs() {
-        return (List<UmboxLog>) findObjects("umbox_log", UmboxLogDAO.class);
+        return (List<UmboxLog>) findObjectsByTable("umbox_log", UmboxLogDAO.class);
     }
 
     /**

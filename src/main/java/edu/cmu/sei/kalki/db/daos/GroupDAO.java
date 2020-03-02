@@ -37,7 +37,7 @@ public class GroupDAO extends DAO
      * @return a list of all Groups in the database.
      */
     public static List<Group> findAllGroups() {
-        return (List<Group>) findObjects("device_group", GroupDAO.class);
+        return (List<Group>) findObjectsByTable("device_group", GroupDAO.class);
     }
 
     /**

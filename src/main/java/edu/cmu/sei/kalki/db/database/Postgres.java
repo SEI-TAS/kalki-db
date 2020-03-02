@@ -35,7 +35,6 @@ public class Postgres {
     private static String dbPassword;
     private static Postgres postgresInstance = null;
 
-    private static Connection dbConn;
     private static BasicDataSource dataSource;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +51,7 @@ public class Postgres {
         dbUser = newDbUser;
         dbPassword = newDbPassword;
 
-        //setupDataSource();
+        setupDataSource();
     }
 
     /**
@@ -121,8 +120,9 @@ public class Postgres {
      * @return
      */
     public static Connection getConnection() throws SQLException {
-        //return dataSource.getConnection();
-        return waitForConnection();
+        //logger.info("Active connections: " + dataSource.getNumActive());
+        return dataSource.getConnection();
+        //return waitForConnection();
     }
 
     /**
@@ -158,18 +158,6 @@ public class Postgres {
             logger.severe("Error connecting to database : " + e.getClass().getName() + ": " + e.getMessage());
         }
         return con;
-    }
-
-    /**
-     * Close the current connection.
-     */
-    public static void dropConnection() {
-        try {
-            dbConn.close();
-        } catch (SQLException e) {
-            logger.severe("Error dropping connection: "+e.getMessage());
-            e.printStackTrace();
-        }
     }
 
     /**

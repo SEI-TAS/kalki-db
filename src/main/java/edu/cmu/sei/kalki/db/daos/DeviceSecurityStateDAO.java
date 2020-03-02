@@ -43,7 +43,7 @@ public class DeviceSecurityStateDAO extends DAO
     }
 
     /**
-     *
+     * Returns all device security states in the DB.
      * @return
      */
     public static List<DeviceSecurityState> findAllDeviceSecurityStates() {

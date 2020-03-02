@@ -64,7 +64,7 @@ public class AlertTypeDAO extends DAO
      * @return a list of AlertTypes
      */
     public static List<AlertType> findAllAlertTypes() {
-        return (List<AlertType>) findObjects("alert_type", AlertTypeDAO.class);
+        return (List<AlertType>) findObjectsByTable("alert_type", AlertTypeDAO.class);
     }
 
     /**

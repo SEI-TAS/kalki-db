@@ -63,7 +63,7 @@ public class AlertTypeLookupDAO extends DAO
      * @return A list of AlertTypeLookups
      */
     public static List<AlertTypeLookup> findAllAlertTypeLookups() {
-        return (List<AlertTypeLookup>) findObjects("alert_type_lookup", AlertTypeLookupDAO.class);
+        return (List<AlertTypeLookup>) findObjectsByTable("alert_type_lookup", AlertTypeLookupDAO.class);
     }
 
     /**
