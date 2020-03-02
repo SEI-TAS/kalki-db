@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.UmboxImage;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,16 +36,7 @@ public class UmboxImageDAO extends DAO
      * @return The desired UmboxImage on success or null on failure
      */
     public static UmboxImage findUmboxImage(int id) {
-        ResultSet rs = findById(id, "umbox_image");
-        UmboxImage umboxImage = null;
-        try {
-            umboxImage = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return umboxImage;
+        return (UmboxImage) findObjectByIdAndTable(id, "umbox_image", UmboxImageDAO.class);
     }
 
     /**
@@ -55,7 +47,8 @@ public class UmboxImageDAO extends DAO
      * @return A list of UmboxImages for the given device type id and state id
      */
     public static List<UmboxImage> findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT ui.id, ui.name, ui.file_name, ul.dag_order " +
+        try(Connection con = Postgres.getConnection();
+        PreparedStatement st = con.prepareStatement("SELECT ui.id, ui.name, ui.file_name, ul.dag_order " +
                 "FROM umbox_image ui, umbox_lookup ul, policy_rule pl, state_transition st " +
                 "WHERE pl.device_type_id = ? AND st.finish_sec_state_id = ? " +
                 "AND ul.umbox_image_id = ui.id AND ul.policy_rule_id = pl.id AND pl.state_trans_id = st.id")) {
@@ -81,7 +74,7 @@ public class UmboxImageDAO extends DAO
      * @return a list of all UmboxImages in the database.
      */
     public static List<UmboxImage> findAllUmboxImages() {
-        return (List<UmboxImage>) findAll("umbox_image", UmboxImageDAO.class);
+        return (List<UmboxImage>) findObjects("umbox_image", UmboxImageDAO.class);
     }
 
     /**
@@ -92,11 +85,12 @@ public class UmboxImageDAO extends DAO
      */
     public static Integer insertUmboxImage(UmboxImage u) {
         logger.info("Adding umbox image: " + u);
-        try(PreparedStatement st = Postgres.prepareStatement("INSERT INTO umbox_image (name, file_name) VALUES (?, ?)")) {
+        try(Connection con = Postgres.getConnection();
+        PreparedStatement st = con.prepareStatement("INSERT INTO umbox_image (name, file_name) VALUES (?, ?) RETURNING id")) {
             st.setString(1, u.getName());
             st.setString(2, u.getFileName());
-            st.executeUpdate();
-            return getLatestId("umbox_image");
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("SQL exception adding umbox iamge: " + e.getClass().getName() + ": " + e.getMessage());
@@ -112,7 +106,8 @@ public class UmboxImageDAO extends DAO
      */
     public static Integer updateUmboxImage(UmboxImage u) {
         logger.info("Editing umbox image: " + u);
-        try(PreparedStatement st = Postgres.prepareStatement("UPDATE umbox_image " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE umbox_image " +
                 "SET name = ?, file_name = ? " +
                 "WHERE id = ?")) {
             st.setString(1, u.getName());

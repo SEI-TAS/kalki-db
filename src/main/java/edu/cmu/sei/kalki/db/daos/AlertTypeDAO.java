@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertType;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,7 +30,7 @@ public class AlertTypeDAO extends DAO
      * Finds an AlertType from the dataase with the given id
      */
     public static AlertType findAlertType(int id) {
-        return (AlertType) findObject(id, "alert_type", AlertTypeDAO.class);
+        return (AlertType) findObjectByIdAndTable(id, "alert_type", AlertTypeDAO.class);
     }
 
     /**
@@ -40,7 +41,8 @@ public class AlertTypeDAO extends DAO
      */
     public static List<AlertType> findAlertTypesByDeviceType(int deviceTypeId) {
         List<AlertType> alertTypeList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT alert_type.id, alert_type.name, alert_type.description, alert_type.source " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT alert_type.id, alert_type.name, alert_type.description, alert_type.source " +
                 "FROM alert_type, alert_type_lookup AS atl " +
                 "WHERE alert_type.id = atl.alert_type_id AND atl.device_type_id = ?;")) {
             st.setInt(1, deviceTypeId);
@@ -62,7 +64,7 @@ public class AlertTypeDAO extends DAO
      * @return a list of AlertTypes
      */
     public static List<AlertType> findAllAlertTypes() {
-        return (List<AlertType>) findAll("alert_type", AlertTypeDAO.class);
+        return (List<AlertType>) findObjects("alert_type", AlertTypeDAO.class);
     }
 
     /**
@@ -73,12 +75,13 @@ public class AlertTypeDAO extends DAO
      */
     public static Integer insertAlertType(AlertType type) {
         logger.info("Inserting alert type: " + type.getName());
-        try(PreparedStatement insertAlertType = Postgres.prepareStatement("INSERT INTO alert_type(name, description, source) VALUES (?,?,?);")) {
-            insertAlertType.setString(1, type.getName());
-            insertAlertType.setString(2, type.getDescription());
-            insertAlertType.setString(3, type.getSource());
-            insertAlertType.executeUpdate();
-            return getLatestId("alert_type");
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO alert_type(name, description, source) VALUES (?,?,?) RETURNING id")) {
+            st.setString(1, type.getName());
+            st.setString(2, type.getDescription());
+            st.setString(3, type.getSource());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting AlertType: " + e.getClass().getName() + ": " + e.getMessage());
@@ -94,14 +97,15 @@ public class AlertTypeDAO extends DAO
      */
     public static Integer updateAlertType(AlertType type) {
         logger.info(String.format("Updating AlertType with id = %d with values: %s", type.getId(), type));
-        try(PreparedStatement update = Postgres.prepareStatement("UPDATE alert_type " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE alert_type " +
                 "SET name = ?, description = ?, source = ?" +
                 "WHERE id = ?")) {
-            update.setString(1, type.getName());
-            update.setString(2, type.getDescription());
-            update.setString(3, type.getSource());
-            update.setInt(4, type.getId());
-            update.executeUpdate();
+            st.setString(1, type.getName());
+            st.setString(2, type.getDescription());
+            st.setString(3, type.getSource());
+            st.setInt(4, type.getId());
+            st.executeUpdate();
 
             return type.getId();
         } catch (SQLException e) {
@@ -134,15 +138,6 @@ public class AlertTypeDAO extends DAO
      * @return true if the deletion succeeded, false otherwise.
      */
     public static Boolean deleteAlertType(int id) {
-        logger.info(String.format("Deleting AlertType with id = %d", id));
-        try(PreparedStatement deleteAlertType = Postgres.prepareStatement("DELETE FROM alert_type WHERE id = ?")) {
-            deleteAlertType.setInt(1, id);
-            deleteAlertType.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error updating AlertType: " + e.getClass().toString() + ": " + e.getMessage());
-        }
-        return false;
+        return deleteById("alert_table", id);
     }
 }

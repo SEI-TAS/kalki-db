@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.PolicyRule;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,18 +24,14 @@ public class PolicyRuleDAO extends DAO
         int samplingRate = rs.getInt("sampling_rate");
         return new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
     }
-    
+
+    /**
+     * Returns a policy rule give its id.
+     * @param id
+     * @return
+     */
     public static PolicyRule findPolicyRule(int id) {
-        ResultSet rs = findById(id, "policy_rule");
-        PolicyRule policyRule = null;
-        try {
-            policyRule = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return policyRule;
+        return (PolicyRule) findObjectByIdAndTable(id, "policy_rule", PolicyRuleDAO.class);
     }
 
     /**
@@ -45,15 +42,16 @@ public class PolicyRuleDAO extends DAO
      * @return
      */
     public static PolicyRule findPolicyRule(int stateTransId, int policyCondId, int devTypeId) {
-        try(PreparedStatement query = Postgres.prepareStatement("SELECT * FROM policy_rule WHERE " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM policy_rule WHERE " +
                 "state_trans_id = ? AND " +
                 "policy_cond_id = ? AND " +
                 "device_type_id = ?")) {
-            query.setInt(1, stateTransId);
-            query.setInt(2, policyCondId);
-            query.setInt(3, devTypeId);
+            st.setInt(1, stateTransId);
+            st.setInt(2, policyCondId);
+            st.setInt(3, devTypeId);
 
-            ResultSet rs = query.executeQuery();
+            ResultSet rs = st.executeQuery();
             if(rs.next()) {
                 return createFromRs(rs);
             }
@@ -71,23 +69,8 @@ public class PolicyRuleDAO extends DAO
      * @return
      */
     public static List<PolicyRule> findPolicyRules(int devTypeId) {
-        try(PreparedStatement query = Postgres.prepareStatement("SELECT * " +
-                "FROM policy_rule WHERE " +
-                "device_type_id = ?")) {
-            query.setInt(1, devTypeId);
-
-            try(ResultSet rs = query.executeQuery()) {
-                List<PolicyRule> rules = new ArrayList<>();
-                while (rs.next()) {
-                    rules.add(createFromRs(rs));
-                }
-                return rules;
-            }
-        } catch (SQLException e) {
-            logger.severe("Error finding Policy Rule: "+e.getClass().getName() +": "+e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
+        String query = "SELECT * FROM policy_rule WHERE device_type_id = ?";
+        return (List<PolicyRule>) findObjectsByIdAndQuery(devTypeId, query, PolicyRuleDAO.class);
     }
 
     /**
@@ -96,13 +79,14 @@ public class PolicyRuleDAO extends DAO
      * @return Row's id on success. -1 otherwise
      */
     public static Integer insertPolicyRule(PolicyRule policyRule) {
-        try(PreparedStatement insert = Postgres.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?)")) {
-            insert.setInt(1, policyRule.getStateTransId());
-            insert.setInt(2, policyRule.getPolicyCondId());
-            insert.setInt(3, policyRule.getDevTypeId());
-            insert.setInt(4, policyRule.getSamplingRate());
-            insert.executeUpdate();
-            return getLatestId("policy_rule");
+        try(Connection con = Postgres.getConnection();
+        PreparedStatement st = con.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?) RETURNING id")) {
+            st.setInt(1, policyRule.getStateTransId());
+            st.setInt(2, policyRule.getPolicyCondId());
+            st.setInt(3, policyRule.getDevTypeId());
+            st.setInt(4, policyRule.getSamplingRate());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             logger.severe("Error inserting Policy: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
@@ -116,18 +100,19 @@ public class PolicyRuleDAO extends DAO
      * @return The id of the given policy on success. -1 otherwise
      */
     public static Integer updatePolicyRule(PolicyRule policyRule) {
-        try(PreparedStatement update = Postgres.prepareStatement("UPDATE policy_rule SET " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE policy_rule SET " +
                 "state_trans_id = ? " +
                 ", policy_cond_id = ? " +
                 ", device_type_id = ? " +
                 ", sampling_rate = ? " +
                 "WHERE id = ?")) {
-            update.setInt(1, policyRule.getStateTransId());
-            update.setInt(2, policyRule.getPolicyCondId());
-            update.setInt(3, policyRule.getDevTypeId());
-            update.setInt(4, policyRule.getSamplingRate());
-            update.setInt(5, policyRule.getId());
-            update.executeUpdate();
+            st.setInt(1, policyRule.getStateTransId());
+            st.setInt(2, policyRule.getPolicyCondId());
+            st.setInt(3, policyRule.getDevTypeId());
+            st.setInt(4, policyRule.getSamplingRate());
+            st.setInt(5, policyRule.getId());
+            st.executeUpdate();
             return policyRule.getId();
         } catch (SQLException e) {
             logger.severe("Error updating Policy: " + e.getClass().getName() + ": " + e.getMessage());

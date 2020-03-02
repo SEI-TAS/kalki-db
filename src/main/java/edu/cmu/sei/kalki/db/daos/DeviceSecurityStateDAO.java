@@ -4,6 +4,7 @@ import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,24 +34,12 @@ public class DeviceSecurityStateDAO extends DAO
      * @return the DeviceSecurityState, if it exists
      */
     public static DeviceSecurityState findDeviceSecurityState(int id) {
-        DeviceSecurityState dss = null;
-        logger.info("Finding device security state with id: " + id);
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
+        String query = "SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
                 "FROM device_security_state dss, security_state ss " +
                 "WHERE dss.id=? AND dss.state_id = ss.id " +
                 "ORDER BY timestamp DESC " +
-                "LIMIT 1")) {
-            st.setInt(1, id);
-            try( ResultSet rs = st.executeQuery()) {
-                if (rs.next()) {
-                    dss = createFromRs(rs);
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("SQL exception getting the device state: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return dss;
+                "LIMIT 1";
+        return (DeviceSecurityState) findObjectByIdAndQuery(id, query, DeviceSecurityStateDAO.class);
     }
 
     /**
@@ -58,17 +47,8 @@ public class DeviceSecurityStateDAO extends DAO
      * @return
      */
     public static List<DeviceSecurityState> findAllDeviceSecurityStates() {
-        List<DeviceSecurityState> stateList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id")) {
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    stateList.add(createFromRs(rs));
-                }
-            }
-        } catch (Exception e){
-            logger.severe("Error while trying to find all DeviceSecurityStates: "+e.getMessage());
-        }
-        return stateList;
+        String query = "SELECT dss.id, dss.device_id, dss.timestamp, dss.state_id, ss.name FROM device_security_state AS dss, security_state AS ss WHERE dss.state_id=ss.id";
+        return (List<DeviceSecurityState>) findObjectsByQuery(query, DeviceSecurityStateDAO.class);
     }
 
     /**
@@ -78,23 +58,12 @@ public class DeviceSecurityStateDAO extends DAO
      * @return the most recent DeviceSecurityState entered for a device
      */
     public static DeviceSecurityState findDeviceSecurityStateByDevice(int deviceId) {
-        DeviceSecurityState ss = null;
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
+        String query = "SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
                 "FROM device_security_state dss, security_state ss " +
                 "WHERE dss.device_id=? AND dss.state_id = ss.id " +
                 "ORDER BY timestamp DESC " +
-                "LIMIT 1")) {
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()){
-                if (rs.next()) {
-                    ss = createFromRs(rs);
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("SQL exception getting the device state: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return ss;
+                "LIMIT 1";
+        return (DeviceSecurityState) findObjectByIdAndQuery(deviceId, query, DeviceSecurityStateDAO.class);
     }
 
     /**
@@ -103,7 +72,8 @@ public class DeviceSecurityStateDAO extends DAO
      * @return
      */
     public static int findPreviousDeviceSecurityStateId(Device device) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT dss.state_id AS state_id " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT dss.state_id AS state_id " +
                 "FROM device_security_state dss " +
                 "WHERE dss.device_id=? AND dss.id < ? " +
                 "ORDER BY dss.id DESC " +
@@ -132,22 +102,11 @@ public class DeviceSecurityStateDAO extends DAO
      * @return a list of all DeviceSecurityState in the database where the device_id field is equal to deviceId.
      */
     public static List<DeviceSecurityState> findDeviceSecurityStates(int deviceId) {
-        List<DeviceSecurityState> deviceStateList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
+        String query = "SELECT dss.id, dss.device_id, dss.timestamp, ss.name, ss.id AS state_id " +
                 "FROM device_security_state dss, security_state ss " +
                 "WHERE dss.device_id=? AND dss.state_id = ss.id " +
-                "ORDER BY timestamp DESC")) {
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    deviceStateList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting all device states: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return deviceStateList;
+                "ORDER BY timestamp DESC";
+        return (List<DeviceSecurityState>) findObjectsByIdAndQuery(deviceId, query, DeviceSecurityStateDAO.class);
     }
 
     /**
@@ -158,14 +117,15 @@ public class DeviceSecurityStateDAO extends DAO
      */
     public static Integer insertDeviceSecurityState(DeviceSecurityState deviceState) {
         logger.info("Inserting DeviceSecurityState");
-        try(PreparedStatement insert = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("INSERT INTO device_security_state(device_id, timestamp, state_id) " +
                         "values(?,?,?) " +
                         "RETURNING id")) {
-            insert.setInt(1, deviceState.getDeviceId());
-            insert.setTimestamp(2, deviceState.getTimestamp());
-            insert.setInt(3, deviceState.getStateId());
-            try(ResultSet rs = insert.executeQuery()) {
+            st.setInt(1, deviceState.getDeviceId());
+            st.setTimestamp(2, deviceState.getTimestamp());
+            st.setInt(3, deviceState.getStateId());
+            try(ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt("id");
                 }

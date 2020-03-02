@@ -5,6 +5,7 @@ import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceStatus;
 import org.postgresql.util.HStoreConverter;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,16 +36,7 @@ public class DeviceStatusDAO extends DAO
      * @return the DeviceStatus if it exists in the database, else null.
      */
     public static DeviceStatus findDeviceStatus(int id) {
-        ResultSet rs = findById(id, "device_status");
-        DeviceStatus deviceStatus = null;
-        try {
-            deviceStatus = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return deviceStatus;
+        return (DeviceStatus) findObjectByIdAndTable(id, "device_status", DeviceStatusDAO.class);
     }
 
     /**
@@ -54,20 +46,8 @@ public class DeviceStatusDAO extends DAO
      * @return a list of all DeviceStatuses in the database where the device_id field is equal to deviceId.
      */
     public static List<DeviceStatus> findDeviceStatuses(int deviceId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device_status WHERE device_id = ?")) {
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                List<DeviceStatus> deviceHistories = new ArrayList<>();
-                while (rs.next()) {
-                    deviceHistories.add(createFromRs(rs));
-                }
-                return deviceHistories;
-            }
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
+        String query = "SELECT * FROM device_status WHERE device_id = ?";
+        return (List<DeviceStatus>) findObjectsByIdAndQuery(deviceId, query, DeviceStatusDAO.class);
     }
 
     /**
@@ -79,7 +59,8 @@ public class DeviceStatusDAO extends DAO
      */
     public static List<DeviceStatus> findNDeviceStatuses(int deviceId, int N) {
         logger.info("Finding last " + N + "device statuses for device: " + deviceId);
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM device_status WHERE device_id = ? ORDER BY id DESC LIMIT ?")) {
             st.setInt(1, deviceId);
             st.setInt(2, N);
             try(ResultSet rs = st.executeQuery()) {
@@ -105,7 +86,8 @@ public class DeviceStatusDAO extends DAO
      */
     public static List<DeviceStatus> findSubsetNDeviceStatuses(int deviceId, int numStatuses, int startingId) {
         logger.info("Finding "+numStatuses+" previous statuses from id: "+startingId);
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device_status WHERE id < ? AND device_id = ? ORDER BY id DESC LIMIT ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM device_status WHERE id < ? AND device_id = ? ORDER BY id DESC LIMIT ?")) {
             st.setInt(1, startingId);
             st.setInt(2, deviceId);
             st.setInt(3, numStatuses);
@@ -133,7 +115,8 @@ public class DeviceStatusDAO extends DAO
      */
     public static List<DeviceStatus> findDeviceStatusesOverTime(int deviceId, Timestamp startingTime, int period, String timeUnit) {
         String interval = period + " " + timeUnit;
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between (?::timestamp - (?::interval)) and ?::timestamp")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM device_status WHERE device_id = ? AND timestamp between (?::timestamp - (?::interval)) and ?::timestamp")) {
             st.setInt(1, deviceId);
             st.setTimestamp(2, startingTime);
             st.setString(3, interval);
@@ -197,7 +180,7 @@ public class DeviceStatusDAO extends DAO
      * @return a list of all DeviceStatuses in the database.
      */
     public static List<DeviceStatus> findAllDeviceStatuses() {
-        return (List<DeviceStatus>) findAll("device_status", DeviceStatusDAO.class);
+        return (List<DeviceStatus>) findObjects("device_status", DeviceStatusDAO.class);
     }
 
     /**
@@ -208,14 +191,15 @@ public class DeviceStatusDAO extends DAO
      */
     public static Integer insertDeviceStatus(DeviceStatus deviceStatus) {
         logger.info("Inserting device_status: " + deviceStatus.toString());
-        try(PreparedStatement update = Postgres.prepareStatement
-                ("INSERT INTO device_status(device_id, timestamp, attributes) values(?,?,?)")) {
-            update.setInt(1, deviceStatus.getDeviceId());
-            update.setTimestamp(2, deviceStatus.getTimestamp());
-            update.setObject(3, deviceStatus.getAttributes());
-            update.executeUpdate();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
+                ("INSERT INTO device_status(device_id, timestamp, attributes) values(?,?,?) RETURNING id")) {
+            st.setInt(1, deviceStatus.getDeviceId());
+            st.setTimestamp(2, deviceStatus.getTimestamp());
+            st.setObject(3, deviceStatus.getAttributes());
+            st.execute();
 
-            return getLatestId("device_status");
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting DeviceStatus: " + e.getClass().getName() + ": " + e.getMessage());
@@ -246,14 +230,15 @@ public class DeviceStatusDAO extends DAO
      */
     public static Integer updateDeviceStatus(DeviceStatus deviceStatus) {
         logger.info("Updating DeviceStatus with id=" + deviceStatus.getId());
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("UPDATE device_status SET device_id = ?, attributes = ?, timestamp = ? " +
                         "WHERE id=?")) {
-            update.setInt(1, deviceStatus.getDeviceId());
-            update.setObject(2, deviceStatus.getAttributes());
-            update.setTimestamp(3, deviceStatus.getTimestamp());
-            update.setInt(4, deviceStatus.getId());
-            update.executeUpdate();
+            st.setInt(1, deviceStatus.getDeviceId());
+            st.setObject(2, deviceStatus.getAttributes());
+            st.setTimestamp(3, deviceStatus.getTimestamp());
+            st.setInt(4, deviceStatus.getId());
+            st.executeUpdate();
             return deviceStatus.getId();
         } catch (SQLException e) {
             e.printStackTrace();

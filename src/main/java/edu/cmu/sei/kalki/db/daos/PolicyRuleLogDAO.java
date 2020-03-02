@@ -4,6 +4,7 @@ import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.PolicyRuleLog;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,16 +30,7 @@ public class PolicyRuleLogDAO extends DAO
      * @return
      */
     public static PolicyRuleLog findPolicyRuleLog(int id) {
-        ResultSet rs = findById(id, "policy_rule_log");
-        PolicyRuleLog policyRuleLog = null;
-        try {
-            policyRuleLog = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return policyRuleLog;
+        return (PolicyRuleLog) findObjectByIdAndTable(id, "policy_rule_log", PolicyRuleLogDAO.class);
     }
 
     /**
@@ -47,12 +39,13 @@ public class PolicyRuleLogDAO extends DAO
      * @return
      */
     public static Integer insertPolicyRuleLog(PolicyRuleLog policyRuleLog) {
-        try(PreparedStatement insert = Postgres.prepareStatement("INSERT INTO policy_rule_log(policy_rule_id, device_id, timestamp) VALUES(?,?,?)")) {
-            insert.setInt(1, policyRuleLog.getPolicyRuleId());
-            insert.setInt(2, policyRuleLog.getDeviceId());
-            insert.setTimestamp(3, policyRuleLog.getTimestamp());
-            insert.executeUpdate();
-            return getLatestId("policy_rule_log");
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO policy_rule_log(policy_rule_id, device_id, timestamp) VALUES(?,?,?) RETURNING id")) {
+            st.setInt(1, policyRuleLog.getPolicyRuleId());
+            st.setInt(2, policyRuleLog.getDeviceId());
+            st.setTimestamp(3, policyRuleLog.getTimestamp());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();

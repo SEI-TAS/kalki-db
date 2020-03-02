@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Tag;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,16 +29,7 @@ public class TagDAO extends DAO
      * @return the row from the table
      */
     public static Tag findTag(int id) {
-        ResultSet rs = findById(id, "tag");
-        Tag tag = null;
-        try {
-            tag = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return tag;
+        return (Tag) findObjectByIdAndTable(id, "tag", TagDAO.class);
     }
 
     /**
@@ -47,22 +39,9 @@ public class TagDAO extends DAO
      * @return A list of tags or null
      */
     public static List<Tag> findTagsByDevice(int deviceId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT tag.* FROM tag, device_tag " +
-                "WHERE tag.id = device_tag.tag_id AND device_tag.device_id = ?")) {
-            List<Tag> tags = new ArrayList<>();
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    tags.add(createFromRs(rs));
-                }
-            }
-            return tags;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error finding tags by device_id: " + deviceId + ": " + e.getMessage());
-
-        }
-        return null;
+        String query = "SELECT tag.* FROM tag, device_tag " +
+                "WHERE tag.id = device_tag.tag_id AND device_tag.device_id = ?";
+        return (List<Tag>) findObjectsByIdAndQuery(deviceId, query, TagDAO.class);
     }
 
     /**
@@ -72,7 +51,8 @@ public class TagDAO extends DAO
      * @return A list of tag ids or null
      */
     public static List<Integer> findTagIds(int deviceId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM device_tag WHERE device_id = ?")) {
             st.setInt(1, deviceId);
             List<Integer> tagIds = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {
@@ -94,7 +74,7 @@ public class TagDAO extends DAO
      * @return a list of all Tags in the database.
      */
     public static List<Tag> findAllTags() {
-        return (List<Tag>) findAll("tag", TagDAO.class);
+        return (List<Tag>) findObjects("tag", TagDAO.class);
     }
 
     /**
@@ -105,12 +85,13 @@ public class TagDAO extends DAO
      */
     public static Integer insertTag(Tag tag) {
         logger.info("Inserting Tag: " + tag.getId());
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("INSERT INTO tag(name)" +
-                        "values(?)")) {
-            update.setString(1, tag.getName());
-            update.executeUpdate();
-            return getLatestId("tag");
+                        "values(?) RETURNING id")) {
+            st.setString(1, tag.getName());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Tag: " + e.getClass().getName() + ": " + e.getMessage());
@@ -125,12 +106,13 @@ public class TagDAO extends DAO
      */
     public static Integer updateTag(Tag tag) {
         logger.info("Updating Tag with id=" + tag.getId());
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("UPDATE tag SET name = ?" +
                         "WHERE id=?")) {
-            update.setString(1, tag.getName());
-            update.setInt(2, tag.getId());
-            update.executeUpdate();
+            st.setString(1, tag.getName());
+            st.setInt(2, tag.getId());
+            st.executeUpdate();
             return tag.getId();
         } catch (SQLException e) {
             e.printStackTrace();

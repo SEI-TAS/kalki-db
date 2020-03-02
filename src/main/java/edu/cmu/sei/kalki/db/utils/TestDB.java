@@ -2,11 +2,15 @@ package edu.cmu.sei.kalki.db.utils;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 
+import java.util.logging.Logger;
+
 /***
  * Simple class for setting up a test DB.
  */
 public class TestDB
 {
+    private static Logger logger = Logger.getLogger(TestDB.class.getName());
+
     /**
      * Sets up a test DB, initializes it, and inserts test data.
      * @param testFile
@@ -35,13 +39,13 @@ public class TestDB
     {
         if(fileName == null || fileName.isEmpty())
         {
-            System.out.println("No test data file provided.");
+            logger.warning("No test data file provided.");
             return;
         }
 
-        System.out.println("Inserting test data.");
+        logger.info("Inserting test data.");
         Postgres.executeSQLFile(fileName);
-        System.out.println("Test data finished inserting.");
+        logger.info("Test data finished inserting.");
     }
 
 }

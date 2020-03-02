@@ -1,0 +1,9 @@
+FROM postgres:9.5.19
+
+# Set up user and DB to be created.
+ENV POSTGRES_USER=kalkiuser_test
+ENV POSTGRES_PASSWORD=kalkipass_test
+ENV POSTGRES_DB=kalkidb_test
+
+# Copy init scripts to be automatically executed by PG entrypoint.
+ADD sql/init /docker-entrypoint-initdb.d/

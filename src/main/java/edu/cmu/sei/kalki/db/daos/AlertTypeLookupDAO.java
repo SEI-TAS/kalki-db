@@ -4,6 +4,7 @@ import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import org.postgresql.util.HStoreConverter;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,16 +34,7 @@ public class AlertTypeLookupDAO extends DAO
      * @param id of the row
      */
     public static AlertTypeLookup findAlertTypeLookup(int id) {
-        ResultSet rs = findById(id, "alert_type_lookup");
-        AlertTypeLookup alertTypeLookup = null;
-        try {
-            alertTypeLookup = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object.");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return alertTypeLookup;
+        return (AlertTypeLookup) findObjectByIdAndTable(id, "alert_type_lookup", AlertTypeLookupDAO.class);
     }
 
     /**
@@ -51,7 +43,8 @@ public class AlertTypeLookupDAO extends DAO
      */
     public static List<AlertTypeLookup> findAlertTypeLookupsByDeviceType(int typeId){
         List<AlertTypeLookup> atlList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("Select * from alert_type_lookup WHERE device_type_id=?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("Select * from alert_type_lookup WHERE device_type_id=?")) {
             st.setInt(1, typeId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
@@ -70,7 +63,7 @@ public class AlertTypeLookupDAO extends DAO
      * @return A list of AlertTypeLookups
      */
     public static List<AlertTypeLookup> findAllAlertTypeLookups() {
-        return (List<AlertTypeLookup>) findAll("alert_type_lookup", AlertTypeLookupDAO.class);
+        return (List<AlertTypeLookup>) findObjects("alert_type_lookup", AlertTypeLookupDAO.class);
     }
 
     /**
@@ -80,12 +73,13 @@ public class AlertTypeLookupDAO extends DAO
      */
     public static int insertAlertTypeLookup(AlertTypeLookup atl){
         logger.info("Inserting AlertTypeLookup: " + atl.toString());
-        try(PreparedStatement insertAtl = Postgres.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?)")) {
-            insertAtl.setInt(1, atl.getAlertTypeId());
-            insertAtl.setInt(2, atl.getDeviceTypeId());
-            insertAtl.setObject(3, atl.getVariables());
-            insertAtl.executeUpdate();
-            return getLatestId("alert_type_lookup");
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?) RETURNING id")) {
+            st.setInt(1, atl.getAlertTypeId());
+            st.setInt(2, atl.getDeviceTypeId());
+            st.setObject(3, atl.getVariables());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting AlertTypeLookup: " + e.getClass().getName() + ": " + e.getMessage());
@@ -100,12 +94,13 @@ public class AlertTypeLookupDAO extends DAO
      */
     public static int updateAlertTypeLookup(AlertTypeLookup atl){
         logger.info("Updating AlertTypeLookup; atlId: " +atl.getId());
-        try(PreparedStatement updateAtl = Postgres.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ?, variables = ? WHERE id = ?")) {
-            updateAtl.setInt(1, atl.getAlertTypeId());
-            updateAtl.setInt(2, atl.getDeviceTypeId());
-            updateAtl.setObject(3, atl.getVariables());
-            updateAtl.setInt(4, atl.getId());
-            updateAtl.executeUpdate();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ?, variables = ? WHERE id = ?")) {
+            st.setInt(1, atl.getAlertTypeId());
+            st.setInt(2, atl.getDeviceTypeId());
+            st.setObject(3, atl.getVariables());
+            st.setInt(4, atl.getId());
+            st.executeUpdate();
 
             return atl.getId();
         } catch (SQLException e) {

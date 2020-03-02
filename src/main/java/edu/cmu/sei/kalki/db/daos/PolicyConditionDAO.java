@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.PolicyCondition;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,27 +23,26 @@ public class PolicyConditionDAO extends DAO
     }
     
     /**
-     * Find a PolicyCondition and it's associated AlertType id's
+     * Find a PolicyCondition and its associated AlertType ids
      * @param id
      * @return A PolicyCondition obj. Null otherwise
      */
     public static PolicyCondition findPolicyCondition(int id) {
         try {
-            ResultSet pcrs = findById(id,"policy_condition");
-            PolicyCondition policyCondition = createFromRs(pcrs);
-            closeResources(pcrs);
-            if(policyCondition == null) { return null; }
-
-            List<Integer> alertTypeIds = new ArrayList<>();
-            try(PreparedStatement query = Postgres.prepareStatement("SELECT * FROM policy_condition_alert WHERE policy_cond_id = ?")) {
-                query.setInt(1, policyCondition.getId());
-                try(ResultSet rs = query.executeQuery()) {
-                    while (rs.next()) {
-                        alertTypeIds.add(rs.getInt("alert_type_id"));
+            PolicyCondition policyCondition = (PolicyCondition) findObjectByIdAndTable(id, "policy_condition", PolicyConditionDAO.class);
+            if(policyCondition != null) {
+                List<Integer> alertTypeIds = new ArrayList<>();
+                try (Connection con = Postgres.getConnection();
+                     PreparedStatement st = con.prepareStatement("SELECT * FROM policy_condition_alert WHERE policy_cond_id = ?")) {
+                    st.setInt(1, policyCondition.getId());
+                    try (ResultSet rs = st.executeQuery()) {
+                        while (rs.next()) {
+                            alertTypeIds.add(rs.getInt("alert_type_id"));
+                        }
                     }
                 }
+                policyCondition.setAlertTypeIds(alertTypeIds);
             }
-            policyCondition.setAlertTypeIds(alertTypeIds);
 
             return policyCondition;
         } catch (SQLException e) {
@@ -59,15 +59,16 @@ public class PolicyConditionDAO extends DAO
      * @return
      */
     public static Integer insertPolicyCondition(PolicyCondition policyCondition) {
-        try(PreparedStatement insert = Postgres.prepareStatement("INSERT INTO policy_condition(threshold) VALUES(?)")) {
-            insert.setInt(1, policyCondition.getThreshold());
-            insert.executeUpdate();
-            policyCondition.setId(getLatestId("policy_condition"));
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO policy_condition(threshold) VALUES(?) RETURNING id")) {
+            st.setInt(1, policyCondition.getThreshold());
+            st.execute();
+            policyCondition.setId(getLatestId(st));
 
             if(policyCondition.getAlertTypeIds() != null){
                 for(int i=0; i<policyCondition.getAlertTypeIds().size(); i++) {
                     int id = policyCondition.getAlertTypeIds().get(i);
-                    try(PreparedStatement insert2 = Postgres.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)")) {
+                    try(PreparedStatement insert2 = con.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)")) {
                         insert2.setInt(1, policyCondition.getId());
                         insert2.setInt(2, id);
                         insert2.executeQuery();
@@ -89,18 +90,19 @@ public class PolicyConditionDAO extends DAO
      * @return the condition's id on succes; -1 on failure
      */
     public static Integer updatePolicyCondition(PolicyCondition policyCondition) {
-        try(PreparedStatement update = Postgres.prepareStatement("UPDATE policy_condition SET threshold = ? WHERE id = ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE policy_condition SET threshold = ? WHERE id = ?")) {
             // Update PolicyCondition table
-            update.setInt(1, policyCondition.getThreshold());
-            update.setInt(2, policyCondition.getId());
-            update.executeUpdate();
+            st.setInt(1, policyCondition.getThreshold());
+            st.setInt(2, policyCondition.getId());
+            st.executeUpdate();
 
             // Update PolicyConditionAlert table
             if(!deletePolicyConditionAlertRows(policyCondition.getId()))
                 return -1;
 
             for(Integer alertId: policyCondition.getAlertTypeIds()) {
-                try(PreparedStatement insert = Postgres.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)")) {
+                try(PreparedStatement insert = con.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)")) {
                     insert.setInt(1, policyCondition.getId());
                     insert.setInt(2, alertId);
                     insert.executeUpdate();
@@ -116,14 +118,15 @@ public class PolicyConditionDAO extends DAO
     }
 
     /**
-     * Helper function to remove all rows from policy_condition_alert for the givein PolicyCondition id
+     * Helper function to remove all rows from policy_condition_alert for the given PolicyCondition id
      * @param policyConditionId
      * @return
      */
     private static boolean deletePolicyConditionAlertRows(int policyConditionId){
-        try(PreparedStatement delete = Postgres.prepareStatement("DELETE FROM policy_condition_alert WHERE policy_cond_id = ?")) {
-            delete.setInt(1, policyConditionId);
-            delete.executeUpdate();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("DELETE FROM policy_condition_alert WHERE policy_cond_id = ?")) {
+            st.setInt(1, policyConditionId);
+            st.executeUpdate();
             return true;
         } catch (SQLException e) {
             logger.severe("Error deleting PolicyConditionAlert rows: "+e.getClass().getName() +": "+e.getMessage());

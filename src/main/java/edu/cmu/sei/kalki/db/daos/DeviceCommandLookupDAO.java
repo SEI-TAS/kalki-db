@@ -3,10 +3,10 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.DeviceCommandLookup;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class DeviceCommandLookupDAO extends DAO
@@ -26,45 +26,22 @@ public class DeviceCommandLookupDAO extends DAO
      * Finds a command lookup based on the given id
      */
     public static DeviceCommandLookup findCommandLookup(int id) {
-        logger.info("Finding command lookup with id = " + id);
-        ResultSet rs = findById(id, "command_lookup");
-        DeviceCommandLookup deviceCommandLookup = null;
-        try {
-            deviceCommandLookup = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return deviceCommandLookup;
+        return (DeviceCommandLookup) findObjectByIdAndTable(id, "command_lookup", DeviceCommandLookupDAO.class);
     }
 
     /**
      * Finds all command lookups based on the given device id
      */
     public static List<DeviceCommandLookup> findCommandLookupsByDevice(int deviceId) {
-        List<DeviceCommandLookup> lookupList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT cl.* FROM command_lookup cl, device d, command c " +
-                "WHERE d.id = ? AND c.device_type_id = d.type_id AND c.id=cl.command_id")) {
-            st.setInt(1,deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    lookupList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-
-        return lookupList;
+        String query = "SELECT cl.* FROM command_lookup cl, device d, command c WHERE d.id = ? AND c.device_type_id = d.type_id AND c.id=cl.command_id";
+        return (List<DeviceCommandLookup>) findObjectsByIdAndQuery(deviceId, query, DeviceCommandLookupDAO.class);
     }
 
     /**
      * Finds all rows in the command lookup table
      */
     public static List<DeviceCommandLookup> findAllCommandLookups() {
-        return (List<DeviceCommandLookup>) findAll("command_lookup", DeviceCommandLookupDAO.class);
+        return (List<DeviceCommandLookup>) findObjects("command_lookup", DeviceCommandLookupDAO.class);
     }
 
     /**
@@ -74,13 +51,13 @@ public class DeviceCommandLookupDAO extends DAO
      */
     public static int insertCommandLookup(DeviceCommandLookup commandLookup) {
         logger.info("Inserting command lookup; commandId: "+ commandLookup.getCommandId());
-        try(PreparedStatement insertCommandLookup =
-                    Postgres.prepareStatement("INSERT INTO command_lookup(command_id, policy_rule_id) VALUES (?,?)")) {
-            insertCommandLookup.setInt(1, commandLookup.getCommandId());
-            insertCommandLookup.setInt(2, commandLookup.getPolicyRuleId());
-            insertCommandLookup.executeUpdate();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO command_lookup(command_id, policy_rule_id) VALUES (?,?) RETURNING id")) {
+            st.setInt(1, commandLookup.getCommandId());
+            st.setInt(2, commandLookup.getPolicyRuleId());
+            st.execute();
 
-            return getLatestId("command_lookup");
+            return getLatestId(st);
         } catch (SQLException e) {
             logger.severe("Error inserting CommandLookup: " + e.getClass().getName() + ": " + e.getMessage());
             e.printStackTrace();
@@ -111,11 +88,12 @@ public class DeviceCommandLookupDAO extends DAO
 
     public static Integer updateCommandLookup(DeviceCommandLookup commandLookup) {
         logger.info("Updating command lookup; commandId: " +commandLookup.getCommandId());
-        try(PreparedStatement updatecommand = Postgres.prepareStatement("UPDATE command_lookup SET command_id = ?, policy_rule_id = ? WHERE id = ?")) {
-            updatecommand.setInt(1, commandLookup.getCommandId());
-            updatecommand.setInt(2, commandLookup.getPolicyRuleId());
-            updatecommand.setInt(3, commandLookup.getId());
-            updatecommand.executeUpdate();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE command_lookup SET command_id = ?, policy_rule_id = ? WHERE id = ?")) {
+            st.setInt(1, commandLookup.getCommandId());
+            st.setInt(2, commandLookup.getPolicyRuleId());
+            st.setInt(3, commandLookup.getId());
+            st.executeUpdate();
 
             return commandLookup.getId();
         } catch (SQLException e) {

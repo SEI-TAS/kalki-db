@@ -6,6 +6,7 @@ import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.Device;
 import org.postgresql.util.HStoreConverter;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,7 +16,6 @@ import java.util.Map;
 
 public class AlertConditionDAO extends DAO
 {
-
     /**
      * Extract an AlertCondition from the result set of a database query.
      */
@@ -40,21 +40,10 @@ public class AlertConditionDAO extends DAO
      * @return An AlertCondition with desired id
      */
     public static AlertCondition findAlertCondition(int id) {
-        AlertCondition alertCondition = new AlertCondition();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
+        String query = "SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
                 "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
-                "WHERE ac.id=? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id")) {
-            st.setInt(1, id);
-            try(ResultSet rs = st.executeQuery()) {
-                if (rs.next()) {
-                    alertCondition = createFromRs(rs);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error getting all AlertConditions: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return alertCondition;
+                "WHERE ac.id=? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id";
+        return (AlertCondition) findObjectByIdAndQuery(id, query, AlertConditionDAO.class);
     }
 
     /**
@@ -63,20 +52,10 @@ public class AlertConditionDAO extends DAO
      * @return a list of AlertCondition
      */
     public static List<AlertCondition> findAllAlertConditions() {
-        List<AlertCondition> alertConditionList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
+        String query = "SELECT ac.*, d.name AS device_name, at.name AS alert_type_name " +
                 "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup as atl " +
-                "WHERE ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id")) {
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    alertConditionList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error getting all AlertConditions: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return alertConditionList;
+                "WHERE ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id";
+        return (List<AlertCondition>) findObjectsByQuery(query, AlertConditionDAO.class);
     }
 
     /**
@@ -87,7 +66,8 @@ public class AlertConditionDAO extends DAO
      */
     public static List<AlertCondition> findAlertConditionsByDevice(int deviceId) {
         List<AlertCondition> conditionList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
                 "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl " +
                 "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id")) {
             st.setInt(1, deviceId);
@@ -111,12 +91,13 @@ public class AlertConditionDAO extends DAO
      */
     public static Integer insertAlertCondition(AlertCondition cond) {
         logger.info("Inserting alert condition for device: " + cond.getDeviceId());
-        try(PreparedStatement insertAlertCondition = Postgres.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?)")) {
-            insertAlertCondition.setObject(1, cond.getVariables());
-            insertAlertCondition.setInt(2, cond.getDeviceId());
-            insertAlertCondition.setInt(3, cond.getAlertTypeLookupId());
-            insertAlertCondition.executeUpdate();
-            return getLatestId("alert_condition");
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?) RETURNING id")) {
+            st.setObject(1, cond.getVariables());
+            st.setInt(2, cond.getDeviceId());
+            st.setInt(3, cond.getAlertTypeLookupId());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
@@ -153,26 +134,14 @@ public class AlertConditionDAO extends DAO
      */
     public static Integer updateAlertConditionsForDeviceType(AlertTypeLookup alertTypeLookup) {
         logger.info("Inserting alert conditions for device type: " + alertTypeLookup.getDeviceTypeId());
-        try {
-
-            List<Device> deviceList = DeviceDAO.findDevicesByType(alertTypeLookup.getDeviceTypeId());
-            if(deviceList != null) {
-                for (Device d : deviceList) {
-                    try (PreparedStatement insertAlertCondition = Postgres.prepareStatement("INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES (?,?,?)")) {
-                        insertAlertCondition.setObject(1, alertTypeLookup.getVariables());
-                        insertAlertCondition.setInt(2, d.getId());
-                        insertAlertCondition.setInt(3, alertTypeLookup.getId());
-                        insertAlertCondition.executeUpdate();
-                    }
-                }
+        List<Device> deviceList = DeviceDAO.findDevicesByType(alertTypeLookup.getDeviceTypeId());
+        if(deviceList != null) {
+            for (Device d : deviceList) {
+                AlertCondition alertCondition = new AlertCondition(d.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
+                insertAlertCondition(alertCondition);
             }
-
-            return 1;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error inserting AlertCondition: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return -1;
+        return 1;
     }
 
     /**

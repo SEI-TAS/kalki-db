@@ -3,6 +3,8 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 
+import javax.swing.plaf.nimbus.State;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,16 +23,7 @@ public class StateTransitionDAO extends DAO
     }
     
     public static StateTransition findStateTransition(int id) {
-        ResultSet rs = findById(id, "state_transition");
-        StateTransition stateTransition = null;
-        try {
-            stateTransition = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return stateTransition;
+        return (StateTransition) findObjectByIdAndTable(id, "state_transition", StateTransitionDAO.class);
     }
 
     /**
@@ -39,11 +32,12 @@ public class StateTransitionDAO extends DAO
      * @return Row's id on success. -1 otherwise
      */
     public static Integer insertStateTransition(StateTransition trans) {
-        try(PreparedStatement insert = Postgres.prepareStatement("INSERT INTO state_transition(start_sec_state_id, finish_sec_state_id) VALUES(?,?)")) {
-            insert.setInt(1, trans.getStartStateId());
-            insert.setInt(2, trans.getFinishStateId());
-            insert.executeUpdate();
-            return getLatestId("state_transition");
+        try(Connection con = Postgres.getConnection();
+        PreparedStatement st = con.prepareStatement("INSERT INTO state_transition(start_sec_state_id, finish_sec_state_id) VALUES(?,?) RETURNING id")) {
+            st.setInt(1, trans.getStartStateId());
+            st.setInt(2, trans.getFinishStateId());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             logger.severe("Error inserting StateTransition: "+e.getClass().getName() +": "+e.getMessage());
             e.printStackTrace();
@@ -57,14 +51,15 @@ public class StateTransitionDAO extends DAO
      * @return The id of the given transition on success. -1 otherwise
      */
     public static Integer updateStateTransition(StateTransition trans) {
-        try(PreparedStatement update = Postgres.prepareStatement("UPDATE state_transition SET " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE state_transition SET " +
                 "start_sec_state_id = ? " +
                 ", finish_sec_state_id = ? " +
                 "WHERE id = ?")) {
-            update.setInt(1, trans.getStartStateId());
-            update.setInt(2, trans.getFinishStateId());
-            update.setInt(3, trans.getId());
-            update.executeUpdate();
+            st.setInt(1, trans.getStartStateId());
+            st.setInt(2, trans.getFinishStateId());
+            st.setInt(3, trans.getId());
+            st.executeUpdate();
             return trans.getId();
         } catch (SQLException e) {
             logger.severe("Error updating StateTransition: " + e.getClass().getName() + ": " + e.getMessage());

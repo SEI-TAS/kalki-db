@@ -16,13 +16,6 @@ public class InsertListener extends TimerTask
     private static Map<String, InsertHandler> handlerMap = new HashMap<>();
     private static Timer timer = null;
 
-    private PGConnection pgconn;
-
-    private InsertListener()
-    {
-        this.pgconn = (PGConnection) Postgres.dbConn;
-    }
-
     public static void startListening() {
         if(!isListening) {
             int pollInterval = 1000;
@@ -60,7 +53,7 @@ public class InsertListener extends TimerTask
     public void run() {
         try
         {
-            PGNotification notifications[] = pgconn.getNotifications();
+            PGNotification notifications[] = Postgres.getNotifications();
             if (notifications != null)
             {
                 for (PGNotification notification : notifications)

@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Alert;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,7 +36,7 @@ public class AlertDAO extends DAO
      * Finds an Alert from the database with the given id.
      */
     public static Alert findAlert(int id) {
-        return (Alert) findObject(id, "alert", AlertDAO.class);
+        return (Alert) findObjectByIdAndTable(id, "alert", AlertDAO.class);
     }
 
     /**
@@ -75,9 +76,10 @@ public class AlertDAO extends DAO
             int deviceId = alert.getDeviceId();
             if(alert.getDeviceStatusId() == 0) {
                 if(deviceId == 0) {
-                    try(PreparedStatement findDeviceId = Postgres.prepareStatement("SELECT device_id FROM umbox_instance WHERE alerter_id = ?;")) {
-                        findDeviceId.setString(1, alert.getAlerterId());
-                        try(ResultSet rs = findDeviceId.executeQuery()) {
+                    try(Connection con = Postgres.getConnection();
+                        PreparedStatement st = con.prepareStatement("SELECT device_id FROM umbox_instance WHERE alerter_id = ?;")) {
+                        st.setString(1, alert.getAlerterId());
+                        try(ResultSet rs = st.executeQuery()) {
                             if (rs.next()) {
                                 deviceId = rs.getInt("device_id");
                                 alert.setDeviceId(deviceId);
@@ -88,21 +90,24 @@ public class AlertDAO extends DAO
                     }
                 }
 
-                try(PreparedStatement insertAlert = Postgres.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, device_id, alerter_id, info) VALUES (?,?,?,?,?,?);")) {
-                    insertAlert.setString(1, alert.getName());
-                    insertAlert.setTimestamp(2, alert.getTimestamp());
-                    insertAlert.setInt(3, alert.getAlertTypeId());
-                    insertAlert.setInt(4, deviceId);
-                    insertAlert.setString(5, alert.getAlerterId());
-                    insertAlert.setString(6, alert.getInfo());
-                    insertAlert.executeUpdate();
+                try(Connection con = Postgres.getConnection();
+                    PreparedStatement st = con.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, device_id, alerter_id, info) VALUES (?,?,?,?,?,?) RETURNING id")) {
+                    st.setString(1, alert.getName());
+                    st.setTimestamp(2, alert.getTimestamp());
+                    st.setInt(3, alert.getAlertTypeId());
+                    st.setInt(4, deviceId);
+                    st.setString(5, alert.getAlerterId());
+                    st.setString(6, alert.getInfo());
+                    st.execute();
+                    return getLatestId(st);
                 }
             }
             else {
                 if(deviceId == 0) {
-                    try(PreparedStatement findDeviceId = Postgres.prepareStatement("SELECT device_id FROM device_status WHERE id = ?;")) {
-                        findDeviceId.setInt(1, alert.getDeviceStatusId());
-                        try(ResultSet rs = findDeviceId.executeQuery()) {
+                    try(Connection con = Postgres.getConnection();
+                        PreparedStatement st = con.prepareStatement("SELECT device_id FROM device_status WHERE id = ?;")) {
+                        st.setInt(1, alert.getDeviceStatusId());
+                        try(ResultSet rs = st.executeQuery()) {
                             if (rs.next()) {
                                 deviceId = rs.getInt("device_id");
                                 alert.setDeviceId(deviceId);
@@ -113,19 +118,19 @@ public class AlertDAO extends DAO
                     }
                 }
 
-                try(PreparedStatement insertAlert = Postgres.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_id, device_status_id, info) VALUES (?,?,?,?,?,?,?);")) {
-                    insertAlert.setString(1, alert.getName());
-                    insertAlert.setTimestamp(2, alert.getTimestamp());
-                    insertAlert.setInt(3, alert.getAlertTypeId());
-                    insertAlert.setString(4, alert.getAlerterId());
-                    insertAlert.setInt(5, deviceId);
-                    insertAlert.setInt(6, alert.getDeviceStatusId());
-                    insertAlert.setString(7, alert.getInfo());
-                    insertAlert.executeUpdate();
+                try(Connection con = Postgres.getConnection();
+                    PreparedStatement st = con.prepareStatement("INSERT INTO alert(name, timestamp, alert_type_id, alerter_id, device_id, device_status_id, info) VALUES (?,?,?,?,?,?,?) RETURNING id")) {
+                    st.setString(1, alert.getName());
+                    st.setTimestamp(2, alert.getTimestamp());
+                    st.setInt(3, alert.getAlertTypeId());
+                    st.setString(4, alert.getAlerterId());
+                    st.setInt(5, deviceId);
+                    st.setInt(6, alert.getDeviceStatusId());
+                    st.setString(7, alert.getInfo());
+                    st.execute();
+                    return getLatestId(st);
                 }
             }
-
-            return getLatestId("alert");
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Alert: " + alert.toString() + " " + e.getClass().getName() + ": " + e.getMessage());
@@ -144,31 +149,33 @@ public class AlertDAO extends DAO
 
         try {
             if (alert.getDeviceStatusId() == 0) {
-                try(PreparedStatement update = Postgres.prepareStatement("UPDATE alert " +
+                try(Connection con = Postgres.getConnection();
+                    PreparedStatement st = con.prepareStatement("UPDATE alert " +
                         "SET name = ?, timestamp = ?, alerter_id = ?, device_id = ?, alert_type_id = ?, info = ? " +
                         "WHERE id = ?")) {
-                    update.setString(1, alert.getName());
-                    update.setTimestamp(2, alert.getTimestamp());
-                    update.setString(3, alert.getAlerterId());
-                    update.setInt(4, alert.getDeviceId());
-                    update.setInt(5, alert.getAlertTypeId());
-                    update.setString(6, alert.getInfo());
-                    update.setInt(7, alert.getId());
-                    update.executeUpdate();
+                    st.setString(1, alert.getName());
+                    st.setTimestamp(2, alert.getTimestamp());
+                    st.setString(3, alert.getAlerterId());
+                    st.setInt(4, alert.getDeviceId());
+                    st.setInt(5, alert.getAlertTypeId());
+                    st.setString(6, alert.getInfo());
+                    st.setInt(7, alert.getId());
+                    st.executeUpdate();
                 }
             } else {
-                try(PreparedStatement update = Postgres.prepareStatement("UPDATE alert " +
+                try(Connection con = Postgres.getConnection();
+                    PreparedStatement st = con.prepareStatement("UPDATE alert " +
                         "SET name = ?, timestamp = ?, alerter_id = ?, device_status_id = ?, device_id = ?, alert_type_id = ?, info = ?" +
                         "WHERE id = ?")) {
-                    update.setString(1, alert.getName());
-                    update.setTimestamp(2, alert.getTimestamp());
-                    update.setString(3, alert.getAlerterId());
-                    update.setInt(4, alert.getDeviceStatusId());
-                    update.setInt(5, alert.getDeviceId());
-                    update.setInt(6, alert.getAlertTypeId());
-                    update.setString(7, alert.getInfo());
-                    update.setInt(8, alert.getId());
-                    update.executeUpdate();
+                    st.setString(1, alert.getName());
+                    st.setTimestamp(2, alert.getTimestamp());
+                    st.setString(3, alert.getAlerterId());
+                    st.setInt(4, alert.getDeviceStatusId());
+                    st.setInt(5, alert.getDeviceId());
+                    st.setInt(6, alert.getAlertTypeId());
+                    st.setString(7, alert.getInfo());
+                    st.setInt(8, alert.getId());
+                    st.executeUpdate();
                 }
             }
 

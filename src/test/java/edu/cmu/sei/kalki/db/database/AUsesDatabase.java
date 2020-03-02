@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.database;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.sql.SQLException;
 import java.util.logging.Level;
 
 public abstract class AUsesDatabase {
@@ -14,21 +15,16 @@ public abstract class AUsesDatabase {
         //System.out.println("Checking if Test DB has already been setup: " + hasRun);
         if (!hasRun) {
             System.out.println("Initial Test DB setup.");
-            String rootPassword = "kalkipass";
+            String testPort = "5433";
             String dbName = "kalkidb_test";
             String dbUser = "kalkiuser_test";
-            String dbPass = "kalkipass";
+            String dbPass = "kalkipass_test";
 
             try {
-                // Recreate DB and user.
-                Postgres.setLoggingLevel(Level.SEVERE);
-                Postgres.removeDatabase(rootPassword, dbName);
-                Postgres.removeUser(rootPassword, dbUser);
-                Postgres.createUserIfNotExists(rootPassword, dbUser, dbPass);
-                Postgres.createDBIfNotExists(rootPassword, dbName, dbUser);
-
                 //initialize test DB
-                Postgres.initialize(dbName, dbUser, dbPass);
+                Postgres.initialize("127.0.0.1", testPort, dbName, dbUser, dbPass);
+                Postgres.setLoggingLevel(Level.SEVERE);
+
             } catch (Exception e) {
                 System.out.println("Error with initial test DB setup: " + e.toString());
                 e.printStackTrace();
@@ -40,7 +36,11 @@ public abstract class AUsesDatabase {
     @BeforeEach
     public void resetDB() {
         //System.out.println("Resetting Test DB.");
-        Postgres.resetDatabase();
+        try {
+            Postgres.resetDatabase();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         insertData();
     }
 

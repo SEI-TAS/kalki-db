@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.UmboxLookup;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,48 +31,23 @@ public class UmboxLookupDAO extends DAO
      * @return the UmboxLookup if it exists in the database, else null.
      */
     public static UmboxLookup findUmboxLookup(int id) {
-        logger.info("Finding umboxLookup with id = " + id);
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM umbox_lookup WHERE id = ?")) {
-            st.setInt(1, id);
-            try(ResultSet rs = st.executeQuery()) {
-                if (rs.next()) {
-                    return createFromRs(rs);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Exception finding umbox lookup by ID: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-
-        return null;
+        return (UmboxLookup) findObjectByIdAndTable(id, "umbox_lookup", UmboxLookupDAO.class);
     }
 
     /**
      * Finds all umbox lookups based on the given device id
      */
     public static List<UmboxLookup> findUmboxLookupsByDevice(int deviceId) {
-        List<UmboxLookup> lookupList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT ul.* FROM umbox_lookup ul, device d, policy_rule p " +
-                "WHERE ul.policy_rule_id = p.id AND p.device_type_id = d.type_id AND d.id = ?;")) {
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    lookupList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Exception finding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-
-        return lookupList;
+        String query = "SELECT ul.* FROM umbox_lookup ul, device d, policy_rule p " +
+                "WHERE ul.policy_rule_id = p.id AND p.device_type_id = d.type_id AND d.id = ?";
+        return (List<UmboxLookup>) findObjectsByIdAndQuery(deviceId, query, UmboxLookupDAO.class);
     }
 
     /**
      * Finds all umboxLookup entries
      */
     public static List<UmboxLookup> findAllUmboxLookups() {
-        return (List<UmboxLookup>) findAll("umbox_lookup", UmboxLookupDAO.class);
+        return (List<UmboxLookup>) findObjects("umbox_lookup", UmboxLookupDAO.class);
     }
 
     /**
@@ -79,12 +55,13 @@ public class UmboxLookupDAO extends DAO
      */
     public static Integer insertUmboxLookup(UmboxLookup ul) {
         logger.info("Adding umbox lookup: ");
-        try(PreparedStatement st = Postgres.prepareStatement("INSERT INTO umbox_lookup (policy_rule_id, umbox_image_id, dag_order) VALUES (?,?,?)")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO umbox_lookup (policy_rule_id, umbox_image_id, dag_order) VALUES (?,?,?) RETURNING id")) {
             st.setInt(1, ul.getPolicyRuleId());
             st.setInt(2, ul.getUmboxImageId());
             st.setInt(3, ul.getDagOrder());
-            st.executeUpdate();
-            return getLatestId("umbox_lookup");
+            st.execute();
+            return getLatestId(st);
         }
         catch (SQLException e){
             e.printStackTrace();
@@ -98,15 +75,16 @@ public class UmboxLookupDAO extends DAO
      */
     public static Integer updateUmboxLookup(UmboxLookup ul) {
         logger.info(String.format("Updating UmboxLookup with id = %d with values: %s", ul.getId(), ul));
-        try(PreparedStatement update = Postgres.prepareStatement("UPDATE umbox_lookup " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE umbox_lookup " +
                 "SET policy_" +
                 "rule_id = ?, umbox_image_id = ?, dag_order = ?" +
                 "WHERE id = ?")) {
-            update.setInt(1, ul.getPolicyRuleId());
-            update.setInt(2, ul.getUmboxImageId());
-            update.setInt(3, ul.getDagOrder());
-            update.setInt(4, ul.getId());
-            update.executeUpdate();
+            st.setInt(1, ul.getPolicyRuleId());
+            st.setInt(2, ul.getUmboxImageId());
+            st.setInt(3, ul.getDagOrder());
+            st.setInt(4, ul.getId());
+            st.executeUpdate();
 
             return ul.getId();
         } catch (SQLException e) {

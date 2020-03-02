@@ -1,6 +1,9 @@
 # KalkiDB
+* [Prerequisites](#prerequisites)
+* [Running Unit Tests](#running-unit-tests)
 * [Usage](#usage)
-    * [Docker Container Startup](#docker-container-startup)
+    * [Database Engine Startup](#database-engine-startup)
+    * [Publishing the Library](#publishing-the-library)
     * [Code Integration](#code-integration)
 * [Exporting and Importing Data](#exporting-and-importing-data)
 * [Models & Actions](#models-&-actions)
@@ -8,10 +11,32 @@
     * [Java Objects](#java-objects)
     * [Insert Notifications](#insert-notifications)
 
-## Usage
-First, clone this repo.
+## Prerequisites   
+  - To compile this program, Java JDK 8 is required. This program uses Gradle as its build system, 
+ but since it uses an included Gradle wrapper, no external Gradle setup is required.
+  - To run the tests for this program, and to run the DB this library connects to, Docker needs to be set up
+  in the system.
 
-To publish to the local maven repository, use `$ ./gradlew publishToMavenLocal`.
+## Running Unit Tests
+Running the tests is not mandatory to publish and use the library. To run the tests:
+1. Start the test database container with `bash run_test_postgres_container`
+1. Run `./gradlew build`
+
+## Usage
+### Database Engine Startup
+Start the database by running `bash run_postgres_container.sh` from the project root.
+This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+
+If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments
+are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match
+the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc"
+device types, execute `$ bash run_postgres_container.sh wemo dlc`
+
+To stop the docker container execute `$ docker container stop kalki-postgres`  
+
+### Publishing the Library
+To publish to the local maven repository:
+1. Run `./gradlew publishToMavenLocal`
 
 In whatever project you want to include this library in, make sure that your dependencies include this project
 and that mavenLocal is under the repositories in your build.gradle file.
@@ -25,18 +50,6 @@ dependencies {
     compile group: 'edu.cmu.sei.ttg', name: 'kalki-db', version: '0.0.1-SNAPSHOT'
 }
 ```
-
-### Docker Container Startup
-Start the database by running `$ bash run_postgres_container.sh` from the project root.
-This will create a docker container named `kalki-postgres` running the Postgres DB engine.
-
-If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments
-are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match
-the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc"
-device types, execute `$ bash run_postgres_container.sh wemo dlc`
-
-To stop the docker container execute `$ docker container stop kalki-postgres`  
-
 ### Code Integration
 
 First, initialize the Postgres singleton using 

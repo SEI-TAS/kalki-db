@@ -1,17 +1,17 @@
 package edu.cmu.sei.kalki.db.database;
 
 import edu.cmu.sei.kalki.db.utils.Config;
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.postgresql.PGConnection;
+import org.postgresql.PGNotification;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
 import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -20,8 +20,6 @@ public class Postgres {
     private static final String DEFAULT_IP = "localhost";
     private static final String DEFAULT_PORT = "5432";
 
-    private static final String DEFAULT_ROOT_USER = "kalkiuser";
-    private static final String BASE_DB = "postgres";
     private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
 
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
@@ -29,13 +27,16 @@ public class Postgres {
     public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyruleloginsert";
     public static final String TRIGGER_NOTIF_NEW_ALERT = "alerthistoryinsert";
 
-    private static Logger logger = Logger.getLogger("myLogger");
+    private static Logger logger = Logger.getLogger(Postgres.class.getName());
+    private static String dbIp;
+    private static String dbPort;
     private static String dbName;
     private static String dbUser;
     private static String dbPassword;
     private static Postgres postgresInstance = null;
 
-    public static Connection dbConn = null;
+    private static Connection dbConn;
+    private static BasicDataSource dataSource;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //    General setup.
@@ -45,20 +46,29 @@ public class Postgres {
      * Singleton constructor.
      */
     private Postgres(String ip, String port, String newDbName, String newDbUser, String newDbPassword) {
-        try {
-            //Read ip, port from config file
-            dbName = newDbName;
-            dbUser = newDbUser;
-            dbPassword = newDbPassword;
-            while((dbConn = makeConnection(ip, port)) == null) {
-                logger.info("Waiting for DB engine to be available...");
-                Thread.sleep(1000);
-            }
-            logger.info("DB connection established.");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            logger.severe("Error initializing postgres: " + e.getClass().getName() + ": " + e.getMessage());
-        }
+        dbIp = ip;
+        dbPort = port;
+        dbName = newDbName;
+        dbUser = newDbUser;
+        dbPassword = newDbPassword;
+
+        //setupDataSource();
+    }
+
+    /**
+     * Prepares a connection pool.
+     * @return
+     */
+    private static void setupDataSource() {
+        String url = POSTGRES_URL_SCHEMA + dbIp + ":" + dbPort + "/" + Postgres.dbName;
+        dataSource = new BasicDataSource();
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        dataSource.setUrl(url);
+        dataSource.setUsername(Postgres.dbUser);
+        dataSource.setPassword(Postgres.dbPassword);
+
+        dataSource.setInitialSize(1);
+        dataSource.setMaxTotal(10);
     }
 
     /**
@@ -69,21 +79,6 @@ public class Postgres {
         String dbName = Config.getValue("db_name");
         String dbUser = Config.getValue("db_user");
         String dbPass = Config.getValue("db_password");
-
-        // Optional params, only needed if one wants to re-create the DB and user.
-        String recreateDB = Config.getValue("db_recreate");
-        if(recreateDB != null && recreateDB.equals("true"))
-        {
-            String rootUser = Config.getValue("db_root_user");
-            String rootPassword = Config.getValue("db_root_password");
-            String dbHost = DEFAULT_IP;
-
-            // Recreate DB and user.
-            Postgres.removeDatabase(dbHost, rootUser, rootPassword, dbName);
-            Postgres.removeUser(dbHost, rootUser, rootPassword, dbUser);
-            Postgres.createUserIfNotExists(dbHost, rootUser, rootPassword, dbUser, dbPass);
-            Postgres.createDBIfNotExists(dbHost, rootUser, rootPassword, dbName, dbUser);
-        }
 
         Postgres.initialize(dbName, dbUser, dbPass);
     }
@@ -122,21 +117,47 @@ public class Postgres {
     }
 
     /**
+     * Returns a valid connection to the server.
+     * @return
+     */
+    public static Connection getConnection() throws SQLException {
+        //return dataSource.getConnection();
+        return waitForConnection();
+    }
+
+    /**
+     * Attempts a DB connection, waiting and retrying if not possible.
+     */
+    private static Connection waitForConnection() {
+        Connection con;
+        while((con = establishConnection(dbIp, dbPort)) == null) {
+            logger.info("Waiting for DB engine to be available...");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignore) {
+                throw new RuntimeException("Could not connect to DB");
+            }
+        }
+
+        logger.info("DB connection established.");
+        return con;
+    }
+
+    /**
      * Connects to the postgres database, allowing for database ops.
      *
      * @return a connection to the database.
      */
-    private Connection makeConnection(String ip, String port) {
+    private static Connection establishConnection(String ip, String port) {
+        Connection con = null;
         try {
             Class.forName("org.postgresql.Driver");
-            dbConn = DriverManager
-                    .getConnection(POSTGRES_URL_SCHEMA + ip + ":" + port + "/" + Postgres.dbName, Postgres.dbUser, Postgres.dbPassword);
-            return dbConn;
+            con = DriverManager.getConnection(POSTGRES_URL_SCHEMA + ip + ":" + port + "/" + Postgres.dbName, Postgres.dbUser, Postgres.dbPassword);
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             logger.severe("Error connecting to database : " + e.getClass().getName() + ": " + e.getMessage());
-            return null;
         }
+        return con;
     }
 
     /**
@@ -151,136 +172,10 @@ public class Postgres {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //    DB and User Management.
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Creates a DB if it does not exist.
-     */
-    public static boolean createDBIfNotExists(String rootPassword, String dbName, String dbOwner) {
-        return createDBIfNotExists(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, dbName, dbOwner);
-    }
-
-    /**
-     * Creates a DB if it does not exist.
-     */
-    public static boolean createDBIfNotExists(String ip, String rootUser, String rootPassword, String dbName, String dbOwner) {
-        // First check it DB exists.
-        String checkDB = "SELECT datname FROM pg_catalog.pg_database "
-                + "WHERE datname = '" + dbName + "';";
-        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword);
-             Statement stmt = rootConn.createStatement();
-             ResultSet result = stmt.executeQuery(checkDB)) {
-            if (!result.next()) {
-                // If there was no DB with this name, then create it.
-                makeDatabase(rootConn, dbName, dbOwner);
-                return true;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    /**
-     * Creates a postgres database.
-     */
-    private static void makeDatabase(Connection rootConnection, String dbName, String dbOwner) {
-        logger.info("Creating database.");
-        executeCommand("CREATE DATABASE " + dbName
-                + " WITH OWNER= " + dbOwner
-                + " ENCODING = 'UTF8' TEMPLATE = template0 "
-                + " CONNECTION LIMIT = -1;", rootConnection);
-    }
-
-    /**
-     * Removes the database.
-     */
-    public static void removeDatabase(String rootPassword, String dbName) {
-        removeDatabase(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, dbName);
-    }
-
-    /**
-     * Removes the database.
-     */
-    public static void removeDatabase(String ip, String rootUser, String rootPassword, String dbName) {
-        logger.info("Removing database.");
-        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword)) {
-            executeCommand("DROP DATABASE IF EXISTS " + dbName + ";", rootConn);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error removing database:" + e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
-    /**
-     * Removes the user.
-     */
-    public static void removeUser(String rootPassword, String userName) {
-        removeUser(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, userName);
-    }
-
-    /**
-     * Removes the user.
-     */
-    public static void removeUser(String ip, String rootUser, String rootPassword, String userName) {
-        logger.info("Removing user.");
-        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword)) {
-            executeCommand("DROP ROLE IF EXISTS " + userName + ";", rootConn);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error removing user:" + e.getClass().getName() + ": " + e.getMessage());
-        }
-
-    }
-
-    /**
-     * Creates the user if it does not exist.
-     */
-    public static void createUserIfNotExists(String rootPassword, String user, String password) {
-        createUserIfNotExists(DEFAULT_IP, DEFAULT_ROOT_USER, rootPassword, user, password);
-    }
-
-    /**
-     * Creates the user if it does not exist.
-     */
-    public static void createUserIfNotExists(String ip, String rootUser, String rootPassword, String user, String password) {
-        String createUser = "DO\n" +
-                "$body$\n" +
-                "BEGIN\n" +
-                "   IF NOT EXISTS (\n" +
-                "      SELECT *\n" +
-                "      FROM   pg_catalog.pg_user\n" +
-                "      WHERE  usename = '" + user + "') THEN\n" +
-                "\n" +
-                "      CREATE ROLE " + user + " SUPERUSER LOGIN PASSWORD '"
-                + password + "';\n" +
-                "   END IF;\n" +
-                "END\n" +
-                "$body$;";
-        try (Connection rootConn = getRootConnection(ip, rootUser, rootPassword)) {
-            executeCommand(createUser, rootConn);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error creating user:" + e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
-    /**
-     * Gets a connection to the root user.
-     */
-    private static Connection getRootConnection(String ip, String rootUser, String rootPwd) throws SQLException {
-        Properties connectionProps = new Properties();
-        connectionProps.put("user", rootUser);
-        connectionProps.put("password", rootPwd);
-        return DriverManager.getConnection(POSTGRES_URL_SCHEMA + ip + ":" + DEFAULT_PORT + "/" + BASE_DB, connectionProps);
-    }
-
     /**
      * Resets structure and default data to DB.
      */
-    public static void resetDatabase() {
+    public static void resetDatabase() throws SQLException {
         logger.info("Dropping tables.");
         executeSQLResource("db-drop-tables.sql");
 
@@ -297,36 +192,8 @@ public class Postgres {
     //    Generic DB Actions
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /**
-     * Checks if the DB connection has been initializes, throws an exception if it has not.
-     */
-    private static void checkDBConnection() {
-        if (dbConn == null) {
-            String message = "Trying to execute commands with null connection. Initialize Postgres first!";
-            logger.severe(message);
-            throw new RuntimeException(message);
-        }
-    }
-
-    /**
-     * Returns a prepared statement from the current connection.
-     * @param sql
-     * @return
-     * @throws SQLException
-     */
-    public static PreparedStatement prepareStatement(String sql) throws SQLException {
-        checkDBConnection();
-        return dbConn.prepareStatement(sql);
-    }
-
-
-    /**
-     * Executes the given SQL command in the database, using the already set up, default connection.
-     *
-     * @param command SQL commmand string
-     */
-    public static void executeCommand(String command) {
-        executeCommand(command, Postgres.dbConn);
+    public static PGNotification[] getNotifications() throws SQLException {
+        return ((PGConnection)getConnection()).getNotifications();
     }
 
     /**
@@ -334,14 +201,10 @@ public class Postgres {
      *
      * @param command SQL commmand string
      */
-    private static void executeCommand(String command, Connection connection) {
-        if (connection == null) {
-            String message = "Trying to execute commands with null connection.";
-            logger.severe(message);
-            throw new RuntimeException(message);
-        }
+    public static void executeCommand(String command) {
         logger.info(String.format("Executing command: %s", command));
-        try(Statement st = connection.createStatement()) {
+        try(Connection connection = getConnection();
+            Statement st = connection.createStatement()) {
             st.execute(command);
         } catch (SQLException e) {
             logger.severe("Error executing database command: '" + command + "' " +
@@ -355,7 +218,7 @@ public class Postgres {
      *
      * @param fileName the file containing SQL commands to execute
      */
-    private static void executeSQLResource(String fileName) {
+    private static void executeSQLResource(String fileName) throws SQLException {
         logger.info("Executing script from resource: " + fileName);
         InputStream is = Postgres.class.getResourceAsStream("/" + fileName);
         executeSQLScript(is);
@@ -379,8 +242,7 @@ public class Postgres {
     /***
      * Executes SQL from the given input stream.
      */
-    private static void executeSQLScript(InputStream is)
-    {
+    private static void executeSQLScript(InputStream is) {
         Scanner scanner = new Scanner(is);
         String line;
         StringBuilder statement = new StringBuilder();

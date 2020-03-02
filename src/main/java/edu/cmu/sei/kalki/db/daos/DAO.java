@@ -4,16 +4,20 @@ import edu.cmu.sei.kalki.db.database.Postgres;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 public class DAO
 {
-    protected static Logger logger = Logger.getLogger("myLogger");
+    private static final String DEFAULT_SELECT_QUERY = "SELECT * FROM %s WHERE %s = ?";
+
+    protected static Logger logger = Logger.getLogger(DAO.class.getName());
 
     /**
      * Properly closes a resource set and its parent statement.
@@ -28,16 +32,13 @@ public class DAO
             try {
                 if(rs.getStatement() != null) {
                     rs.getStatement().close();
+
+                    if(rs.getStatement().getConnection() != null) {
+                        rs.getStatement().getConnection().close();
+                    }
                 }
             } catch (SQLException ignored) { }
         }
-    }
-
-    /**
-     * Finds a database entry give an id and table.
-     */
-    protected static ResultSet findById(int id, String tableName) {
-        return findByInt(id, tableName, "id");
     }
 
     /**
@@ -46,15 +47,15 @@ public class DAO
      * caller function. Both should be closed by the caller. The statement can be obtained from the RS by calling
      * rs.getStatement().
      *
-     * @param key       id or key of the entry to find
-     * @param column    the column to look for
-     * @param tableName name of the table to search
+     * @param key           id or key of the entry to find
+     * @param selectQuery   the select query.
      * @return the resultset of the query if something is found, null otherwise
      */
-    protected static ResultSet findByInt(int key, String tableName, String column) {
-        logger.info(String.format("Finding by key = %d in column %s in table %s", key, column, tableName));
+    protected static ResultSet findByInt(int key, String selectQuery) {
+        logger.info(String.format("Finding by key = %d for query %s", key, selectQuery));
         try {
-            PreparedStatement st = Postgres.prepareStatement(String.format("SELECT * FROM %s WHERE %s = ?", tableName, column));
+            Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(selectQuery);
             st.setInt(1, key);
             ResultSet rs = st.executeQuery();
             // Moves the result set to the first row if it exists. Returns null otherwise.
@@ -74,15 +75,15 @@ public class DAO
      * caller function. Both should be closed by the caller. The statement can be obtained from the RS by calling
      * rs.getStatement().
      *
-     * @param key       id or key of the entry to find
-     * @param column    the column to look for
-     * @param tableName name of the table to search
+     * @param key       key of the entry to find
+     * @param query     select query.
      * @return the resultset of the query if something is found, null otherwise
      */
-    protected static ResultSet findByString(String key, String tableName, String column) {
-        logger.info(String.format("Finding by key = %s in column %s in table %s", key, column, tableName));
+    protected static ResultSet findByString(String key, String query) {
+        logger.info(String.format("Finding by key = %s for query %s", key, query));
         try {
-            PreparedStatement st = Postgres.prepareStatement(String.format("SELECT * FROM %s WHERE %s = ?", tableName, column));
+            Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(query);
             st.setString(1, key);
             ResultSet rs = st.executeQuery();
             // Moves the result set to the first row if it exists. Returns null otherwise.
@@ -91,50 +92,23 @@ public class DAO
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.severe("Exception finding by string: " + e.getClass().getName() + ": " + e.getMessage());
+            logger.severe("Exception finding by int: " + e.getClass().getName() + ": " + e.getMessage());
         }
         return null;
     }
 
     /**
-     * Uses Postgresql pg_get_serial_sequence to select the most recent id for the given table
+     * Assumes a RETURNING clause in an executed statement was included, gets result from resultset.
      *
      * @param tableName The table to get the latest id
-     * @return The latest id on success or -1 on failure
+     * @return The latest id on success
      */
-    protected static int getLatestId(String tableName) {
-        try(PreparedStatement stmt = Postgres.prepareStatement(String.format("select currval('%s_id_seq')", tableName))) {
-            try(ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error getting most recent in table: " + tableName);
+    protected static int getLatestId(Statement st) throws SQLException {
+        ResultSet rs = st.getResultSet();
+        if(rs.next()) {
+            return rs.getInt(1);
         }
         return -1;
-    }
-
-    /**
-     * Finds all entries in a given table.
-     * NOTE: the RS and PreparedStatement are left open when this function returns so that the RS can be used by the
-     * caller function. Both should be closed by the caller. The statement can be obtained from the RS by calling
-     * rs.getStatement().
-     *
-     * @param tableName name of the table.
-     * @return a list of all entries in the table.
-     */
-    protected static ResultSet getAllFromTable(String tableName) {
-        ResultSet rs = null;
-        try {
-            PreparedStatement st = Postgres.prepareStatement("SELECT * FROM " + tableName);
-            rs = st.executeQuery();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error getting all entries: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return rs;
     }
 
     /**
@@ -146,7 +120,8 @@ public class DAO
      */
     protected static Boolean deleteById(String table, int id) {
         logger.info(String.format("Deleting by id = %d in %s", id, table));
-        try (PreparedStatement st = Postgres.prepareStatement(String.format("DELETE FROM %s WHERE id=?", table))) {
+        try (Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(String.format("DELETE FROM %s WHERE id=?", table))) {
             st.setInt(1, id);
             st.executeUpdate();
             return true;
@@ -180,8 +155,37 @@ public class DAO
      * @param objectClass class of the object to return.
      * @return
      */
-    protected static Object findObject(int id, String tableName, Class objectClass) {
-        ResultSet rs = findById(id, tableName);
+    protected static Object findObjectByIdAndTable(int id, String tableName, Class objectClass) {
+        logger.info(String.format("Finding by key = %d in column %s in table %s", id, "id", tableName));
+        ResultSet rs = findByInt(id, String.format(DEFAULT_SELECT_QUERY, tableName, "id"));
+        Object dbObject = createFromRs(objectClass, rs);
+        closeResources(rs);
+        return dbObject;
+    }
+
+    /**
+     * Returns a DB object of the given class, from the given table.
+     * @param id DB id of the object to get
+     * @param query query to use.
+     * @param objectClass class of the object to return.*
+     * @return
+     */
+    protected static Object findObjectByIdAndQuery(int id, String query, Class objectClass) {
+        ResultSet rs = findByInt(id, query);
+        Object dbObject = createFromRs(objectClass, rs);
+        closeResources(rs);
+        return dbObject;
+    }
+
+    /**
+     * Returns a DB object of the given class, from the given table.
+     * @param key DB key of the object to get
+     * @param query query to use.
+     * @param objectClass class of the object to return.*
+     * @return
+     */
+    protected static Object findObjectByStringAndQuery(String key, String query, Class objectClass) {
+        ResultSet rs = findByString(key, query);
         Object dbObject = createFromRs(objectClass, rs);
         closeResources(rs);
         return dbObject;
@@ -238,7 +242,8 @@ public class DAO
      */
     protected static List<?> findObjectsByIds(String idList, String tableName, String column, Class objectClass) {
         List<Object> allObjects = new ArrayList<>();
-        try (PreparedStatement st = Postgres.prepareStatement(String.format("SELECT * FROM %s WHERE %s in (%s)", tableName, column, idList))) {
+        try (Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(String.format("SELECT * FROM %s WHERE %s in (%s)", tableName, column, idList))) {
             System.out.println(st.toString());
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
@@ -253,14 +258,105 @@ public class DAO
     }
 
     /**
+     * Finds all entries in a given table.
+     * NOTE: the RS and PreparedStatement are left open when this function returns so that the RS can be used by the
+     * caller function. Both should be closed by the caller. The statement can be obtained from the RS by calling
+     * rs.getStatement().
+     *
+     * @param tableName name of the table.
+     * @return a list of all entries in the table.
+     */
+    protected static ResultSet findAllFromTable(String tableName) {
+        return findAllByQuery("SELECT * FROM " + tableName);
+    }
+
+    /**
+     *
+     * @param query
+     * @return
+     */
+    protected static ResultSet findAllByQuery(String query) {
+        ResultSet rs = null;
+        try {
+            Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(query);
+            rs = st.executeQuery();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error getting all entries: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return rs;
+    }
+
+    /**
+     *
+     * @param query
+     * @return
+     */
+    protected static ResultSet findAllByIdAndQuery(int id, String query) {
+        ResultSet rs = null;
+        try {
+            Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(query);
+            st.setInt(1, id);
+            rs = st.executeQuery();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error getting all entries: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return rs;
+    }
+
+
+    /**
      * Finds all in the database
      *
      * @return a list of items
      */
-    protected static List<?> findAll(String tableName, Class objectClass) {
+    protected static List<?> findObjects(String tableName, Class objectClass) {
         List<Object> objectList = new ArrayList<>();
         try {
-            ResultSet rs = getAllFromTable(tableName);
+            ResultSet rs = findAllFromTable(tableName);
+            while (rs.next()) {
+                objectList.add(createFromRs(objectClass, rs));
+            }
+            closeResources(rs);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error getting all: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return objectList;
+    }
+
+    /**
+     * Finds all in the database
+     *
+     * @return a list of items
+     */
+    protected static List<?> findObjectsByQuery(String query, Class objectClass) {
+        List<Object> objectList = new ArrayList<>();
+        try {
+            ResultSet rs = findAllByQuery(query);
+            while (rs.next()) {
+                objectList.add(createFromRs(objectClass, rs));
+            }
+            closeResources(rs);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error getting all: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return objectList;
+    }
+
+    /**
+     * Finds all in the database
+     *
+     * @return a list of items
+     */
+    protected static List<?> findObjectsByIdAndQuery(int id, String query, Class objectClass) {
+        List<Object> objectList = new ArrayList<>();
+        try {
+            ResultSet rs = findAllByIdAndQuery(id, query);
             while (rs.next()) {
                 objectList.add(createFromRs(objectClass, rs));
             }

@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.DeviceCommand;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,23 +27,14 @@ public class DeviceCommandDAO extends DAO
      * Finds a command based on the given id
      */
     public static DeviceCommand findCommand(int id) {
-        ResultSet rs = findById(id, "command");
-        DeviceCommand deviceCommand = null;
-        try {
-            deviceCommand = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return deviceCommand;
+        return (DeviceCommand) findObjectByIdAndTable(id,"command", DeviceCommandDAO.class);
     }
 
     /**
      * Finds all rows in the command table
      */
     public static List<DeviceCommand> findAllCommands() {
-        return (List<DeviceCommand>) findAll("command", DeviceCommandDAO.class);
+        return (List<DeviceCommand>) findObjects("command", DeviceCommandDAO.class);
     }
 
     /**
@@ -52,21 +44,9 @@ public class DeviceCommandDAO extends DAO
      * @return commands A list of command names
      */
     public static List<DeviceCommand> findCommandsByPolicyRuleLog(int policyRuleId) {
-        List<DeviceCommand> commands = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c, policy_rule_log AS pi " +
-                "WHERE pi.policy_rule_id = cl.policy_rule_id AND c.id = cl.command_id AND pi.id = ?")) {
-            st.setInt(1, policyRuleId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    commands.add(createFromRs(rs));
-                }
-            }
-            return commands;
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting all commands for device: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
+        String query = "SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c, policy_rule_log AS pi " +
+                "WHERE pi.policy_rule_id = cl.policy_rule_id AND c.id = cl.command_id AND pi.id = ?";
+        return (List<DeviceCommand>) findObjectsByIdAndQuery(policyRuleId, query, DeviceCommandDAO.class);
     }
 
     /**
@@ -74,11 +54,12 @@ public class DeviceCommandDAO extends DAO
      */
     public static Integer insertCommand(DeviceCommand command) {
         logger.info("Inserting command: " + command.getName());
-        try(PreparedStatement insertCommand = Postgres.prepareStatement("INSERT INTO command(name, device_type_id) VALUES (?,?);")) {
-            insertCommand.setString(1, command.getName());
-            insertCommand.setInt(2, command.getDeviceTypeId());
-            insertCommand.executeUpdate();
-            return getLatestId("command");
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO command(name, device_type_id) VALUES (?,?) RETURNING id")) {
+            st.setString(1, command.getName());
+            st.setInt(2, command.getDeviceTypeId());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Command: " + e.getClass().getName() + ": " + e.getMessage());
@@ -93,11 +74,12 @@ public class DeviceCommandDAO extends DAO
      */
     public static Integer updateCommand(DeviceCommand command) {
         logger.info("Updating command; commandId: " +command.getId()+ " name: " +command.getName());
-        try(PreparedStatement updatecommand = Postgres.prepareStatement("UPDATE command SET name = ?, device_type_id = ? WHERE id = ?")) {
-            updatecommand.setString(1, command.getName());
-            updatecommand.setInt(2, command.getDeviceTypeId());
-            updatecommand.setInt(3, command.getId());
-            updatecommand.executeUpdate();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE command SET name = ?, device_type_id = ? WHERE id = ?")) {
+            st.setString(1, command.getName());
+            st.setInt(2, command.getDeviceTypeId());
+            st.setInt(3, command.getId());
+            st.executeUpdate();
 
             return command.getId();
         } catch (SQLException e) {

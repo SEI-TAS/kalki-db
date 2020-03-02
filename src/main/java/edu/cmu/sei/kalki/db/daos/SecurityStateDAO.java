@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.SecurityState;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,16 +28,7 @@ public class SecurityStateDAO extends DAO
      * @return the row from the table
      */
     public static SecurityState findSecurityState(int id) {
-        ResultSet rs = findById(id, "security_state");
-        SecurityState state = null;
-        try {
-            state = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return state;
+        return (SecurityState) findObjectByIdAndTable(id, "security_state", SecurityStateDAO.class);
     }
 
     /**
@@ -45,16 +37,8 @@ public class SecurityStateDAO extends DAO
      * @return
      */
     public static SecurityState findByName(String name) {
-        ResultSet rs = findByString(name, "security_state", "name");
-        SecurityState state = null;
-        try {
-            state = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return state;
+        String query = "SELECT * FROM security_state WHERE name = ?";
+        return (SecurityState) findObjectByStringAndQuery(name, query, SecurityStateDAO.class);
     }
 
     /**
@@ -63,7 +47,7 @@ public class SecurityStateDAO extends DAO
      * @return a list of all SecurityStates in the database.
      */
     public static List<SecurityState> findAllSecurityStates() {
-        return (List<SecurityState>) findAll("security_state", SecurityStateDAO.class);
+        return (List<SecurityState>) findObjects("security_state", SecurityStateDAO.class);
     }
 
     /**
@@ -74,12 +58,13 @@ public class SecurityStateDAO extends DAO
      */
     public static Integer insertSecurityState(SecurityState state) {
         logger.info("Inserting SecurityState");
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("INSERT INTO security_state(name)" +
-                        "values(?)")) {
-            update.setString(1, state.getName());
-            update.executeUpdate();
-            return getLatestId("security_state");
+                        "values(?) RETURNING id")) {
+            st.setString(1, state.getName());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting SecurityState: " + e.getClass().getName() + ": " + e.getMessage());
@@ -95,12 +80,13 @@ public class SecurityStateDAO extends DAO
      */
     public static Integer updateSecurityState(SecurityState state) {
         logger.info("Updating SecurityState with id=" + state.getId());
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("UPDATE security_state SET name = ?" +
                         "WHERE id=?")) {
-            update.setString(1, state.getName());
-            update.setInt(2, state.getId());
-            update.executeUpdate();
+            st.setString(1, state.getName());
+            st.setInt(2, state.getId());
+            st.executeUpdate();
             return state.getId();
         } catch (SQLException e) {
             e.printStackTrace();

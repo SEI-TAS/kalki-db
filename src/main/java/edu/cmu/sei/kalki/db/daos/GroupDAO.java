@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Group;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,16 +28,7 @@ public class GroupDAO extends DAO
      * @return the Group if it exists in the database, else null.
      */
     public static Group findGroup(int id) {
-        ResultSet rs = findById(id, "device_group");
-        Group group = null;
-        try {
-            group = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return group;
+        return (Group) findObjectByIdAndTable(id, "device_group", GroupDAO.class);
     }
 
     /**
@@ -45,7 +37,7 @@ public class GroupDAO extends DAO
      * @return a list of all Groups in the database.
      */
     public static List<Group> findAllGroups() {
-        return (List<Group>) findAll("device_group", GroupDAO.class);
+        return (List<Group>) findObjects("device_group", GroupDAO.class);
     }
 
     /**
@@ -56,12 +48,13 @@ public class GroupDAO extends DAO
      */
     public static Integer insertGroup(Group group) {
         logger.info("Inserting group: " + group.getName());
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("INSERT INTO device_group(name)" +
-                        "values(?)")) {
-            update.setString(1, group.getName());
-            update.executeUpdate();
-            return getLatestId("device_group");
+                        "values(?) RETURNING id")) {
+            st.setString(1, group.getName());
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Group: " + e.getClass().getName() + ": " + e.getMessage());
@@ -76,12 +69,13 @@ public class GroupDAO extends DAO
      */
     public static Integer updateGroup(Group group) {
         logger.info("Updating Group with id=" + group.getId());
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("UPDATE device_group SET name = ?" +
                         "WHERE id=?")) {
-            update.setString(1, group.getName());
-            update.setInt(2, group.getId());
-            update.executeUpdate();
+            st.setString(1, group.getName());
+            st.setInt(2, group.getId());
+            st.executeUpdate();
             return group.getId();
         } catch (SQLException e) {
             e.printStackTrace();

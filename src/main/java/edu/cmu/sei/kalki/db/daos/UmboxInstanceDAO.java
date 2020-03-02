@@ -2,7 +2,9 @@ package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.UmboxInstance;
+import edu.cmu.sei.kalki.db.models.UmboxLog;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,19 +34,8 @@ public class UmboxInstanceDAO extends DAO
      * @return The desired UmboxInstance on success or null on failure
      */
     public static UmboxInstance findUmboxInstance(String alerterId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM umbox_instance WHERE alerter_id = ?")) {
-            st.setString(1, alerterId);
-            try(ResultSet rs = st.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                return createFromRs(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Exception finding by ID: " + e.getClass().getName() + ": " + e.getMessage());
-        }
-        return null;
+        String query = "SELECT * FROM umbox_instance WHERE alerter_id = ?";
+        return (UmboxInstance) findObjectByStringAndQuery(alerterId, query, UmboxInstanceDAO.class);
     }
 
     /**
@@ -54,20 +45,8 @@ public class UmboxInstanceDAO extends DAO
      * @return a list of all UmboxInstaces in the database where the device_id field is equal to deviceId.
      */
     public static List<UmboxInstance> findUmboxInstances(int deviceId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM umbox_instance WHERE device_id = ?")) {
-            st.setInt(1, deviceId);
-            List<UmboxInstance> umboxInstances = new ArrayList<>();
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    umboxInstances.add(createFromRs(rs));
-                }
-            }
-            return umboxInstances;
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting all UmboxInstances: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
+        String query = "SELECT * FROM umbox_instance WHERE device_id = ?";
+        return (List<UmboxInstance>) findObjectsByIdAndQuery(deviceId, query, UmboxInstanceDAO.class);
     }
 
     /**
@@ -78,13 +57,14 @@ public class UmboxInstanceDAO extends DAO
      */
     public static Integer insertUmboxInstance(UmboxInstance u) {
         logger.info("Adding umbox instance: " + u);
-        try(PreparedStatement st = Postgres.prepareStatement("INSERT INTO umbox_instance (alerter_id, umbox_image_id, device_id, started_at) VALUES (?,?,?,?)")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO umbox_instance (alerter_id, umbox_image_id, device_id, started_at) VALUES (?,?,?,?) RETURNING id")) {
             st.setString(1, u.getAlerterId());
             st.setInt(2, u.getUmboxImageId());
             st.setInt(3, u.getDeviceId());
             st.setTimestamp(4, u.getStartedAt());
-            st.executeUpdate();
-            return getLatestId("umbox_instance");
+            st.execute();
+            return getLatestId(st);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("SQL exception adding umbox instance: " + e.getClass().getName() + ": " + e.getMessage());
@@ -100,7 +80,8 @@ public class UmboxInstanceDAO extends DAO
      */
     public static Integer updateUmboxInstance(UmboxInstance u) {
         logger.info("Editing umbox intance: " + u);
-        try(PreparedStatement st = Postgres.prepareStatement("UPDATE umbox_instance " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE umbox_instance " +
                 "SET alerter_id = ?, umbox_image_id = ?, device_id = ?, started_at = ?" +
                 "WHERE id = ?")) {
             st.setString(1, u.getAlerterId());

@@ -6,6 +6,7 @@ import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 import edu.cmu.sei.kalki.db.models.SecurityState;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,16 +40,7 @@ public class DeviceDAO extends DAO
      * @return the Device if it exists in the database, else null.
      */
     public static Device findDevice(int id) {
-        logger.info("Finding device with id = " + id);
-        ResultSet rs = findById(id, "device");
-        Device device = null;
-        try {
-            device = createFromRs( rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-
+        Device device = (Device) findObjectByIdAndTable(id, "device", DeviceDAO.class);
         if(device != null) {
             List<Integer> tagIds = TagDAO.findTagIds(device.getId());
             device.setTagIds(tagIds);
@@ -56,8 +48,6 @@ public class DeviceDAO extends DAO
             DeviceSecurityState ss = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(device.getId());
             device.setCurrentState(ss);
         }
-
-        closeResources(rs);
         return device;
     }
 
@@ -69,7 +59,7 @@ public class DeviceDAO extends DAO
     public static List<Device> findAllDevices() {
         List<Device> devices = new ArrayList<>();
         try {
-            ResultSet rs = getAllFromTable("device");
+            ResultSet rs = findAllFromTable("device");
             while (rs.next()) {
                 Device d = createFromRs( rs);
                 List<Integer> tagIds = TagDAO.findTagIds(d.getId());
@@ -95,7 +85,8 @@ public class DeviceDAO extends DAO
      */
     public static List<Device> findDevicesByGroup(int groupId) {
         List<Device> devices = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device WHERE group_id = ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM device WHERE group_id = ?")) {
             st.setInt(1, groupId);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
@@ -117,7 +108,8 @@ public class DeviceDAO extends DAO
      * @return
      */
     public static Device findDeviceByDeviceSecurityState(int dssId) {
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT device_id FROM device_security_state WHERE id = ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT device_id FROM device_security_state WHERE id = ?")) {
             st.setInt(1, dssId);
 
             try(ResultSet rs = st.executeQuery()) {
@@ -158,7 +150,8 @@ public class DeviceDAO extends DAO
      */
     public static List<Device> findDevicesByType(int id) {
         List<Device> deviceList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM device WHERE type_id = ?")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM device WHERE type_id = ?")) {
             st.setInt(1, id);
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
@@ -183,30 +176,31 @@ public class DeviceDAO extends DAO
      */
     public static Device insertDevice(Device device) {
         logger.info("Inserting device: " + device);
-        try(PreparedStatement update = Postgres.prepareStatement
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
                 ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                        "status_history_size, sampling_rate, default_sampling_rate) values(?,?,?,?,?,?,?,?)")) {
-            update.setString(1, device.getDescription());
-            update.setString(2, device.getName());
-            update.setInt(3, device.getType().getId());
+                        "status_history_size, sampling_rate, default_sampling_rate) values(?,?,?,?,?,?,?,?) RETURNING id")) {
+            st.setString(1, device.getDescription());
+            st.setString(2, device.getName());
+            st.setInt(3, device.getType().getId());
             if (device.getGroup() != null) {
-                update.setInt(4, device.getGroup().getId());
+                st.setInt(4, device.getGroup().getId());
             } else {
-                update.setObject(4, null);
+                st.setObject(4, null);
             }
 
-            update.setString(5, device.getIp());
-            update.setInt(6, device.getStatusHistorySize());
-            update.setInt(7, device.getSamplingRate());
-            update.setInt(8, device.getDefaultSamplingRate());
-            update.executeUpdate();
+            st.setString(5, device.getIp());
+            st.setInt(6, device.getStatusHistorySize());
+            st.setInt(7, device.getSamplingRate());
+            st.setInt(8, device.getDefaultSamplingRate());
+            st.execute();
+            int serialNum = getLatestId(st);
+            device.setId(serialNum);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Device: " + e.getClass().getName() + ": " + e.getMessage());
         }
 
-        int serialNum = getLatestId("device");
-        device.setId(serialNum);
         DeviceSecurityState currentState = device.getCurrentState();
 
         if(currentState == null) {
@@ -224,7 +218,7 @@ public class DeviceDAO extends DAO
             List<Integer> tagIds = device.getTagIds();
             if (tagIds != null) {
                 for (int tagId : tagIds) {
-                    Postgres.executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", serialNum, tagId));
+                    Postgres.executeCommand(String.format("INSERT INTO device_tag(device_id, tag_id) values (%d,%d)", device.getId(), tagId));
                 }
             }
         }
@@ -260,22 +254,23 @@ public class DeviceDAO extends DAO
         // Delete existing tags
         Postgres.executeCommand(String.format("DELETE FROM device_tag WHERE device_id = %d", device.getId()));
 
-        try(PreparedStatement update = Postgres.prepareStatement("UPDATE device " +
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE device " +
                 "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ? " +
                 "WHERE id = ?")) {
-            update.setString(1, device.getName());
-            update.setString(2, device.getDescription());
-            update.setInt(3, device.getType().getId());
+            st.setString(1, device.getName());
+            st.setString(2, device.getDescription());
+            st.setInt(3, device.getType().getId());
             if (device.getGroup() != null)
-                update.setInt(4, device.getGroup().getId());
+                st.setInt(4, device.getGroup().getId());
             else
-                update.setObject(4, null);
-            update.setString(5, device.getIp());
-            update.setInt(6, device.getStatusHistorySize());
-            update.setInt(7, device.getSamplingRate());
+                st.setObject(4, null);
+            st.setString(5, device.getIp());
+            st.setInt(6, device.getStatusHistorySize());
+            st.setInt(7, device.getSamplingRate());
 
-            update.setInt(8, device.getId());
-            update.executeUpdate();
+            st.setInt(8, device.getId());
+            st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating Device: " + e.getClass().getName() + ": " + e.getMessage());
@@ -307,7 +302,8 @@ public class DeviceDAO extends DAO
      */
     public static void resetSecurityState(int deviceId) {
         logger.info("Inserting a state reset alert for device id: " +deviceId);
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;")) {
             st.setString(1, "state-reset");
             try(ResultSet rs = st.executeQuery()) {
 

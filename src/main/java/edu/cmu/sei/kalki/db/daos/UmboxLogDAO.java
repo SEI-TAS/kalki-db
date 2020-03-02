@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.UmboxLog;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,17 +32,7 @@ public class UmboxLogDAO extends DAO
      * @return UmboxLog object representing row; Null if an exception is thrown
      */
     public static UmboxLog findUmboxLog(int id){
-        logger.info("Finding UmboxLog with id = "+id);
-        ResultSet rs = findById(id, "umbox_log");
-        UmboxLog umboxLog = null;
-        try {
-            umboxLog = createFromRs(rs);
-        } catch (SQLException e) {
-            logger.severe("Sql exception creating object");
-            e.printStackTrace();
-        }
-        closeResources(rs);
-        return umboxLog;
+        return (UmboxLog) findObjectByIdAndTable(id, "umbox_log", UmboxLogDAO.class);
     }
 
     /**
@@ -49,19 +40,7 @@ public class UmboxLogDAO extends DAO
      * @return List of UmboxLogs in the umbox_log table
      */
     public static List<UmboxLog> findAllUmboxLogs() {
-        logger.info("Finding all UmboxLogs");
-        List<UmboxLog> umboxLogList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM umbox_log")) {
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    umboxLogList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Exception finding all UmboxLogs "+e.getClass().getName() + ": "+e.getMessage());
-            e.printStackTrace();
-        }
-        return umboxLogList;
+        return (List<UmboxLog>) findObjects("umbox_log", UmboxLogDAO.class);
     }
 
     /**
@@ -70,40 +49,17 @@ public class UmboxLogDAO extends DAO
      * @return List of UmboxLogs with given alerter_id
      *
      */
-    public static List<UmboxLog> findAllUmboxLogsForAlerterId(String alerter_id) {
-        logger.info("Finding UmboxLogs with alerter_id: "+alerter_id);
-        List<UmboxLog> umboxLogList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT * FROM umbox_log WHERE alerter_id = ?")) {
-            st.setString(1, alerter_id);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    umboxLogList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Exception finding UmboxLogs for alerter_id="+alerter_id+"; "+e.getClass().getName() + ": "+e.getMessage());
-            e.printStackTrace();
-        }
-        return umboxLogList;
+    public static List<UmboxLog> findAllUmboxLogsForAlerterId(String alerterId) {
+        List<String> alerterIds = new ArrayList<>();
+        alerterIds.add(alerterId);
+        return (List<UmboxLog>) findObjectsByStringIds(alerterIds, "umbox_log", "alerter_id", UmboxLogDAO.class);
     }
 
     public static List<UmboxLog> findAllUmboxLogsForDevice(int deviceId) {
-        logger.info("Finding UmboxLogs for device: "+deviceId);
-        List<UmboxLog> logList = new ArrayList<>();
-        try(PreparedStatement st = Postgres.prepareStatement("SELECT log.* FROM umbox_log AS log, umbox_instance AS inst WHERE " +
+        String query = "SELECT log.* FROM umbox_log AS log, umbox_instance AS inst WHERE " +
                 "inst.device_id = ? AND inst.alerter_id = log.alerter_id " +
-                "ORDER BY log.id DESC")) {
-            st.setInt(1, deviceId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    logList.add(createFromRs(rs));
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Exception finding UmboxLogs for device: "+deviceId+"; "+e.getMessage());
-            e.printStackTrace();
-        }
-        return logList;
+                "ORDER BY log.id DESC";
+        return (List<UmboxLog>) findObjectsByIdAndQuery(deviceId, query, UmboxLogDAO.class);
     }
 
     /**
@@ -114,11 +70,12 @@ public class UmboxLogDAO extends DAO
     public static int insertUmboxLog(UmboxLog umboxLog){
         logger.info("Inserting new UmboxLog: "+umboxLog.toString());
         int latestId = -1;
-        try(PreparedStatement st = Postgres.prepareStatement("INSERT INTO umbox_log (alerter_id, details) VALUES(?,?)")) {
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO umbox_log (alerter_id, details) VALUES(?,?) RETURNING id")) {
             st.setString(1, umboxLog.getAlerterId());
             st.setString(2, umboxLog.getDetails());
-            st.executeUpdate();
-            latestId = getLatestId("umbox_log");
+            st.execute();
+            latestId = getLatestId(st);
         } catch (Exception e){
             logger.severe("Error insert UmboxLog into db: "+e.getClass().getName()+": "+e.getMessage());
             e.printStackTrace();
