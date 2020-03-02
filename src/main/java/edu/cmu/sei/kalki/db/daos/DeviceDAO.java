@@ -63,7 +63,6 @@ public class DeviceDAO extends DAO
             device.setTagIds(tagIds);
             DeviceSecurityState ss = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(device.getId());
             device.setCurrentState(ss);
-            devices.add(device);
         }
         return devices;
     }

@@ -68,7 +68,7 @@ public class AlertConditionDAO extends DAO
         String query = "SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name, ac.variables " +
                 "FROM alert_condition AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl " +
                 "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id";
-        return (List<AlertCondition>) findObjectByIdAndQuery(deviceId, query, AlertConditionDAO.class);
+        return (List<AlertCondition>) findObjectsByIdAndQuery(deviceId, query, AlertConditionDAO.class);
     }
 
     /**
