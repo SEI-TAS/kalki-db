@@ -1,6 +1,7 @@
 package edu.cmu.sei.kalki.db.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import edu.cmu.sei.kalki.db.daos.DeviceCommandDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
@@ -60,6 +61,17 @@ public class CommandTest extends AUsesDatabase {
 
         assertEquals(2, foundCommands.size());
         assertEquals(deviceCommand.toString(), foundCommands.get(0).toString());
+    }
+
+    @Test
+    public void testFindCommandsForDeviceTypeByPolicyRuleLog() {
+        ArrayList<DeviceCommand> foundCommands = new ArrayList<DeviceCommand>(DeviceCommandDAO.findCommandsForDeviceTypeByPolicyRuleLog(policyRuleLog.getId(), device.getType().getId()));
+        assertEquals(1, foundCommands.size());
+
+        ArrayList<DeviceCommand> foundCommandsTwo = new ArrayList<DeviceCommand>(DeviceCommandDAO.findCommandsForDeviceTypeByPolicyRuleLog(policyRuleLog.getId(), deviceTwo.getType().getId()));
+        assertEquals(1, foundCommandsTwo.size());
+
+        assertNotEquals(foundCommands.get(0).toString(), foundCommandsTwo.get(0).toString());
     }
 
     @Test

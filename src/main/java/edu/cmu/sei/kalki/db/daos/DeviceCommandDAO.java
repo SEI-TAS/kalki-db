@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Arrays;
 
 public class DeviceCommandDAO extends DAO
 {
@@ -46,6 +47,19 @@ public class DeviceCommandDAO extends DAO
         String query = "SELECT c.id, c.name, c.device_type_id FROM command_lookup AS cl, command AS c, policy_rule_log AS pi " +
                 "WHERE pi.policy_rule_id = cl.policy_rule_id AND c.id = cl.command_id AND pi.id = ?";
         return (List<DeviceCommand>) findObjectsByIdAndQuery(policyRuleId, query, DeviceCommandDAO.class);
+    }
+
+    /**
+     * Finds commands for the given device type id and policy rule id
+     * @param policyRuleId
+     * @param device
+     * @return  A list of device commands
+     */
+    public static List<DeviceCommand> findCommandsForDeviceTypeByPolicyRuleLog(int policyRuleLogId, int deviceTypeId) {
+        List<Integer> paramList = Arrays.asList(policyRuleLogId, deviceTypeId);
+        String query = "SELECT c.* FROM command AS c, command_lookup AS cl, policy_rule_log AS prl " +
+                "WHERE prl.id=? AND prl.policy_rule_id=cl.policy_rule_id AND cl.command_id=c.id AND c.device_type_id=?";
+        return (List<DeviceCommand>) findObjectsByIntListAndQuery(paramList, query, DeviceCommandDAO.class);
     }
 
     /**
