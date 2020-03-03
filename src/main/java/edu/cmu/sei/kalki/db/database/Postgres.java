@@ -181,7 +181,7 @@ public class Postgres {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static PGNotification[] getNotifications() throws SQLException {
-        return ((PGConnection)getConnection()).getNotifications();
+        return (getConnection().unwrap(PGConnection.class)).getNotifications();
     }
 
     /**
