@@ -273,4 +273,30 @@ public class DAO
         return objectList;
 
     }
+
+    /**
+     * Finds all entries matching query with a variable size list of inputs
+     * @param ints List of integers to set values on prepared statement
+     * @param query String representation of the query
+     * @param objectClass Class representation of query result
+     * @return List of results
+     */
+    protected static List<?> findObjectsByIntListAndQuery(List<Integer> ints, String query, Class objectClass) {
+        List<Object> objectList = new ArrayList<>();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement(query)) {
+            for(int i=1; i<=ints.size(); i++){
+                st.setInt(i, ints.get(i-1));
+            }
+            try(ResultSet rs = st.executeQuery()){
+                while(rs.next()){
+                    objectList.add(createFromRs(objectClass, rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error getting all entries: "+ e.getClass().getName() + ": " + e.getMessage());
+        }
+        return objectList;
+    }
 }
