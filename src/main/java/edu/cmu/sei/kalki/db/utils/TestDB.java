@@ -2,6 +2,7 @@ package edu.cmu.sei.kalki.db.utils;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /***
@@ -9,27 +10,28 @@ import java.util.logging.Logger;
  */
 public class TestDB
 {
+    private static final String DB_HOST = "127.0.0.1";
+    private static final String PORT = "5433";
+    private static final String DB_TEMPLATE_NAME = "kalkidb_test";
+    private static final String DB_NAME = "kalkidb_test_instance";
+    private static final String DB_USER = "kalkiuser_test";
+    private static final String DB_PASS = "kalkipass_test";
+
     private static Logger logger = Logger.getLogger(TestDB.class.getName());
 
     /**
-     * Sets up a test DB, initializes it, and inserts test data.
-     * @param testFile
+     * Recreates the test DB from the template.
      */
-    public static void setupTestDBFromConfig(String testFile)
-    {
-        TestDB.overwriteDBConfig();
-        Postgres.initializeFromConfig();
-        TestDB.insertTestData(testFile);
-    }
+    public static void recreateTestDB() throws SQLException {
+        logger.info("Test DB setup.");
 
-    /**
-     * Overwrite default DB params to create a new, temp test DB.
-     */
-    public static void overwriteDBConfig()
-    {
-        Config.setValue("db_recreate", "true");
-        Config.setValue("db_name", "kalkidb_test");
-        Config.setValue("db_user", "kalkiuser_test");
+        // Connect first to template db, and recreate DB instance from it.
+        Postgres.initialize(DB_HOST, PORT, DB_TEMPLATE_NAME, DB_USER, DB_PASS);
+        Postgres.recreateDB(DB_NAME, DB_TEMPLATE_NAME);
+        Postgres.close();
+
+        // Reconfigure to connect to newly reset DB.
+        Postgres.initialize(DB_HOST, PORT, DB_NAME, DB_USER, DB_PASS);
     }
 
     /***
@@ -47,5 +49,4 @@ public class TestDB
         Postgres.executeSQLFile(fileName);
         logger.info("Test data finished inserting.");
     }
-
 }

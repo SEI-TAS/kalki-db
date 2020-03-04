@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.database;
 import edu.cmu.sei.kalki.db.utils.Config;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.postgresql.PGConnection;
-import org.postgresql.PGNotification;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -71,6 +70,21 @@ public class Postgres {
     }
 
     /**
+     * Clears up pending connections.
+     */
+    public static void close() {
+        if(dataSource != null) {
+            try {
+                dataSource.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        postgresInstance = null;
+    }
+
+    /**
      * Initialize the singleton assuming the Config object has been loaded.
      */
     public static void initializeFromConfig() {
@@ -120,7 +134,7 @@ public class Postgres {
      * @return
      */
     public static Connection getConnection() throws SQLException {
-        //logger.info("Active connections: " + dataSource.getNumActive());
+        logger.info("Active connections: " + dataSource.getNumActive());
         return dataSource.getConnection();
         //return waitForConnection();
     }
@@ -163,23 +177,19 @@ public class Postgres {
     /**
      * Resets structure and default data to DB.
      */
-    public static void resetDatabase() throws SQLException {
-        logger.info("Dropping tables.");
-        executeSQLResource("db-drop-tables.sql");
-
-        // DB tables and triggers.
-        executeSQLFile("sql/init/0-1-tables.sql");
-        executeSQLFile("sql/init/0-2-triggers.sql");
-
-        // DB initial data.
-        executeSQLFile("sql/init/0-3-security-states.sql");
-        executeSQLFile("sql/init/0-4-common-alert-types.sql");
+    public static void recreateDB(String databaseName, String templateName) throws SQLException {
+        logger.info("Resetting database to given template.");
+        executeCommand("DROP DATABASE IF EXISTS " + databaseName);
+        executeCommand("CREATE DATABASE " + databaseName + " TEMPLATE " + templateName);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //    Generic DB Actions
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Returns the actual Postgres connection object.
+     */
     public static PGConnection getPGConnection(Connection con) throws SQLException {
         return con.unwrap(PGConnection.class);
     }
