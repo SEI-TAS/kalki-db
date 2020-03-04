@@ -180,8 +180,8 @@ public class Postgres {
     //    Generic DB Actions
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public static PGNotification[] getNotifications() throws SQLException {
-        return (getConnection().unwrap(PGConnection.class)).getNotifications();
+    public static PGConnection getPGConnection(Connection con) throws SQLException {
+        return con.unwrap(PGConnection.class);
     }
 
     /**

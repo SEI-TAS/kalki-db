@@ -4,6 +4,7 @@ import edu.cmu.sei.kalki.db.database.Postgres;
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
@@ -51,9 +52,9 @@ public class InsertListener extends TimerTask
     }
 
     public void run() {
-        try
-        {
-            PGNotification notifications[] = Postgres.getNotifications();
+        try(Connection con = Postgres.getConnection()) {
+            PGConnection pgConn = Postgres.getPGConnection(con);
+            PGNotification notifications[] = pgConn.getNotifications();
             if (notifications != null)
             {
                 for (PGNotification notification : notifications)
@@ -66,7 +67,6 @@ public class InsertListener extends TimerTask
                     }
                 }
             }
-
         } catch (SQLException sqle) {
             sqle.printStackTrace();
         }
