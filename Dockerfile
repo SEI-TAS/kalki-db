@@ -1,4 +1,4 @@
-FROM postgres:9.5.19
+FROM postgres:9.6.17
 
 # Set up user and DB to be created.
 ENV POSTGRES_USER=kalkiuser
