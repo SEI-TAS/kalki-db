@@ -138,6 +138,6 @@ public class AlertTypeDAO extends DAO
      * @return true if the deletion succeeded, false otherwise.
      */
     public static Boolean deleteAlertType(int id) {
-        return deleteById("alert_table", id);
+        return deleteById("alert_type", id);
     }
 }
