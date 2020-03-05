@@ -71,7 +71,7 @@ public class PolicyConditionDAO extends DAO
                     try(PreparedStatement insert2 = con.prepareStatement("INSERT INTO policy_condition_alert(policy_cond_id, alert_type_id) VALUES(?,?)")) {
                         insert2.setInt(1, policyCondition.getId());
                         insert2.setInt(2, id);
-                        insert2.executeQuery();
+                        insert2.executeUpdate();
                     }
                 }
             }
