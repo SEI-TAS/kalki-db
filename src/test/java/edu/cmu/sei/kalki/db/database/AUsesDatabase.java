@@ -16,6 +16,7 @@ public abstract class AUsesDatabase {
 
             // Drops and recreates DB from template.
             TestDB.recreateTestDB();
+            TestDB.initialize();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -25,7 +26,7 @@ public abstract class AUsesDatabase {
     @AfterEach
     public void closeConnections() {
         // Ensure singleton is closed so that DB can be recreated later.
-        Postgres.close();
+        Postgres.cleanup();
     }
 
     public abstract void insertData();

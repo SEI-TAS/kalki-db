@@ -28,10 +28,22 @@ public class TestDB
         // Connect first to template db, and recreate DB instance from it.
         Postgres.initialize(DB_HOST, PORT, DB_TEMPLATE_NAME, DB_USER, DB_PASS);
         Postgres.recreateDB(DB_NAME, DB_TEMPLATE_NAME);
-        Postgres.close();
+        Postgres.cleanup();
+    }
 
+    /**
+     * Sets up all parameters to connect to test DB.
+     */
+    public static void initialize() {
         // Reconfigure to connect to newly reset DB.
         Postgres.initialize(DB_HOST, PORT, DB_NAME, DB_USER, DB_PASS);
+    }
+
+    /**
+     * Cleans up singleton setup.
+     */
+    public static void cleanup() {
+        Postgres.cleanup();
     }
 
     /***

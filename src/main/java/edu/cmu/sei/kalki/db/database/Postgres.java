@@ -72,7 +72,7 @@ public class Postgres {
     /**
      * Clears up pending connections.
      */
-    public static void close() {
+    public static void cleanup() {
         if(dataSource != null) {
             try {
                 dataSource.close();
