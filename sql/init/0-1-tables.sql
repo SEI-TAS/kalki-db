@@ -119,21 +119,21 @@ CREATE TABLE IF NOT EXISTS alert_type_lookup(
     id                 serial PRIMARY KEY,
     variables          hstore,
     alert_type_id      int REFERENCES alert_type(id) ON DELETE CASCADE,
-    device_type_id     int REFERENCES device_type(id)
+    device_type_id     int REFERENCES device_type(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
     variables          hstore,
     device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
-    alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id)
+    alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS alert(
     id                 serial PRIMARY KEY,
     name               varchar(255) NOT NULL,
     timestamp          timestamp NOT NULL DEFAULT now(),
-    alert_type_id      int REFERENCES alert_type(id),
+    alert_type_id      int REFERENCES alert_type(id) ON DELETE CASCADE,
     device_id          int REFERENCES device(id) ON DELETE CASCADE,
     alerter_id         varchar(255) REFERENCES umbox_instance(alerter_id) ON DELETE CASCADE,
     device_status_id   int REFERENCES device_status(id),
