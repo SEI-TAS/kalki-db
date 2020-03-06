@@ -134,7 +134,7 @@ public class Postgres {
      * @return
      */
     public static Connection getConnection() throws SQLException {
-        logger.info("Active connections: " + dataSource.getNumActive());
+        //logger.info("Active connections: " + dataSource.getNumActive());
         return dataSource.getConnection();
         //return waitForConnection();
     }
