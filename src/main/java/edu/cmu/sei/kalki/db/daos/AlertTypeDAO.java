@@ -27,10 +27,18 @@ public class AlertTypeDAO extends DAO
     }
 
     /**
-     * Finds an AlertType from the dataase with the given id
+     * Finds an AlertType from the database with the given id
      */
     public static AlertType findAlertType(int id) {
         return (AlertType) findObjectByIdAndTable(id, "alert_type", AlertTypeDAO.class);
+    }
+
+    /**
+     * Finds an AlertType from the database with the given alert type name. Assumes there is only one per each name.
+     */
+    public static AlertType findAlertTypeByName(String name) {
+        String query = "SELECT * FROM alert_type WHERE name = ?";
+        return (AlertType) findObjectByStringAndQuery(name, query, AlertTypeDAO.class);
     }
 
     /**
