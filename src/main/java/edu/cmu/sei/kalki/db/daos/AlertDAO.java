@@ -2,6 +2,8 @@ package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Alert;
+import edu.cmu.sei.kalki.db.models.DeviceStatus;
+import edu.cmu.sei.kalki.db.models.UmboxInstance;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -63,6 +65,54 @@ public class AlertDAO extends DAO
     }
 
     /**
+     * Finds all Alerts from the database for the given deviceId and type.
+     *
+     * @param deviceId of the device
+     * @param alertTypeId type of alerts to look for
+     * @return a list of all Alerts in the database associated to the device with the given id and type.
+     */
+    public static List<Alert> findAlertsByDeviceAndType(int deviceId, int alertTypeId) {
+        List<Integer> deviceIds = new ArrayList<>();
+        deviceIds.add(deviceId);
+        return (List<Alert>) findObjectsByIntIds(deviceIds, "alert", "device_id", AlertDAO.class);
+    }
+
+
+    /**
+     * Finds the last alerts for a device and type given a timeframe.
+     *
+     * @param deviceId the id of the device
+     * @param alertType the type of alerts to find.
+     * @param startingTime The timestamp to start
+     * @param period The amount of time back to search
+     * @param timeUnit the unit of time to use (minute(s), hour(s), day(s))
+     * @return a list of N device statuses
+     */
+    public static List<Alert> findAlertsOverTime(int deviceId, int alertTypeId, Timestamp startingTime, int period, String timeUnit) {
+        String interval = period + " " + timeUnit;
+        List<Alert> alerts = new ArrayList<>();
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("SELECT * FROM alert WHERE device_id = ? AND alert_type_id = ? AND timestamp between (?::timestamp - (?::interval)) and ?::timestamp")) {
+            st.setInt(1, deviceId);
+            st.setInt(2, alertTypeId);
+            st.setTimestamp(3, startingTime);
+            st.setString(4, interval);
+            st.setTimestamp(5, startingTime);
+            logger.info("Parameter count: " + st.getParameterMetaData().getParameterCount());
+            try(ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    alerts.add(createFromRs(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Sql exception getting all device statuses: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return alerts;
+    }
+
+    /**
      * Insert a row into the alert table
      * Will insert the alert with either an alerterId or deviceStatusId, but not both
      *
@@ -76,18 +126,8 @@ public class AlertDAO extends DAO
             int deviceId = alert.getDeviceId();
             if(alert.getDeviceStatusId() == 0) {
                 if(deviceId == 0) {
-                    try(Connection con = Postgres.getConnection();
-                        PreparedStatement st = con.prepareStatement("SELECT device_id FROM umbox_instance WHERE alerter_id = ?;")) {
-                        st.setString(1, alert.getAlerterId());
-                        try(ResultSet rs = st.executeQuery()) {
-                            if (rs.next()) {
-                                deviceId = rs.getInt("device_id");
-                                alert.setDeviceId(deviceId);
-                            } else {
-                                throw new SQLException("Device ID not found for umbox_instance with alerter_id " + alert.getAlerterId());
-                            }
-                        }
-                    }
+                    UmboxInstance instance = UmboxInstanceDAO.findUmboxInstance(alert.getAlerterId());
+                    alert.setDeviceId(instance.getDeviceId());
                 }
 
                 try(Connection con = Postgres.getConnection();
@@ -95,7 +135,7 @@ public class AlertDAO extends DAO
                     st.setString(1, alert.getName());
                     st.setTimestamp(2, alert.getTimestamp());
                     st.setInt(3, alert.getAlertTypeId());
-                    st.setInt(4, deviceId);
+                    st.setInt(4, alert.getDeviceId());
                     st.setString(5, alert.getAlerterId());
                     st.setString(6, alert.getInfo());
                     st.execute();
@@ -104,18 +144,8 @@ public class AlertDAO extends DAO
             }
             else {
                 if(deviceId == 0) {
-                    try(Connection con = Postgres.getConnection();
-                        PreparedStatement st = con.prepareStatement("SELECT device_id FROM device_status WHERE id = ?;")) {
-                        st.setInt(1, alert.getDeviceStatusId());
-                        try(ResultSet rs = st.executeQuery()) {
-                            if (rs.next()) {
-                                deviceId = rs.getInt("device_id");
-                                alert.setDeviceId(deviceId);
-                            } else {
-                                throw new SQLException("Device ID not found for device_status with id " + alert.getDeviceStatusId());
-                            }
-                        }
-                    }
+                    DeviceStatus deviceStatus = DeviceStatusDAO.findDeviceStatus(alert.getDeviceStatusId());
+                    alert.setDeviceId(deviceStatus.getDeviceId());
                 }
 
                 try(Connection con = Postgres.getConnection();
@@ -124,7 +154,7 @@ public class AlertDAO extends DAO
                     st.setTimestamp(2, alert.getTimestamp());
                     st.setInt(3, alert.getAlertTypeId());
                     st.setString(4, alert.getAlerterId());
-                    st.setInt(5, deviceId);
+                    st.setInt(5, alert.getDeviceId());
                     st.setInt(6, alert.getDeviceStatusId());
                     st.setString(7, alert.getInfo());
                     st.execute();
