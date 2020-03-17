@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS tag(
 );
 
 CREATE TABLE IF NOT EXISTS data_node(
-                                        id           serial PRIMARY KEY,
-                                        name         varchar(255) NOT NULL,
-                                        ip_address   varchar(255) NOT NULL
+    id           serial PRIMARY KEY,
+    name         varchar(255) NOT NULL,
+    ip_address   varchar(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device(
