@@ -10,8 +10,6 @@ public class DeviceType {
 
     private int id;
     private String name;
-    private byte[] policyFile;
-    private String policyFileName;
 
     private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
@@ -24,17 +22,8 @@ public class DeviceType {
         this.name = name;
     }
 
-    public DeviceType(String name, byte[] policyFile, String policyFileName) {
+    public DeviceType(String name) {
         this.name = name;
-        this.policyFile = policyFile;
-        this.policyFileName = policyFileName;
-    }
-
-    public DeviceType(int id, String name, byte[] policyFile, String policyFileName) {
-        this.id = id;
-        this.name = name;
-        this.policyFile = policyFile;
-        this.policyFileName = policyFileName;
     }
 
     public int getId() {
@@ -51,22 +40,6 @@ public class DeviceType {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public byte[] getPolicyFile() {
-        return policyFile;
-    }
-
-    public void setPolicyFile(byte[] policyFile) {
-        this.policyFile = policyFile;
-    }
-
-    public String getPolicyFileName() {
-        return policyFileName;
-    }
-
-    public void setPolicyFileName(String policyFileName) {
-        this.policyFileName = policyFileName;
     }
 
     public Integer insert() {
