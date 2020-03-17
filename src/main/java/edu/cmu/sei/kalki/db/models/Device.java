@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.sql.Timestamp;
 
-public class Device {
+public class Device extends Model {
 
     private int id;
     private String name;
@@ -27,24 +27,19 @@ public class Device {
     private List<Integer> tagIds;
     private DeviceSecurityState currentState;
     private Alert lastAlert;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+    private DataNode dataNode;
 
     public Device() {
 
     }
 
-    public Device(String name, String description, DeviceType type, String ip, int statusHistorySize, int samplingRate) {
-        this.name = name;
-        this.description = description;
-        this.type = type;
-        this.ip = ip;
-        this.statusHistorySize = statusHistorySize;
-        this.samplingRate = samplingRate;
-        this.defaultSamplingRate = samplingRate;
+    public Device(String name, String description, DeviceType type, String ip,
+                  int statusHistorySize, int samplingRate) {
+        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null);
     }
 
-    public Device(String name, String description, DeviceType type, Group group, String ip, int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert){
+    public Device(String name, String description, DeviceType type, Group group, String ip,
+                  int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -57,38 +52,22 @@ public class Device {
         this.lastAlert = lastAlert;
     }
 
-    public Device(String name, String description, int typeId, int groupId, String ip, int statusHistorySize, int samplingRate, int defaultSamplingRate){
-        this.name = name;
-        this.description = description;
-        try {
-            this.type = DeviceTypeDAO.findDeviceType(typeId);
-            this.group = GroupDAO.findGroup(groupId);
-        } catch (Exception e) {
-            System.out.println("ERROR initializing Device: "+name);
-            e.printStackTrace();
-        }
-        this.ip = ip;
-        this.statusHistorySize = statusHistorySize;
-        this.samplingRate = samplingRate;
-        this.defaultSamplingRate = defaultSamplingRate;
+    public Device(String name, String description, int typeId, int groupId, String ip,
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate){
+        this(0, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
                   int statusHistorySize, int samplingRate, int defaultSamplingRate) {
         this.id = id;
-        this.description = description;
         this.name = name;
-        try {
-            this.type = DeviceTypeDAO.findDeviceType(typeId);
-            this.group = GroupDAO.findGroup(groupId);
-        } catch (Exception e) {
-            System.out.println("ERROR initializing Device: "+name);
-            e.printStackTrace();
-        }
+        this.description = description;
+        this.type = DeviceTypeDAO.findDeviceType(typeId);
+        this.group = GroupDAO.findGroup(groupId);
+        this.ip = ip;
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
         this.defaultSamplingRate = defaultSamplingRate;
-        this.ip = ip;
     }
 
     public int getId() {
@@ -187,6 +166,14 @@ public class Device {
         this.defaultSamplingRate = defaultSamplingRate;
     }
 
+    public DataNode getDataNode() {
+        return dataNode;
+    }
+
+    public void setDataNode(DataNode dataNode) {
+        this.dataNode = dataNode;
+    }
+
     public Integer insert(){
         Device data = DeviceDAO.insertDevice(this);
         setCurrentState(data.getCurrentState());
@@ -203,15 +190,6 @@ public class Device {
 
     public void resetSecurityState() {
         DeviceDAO.resetSecurityState(this.id);
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad device";
-        }
     }
 
     public List<DeviceStatus> lastNSamples(int N){
