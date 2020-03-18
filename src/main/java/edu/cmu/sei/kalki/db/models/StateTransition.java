@@ -1,5 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
+import edu.cmu.sei.kalki.db.daos.GroupDAO;
 import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,6 +54,10 @@ public class StateTransition {
         int id = StateTransitionDAO.insertStateTransition(this);
         if(id>0)
             this.id = id;
+    }
+
+    public void update() {
+        StateTransitionDAO.updateStateTransition(this);
     }
 
     public String toString() {

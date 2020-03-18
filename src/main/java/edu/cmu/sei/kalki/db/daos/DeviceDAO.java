@@ -2,6 +2,7 @@ package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.Alert;
+import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 import edu.cmu.sei.kalki.db.models.SecurityState;
@@ -30,7 +31,8 @@ public class DeviceDAO extends DAO
         int statusHistorySize = rs.getInt("status_history_size");
         int samplingRate = rs.getInt("sampling_rate");
         int defaultSamplingRate = rs.getInt("default_sampling_rate");
-        return new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
+        int dataNodeId = rs.getInt("data_node_id");
+        return new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate, dataNodeId);
     }
 
     /**
@@ -74,20 +76,11 @@ public class DeviceDAO extends DAO
      * @parameter groupId the id of the group
      */
     public static List<Device> findDevicesByGroup(int groupId) {
-        List<Device> devices = new ArrayList<>();
-        try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("SELECT * FROM device WHERE group_id = ?")) {
-            st.setInt(1, groupId);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    Device d = createFromRs( rs);
-                    d.setCurrentState(DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId()));
-                    devices.add(d);
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting all devices for group: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
+        String query = "SELECT * FROM device WHERE group_id = ?";
+        List<Device> devices = (List<Device>) findObjectsByIdAndQuery(groupId, query, DeviceDAO.class);
+        for(Device device : devices) {
+            DeviceSecurityState ss = DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(device.getId());
+            device.setCurrentState(ss);
         }
         return devices;
     }
@@ -98,23 +91,15 @@ public class DeviceDAO extends DAO
      * @return
      */
     public static Device findDeviceByDeviceSecurityState(int dssId) {
-        try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("SELECT device_id FROM device_security_state WHERE id = ?")) {
-            st.setInt(1, dssId);
-
-            try(ResultSet rs = st.executeQuery()) {
-                if (rs.next()) {
-                    int id = rs.getInt("device_id");
-                    Device d = findDevice(id);
-                    d.setCurrentState(DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId()));
-                    return d;
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Error while finding the device with device security state: "+dssId+".");
-            logger.severe(e.getMessage());
+        DeviceSecurityState deviceSecurityState = DeviceSecurityStateDAO.findDeviceSecurityState(dssId);
+        if(deviceSecurityState != null) {
+            Device device = findDevice(deviceSecurityState.getDeviceId());
+            device.setCurrentState(deviceSecurityState);
+            return device;
         }
-        return null;
+        else {
+            return null;
+        }
     }
 
     /**
@@ -133,29 +118,18 @@ public class DeviceDAO extends DAO
     }
 
     /**
-     * Finds the Device related to the given DeviceType id
+     * Finds the Devices related to the given DeviceType id
      *
      * @param int id of the type
      * @return the Devices associated with the type
      */
-    public static List<Device> findDevicesByType(int id) {
-        List<Device> deviceList = new ArrayList<>();
-        try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("SELECT * FROM device WHERE type_id = ?")) {
-            st.setInt(1, id);
-            try(ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    Device d = createFromRs( rs);
-                    d.setCurrentState(DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(d.getId()));
-                    deviceList.add(d);
-                }
-            }
-            return deviceList;
-        } catch (SQLException e) {
-            logger.severe("Sql exception getting the device for the alert: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
+    public static List<Device> findDevicesByType(int deviceTypeId) {
+        String query = "SELECT * FROM device WHERE type_id = ?";
+        List<Device> deviceList = (List<Device>) findObjectsByIdAndQuery(deviceTypeId, query, DeviceDAO.class);
+        for(Device device : deviceList) {
+            device.setCurrentState(DeviceSecurityStateDAO.findDeviceSecurityStateByDevice(device.getId()));
         }
-        return null;
+        return deviceList;
     }
 
     /**
@@ -292,21 +266,10 @@ public class DeviceDAO extends DAO
      */
     public static void resetSecurityState(int deviceId) {
         logger.info("Inserting a state reset alert for device id: " +deviceId);
-        try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("SELECT name, id FROM alert_type WHERE name = ?;")) {
-            st.setString(1, "state-reset");
-            try(ResultSet rs = st.executeQuery()) {
-
-                if (rs.next()) {
-                    String name = rs.getString("name");
-                    int alertTypeId = rs.getInt("id");
-
-                    Alert alert = new Alert(deviceId, name, alertTypeId, "State reset");
-                    alert.insert();
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Sql exception inserting state reset alert: " + e.getClass().getName() + ": " + e.getMessage());
+        AlertType stateResetAlertType = AlertTypeDAO.findAlertTypeByName("state-reset");
+        if(stateResetAlertType != null) {
+            Alert alert = new Alert(deviceId, stateResetAlertType.getName(), stateResetAlertType.getId(), "State reset");
+            alert.insert();
         }
     }
     

@@ -1,5 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
+import edu.cmu.sei.kalki.db.daos.DataNodeDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
@@ -35,11 +36,11 @@ public class Device extends Model {
 
     public Device(String name, String description, DeviceType type, String ip,
                   int statusHistorySize, int samplingRate) {
-        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null);
+        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null, null);
     }
 
     public Device(String name, String description, DeviceType type, Group group, String ip,
-                  int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert){
+                  int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert, DataNode dataNode){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -50,15 +51,16 @@ public class Device extends Model {
         this.defaultSamplingRate = defaultSamplingRate;
         this.currentState = currentState;
         this.lastAlert = lastAlert;
+        this.dataNode = dataNode;
     }
 
     public Device(String name, String description, int typeId, int groupId, String ip,
-                  int statusHistorySize, int samplingRate, int defaultSamplingRate){
-        this(0, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate);
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate, int dataNodeId){
+        this(0, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate, dataNodeId);
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
-                  int statusHistorySize, int samplingRate, int defaultSamplingRate) {
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate, int dataNodeId) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -68,6 +70,7 @@ public class Device extends Model {
         this.statusHistorySize = statusHistorySize;
         this.samplingRate = samplingRate;
         this.defaultSamplingRate = defaultSamplingRate;
+        this.dataNode = DataNodeDAO.findDataNode(dataNodeId);
     }
 
     public int getId() {
