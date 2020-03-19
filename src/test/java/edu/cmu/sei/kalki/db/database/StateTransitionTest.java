@@ -1,11 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
 import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
-import edu.cmu.sei.kalki.db.models.Group;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 import org.junit.jupiter.api.Test;
-
-import javax.swing.plaf.nimbus.State;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
