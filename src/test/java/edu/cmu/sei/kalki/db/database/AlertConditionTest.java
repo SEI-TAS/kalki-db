@@ -28,14 +28,14 @@ public class AlertConditionTest extends AUsesDatabase {
     @Test
     public void testInsertAlertCondition() {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
-        alertCondition.insertOrUpdate();
+        alertCondition.insert();
         assertNotEquals(-1, alertCondition.getId());
     }
 
     @Test
     public void testFindAlertCondition() {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
-        alertCondition.insertOrUpdate();
+        alertCondition.insert();
 
         AlertCondition ac = AlertConditionDAO.findAlertCondition(alertCondition.getId());
         assertEquals(alertCondition.getAlertTypeLookupId(), ac.getAlertTypeLookupId());
@@ -46,8 +46,8 @@ public class AlertConditionTest extends AUsesDatabase {
     @Test
     public void testFindAllAlertConditions() {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
-        alertCondition.insertOrUpdate();
-        alertCondition.insertOrUpdate();
+        alertCondition.insert();
+        alertCondition.insert();
 
         ArrayList<AlertCondition> acList = new ArrayList<AlertCondition>(AlertConditionDAO.findAllAlertConditions());
         assertEquals(2, acList.size());
