@@ -1,19 +1,13 @@
 package edu.cmu.sei.kalki.db.models;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.util.List;
 
 import edu.cmu.sei.kalki.db.daos.PolicyConditionDAO;
 
-public class PolicyCondition {
+public class PolicyCondition extends Model  {
     private int id;
     private int threshold;
     private List<Integer> alertTypeIds;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public PolicyCondition() {}
 
@@ -55,13 +49,5 @@ public class PolicyCondition {
         int id = PolicyConditionDAO.insertPolicyCondition(this);
         if(id > 0)
             this.id = id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad policy";
-        }
     }
 }

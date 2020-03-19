@@ -2,20 +2,13 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.PolicyRuleLogDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.sql.Timestamp;
 
-public class PolicyRuleLog
-{
+public class PolicyRuleLog extends Model {
     private int id;
     private int policyRuleId;
     private int deviceId;
     private Timestamp timestamp;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public PolicyRuleLog() {}
 
@@ -67,14 +60,4 @@ public class PolicyRuleLog
         if(id>0)
             this.id = id;
     }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad PolicyRuleLog";
-        }
-    }
-
 }

@@ -2,17 +2,11 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.AlertTypeDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class AlertType {
+public class AlertType extends Model  {
     private int id;
     private String name;
     private String description;
     private String source;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public AlertType() {
     }
@@ -70,13 +64,5 @@ public class AlertType {
     public Integer insertOrUpdate() {
         this.id = AlertTypeDAO.insertOrUpdateAlertType(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad AlertType";
-        }
     }
 }

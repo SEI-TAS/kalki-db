@@ -4,19 +4,13 @@ import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.StageLogDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class StageLog {
+public class StageLog extends Model  {
     private int id;
     private int deviceSecurityStateId;
     private Timestamp timestamp;
     private String action;
     private String stage;
     private String info;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public StageLog(){}
 
@@ -102,15 +96,6 @@ public class StageLog {
 
         StageLog temp = StageLogDAO.findStageLog(id);
         setTimestamp(temp.getTimestamp());
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad Alert";
-        }
     }
 
     public enum Action {

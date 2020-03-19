@@ -4,18 +4,12 @@ import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.DeviceSecurityStateDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class DeviceSecurityState {
+public class DeviceSecurityState extends Model  {
     private int id;
     private int deviceId;
     private int stateId;
     private Timestamp timestamp;
     private String name;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceSecurityState() {
 
@@ -92,14 +86,5 @@ public class DeviceSecurityState {
     public Integer insert(){
         this.id = DeviceSecurityStateDAO.insertDeviceSecurityState(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad DeviceSecurityState";
-        }
     }
 }

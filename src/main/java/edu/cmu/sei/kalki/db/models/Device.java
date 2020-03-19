@@ -6,10 +6,6 @@ import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 import edu.cmu.sei.kalki.db.daos.GroupDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.util.List;
 import java.util.Map;
 import java.sql.Timestamp;

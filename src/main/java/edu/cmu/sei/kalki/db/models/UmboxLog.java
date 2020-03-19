@@ -4,17 +4,11 @@ import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.UmboxLogDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class UmboxLog {
+public class UmboxLog extends Model  {
     private int id;
     private String alerter_id;
     private String details;
     private Timestamp timestamp;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public UmboxLog() {}
 
@@ -67,15 +61,6 @@ public class UmboxLog {
 
         UmboxLog temp = UmboxLogDAO.findUmboxLog(this.id);
         this.timestamp = temp.getTimestamp();
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad Alert";
-        }
     }
 }
 

@@ -1,18 +1,11 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.daos.GroupDAO;
 import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class StateTransition {
+public class StateTransition extends Model  {
     private int id;
     private int startStateId;
     private int finishStateId;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public StateTransition() { }
 
@@ -58,13 +51,5 @@ public class StateTransition {
 
     public void update() {
         StateTransitionDAO.updateStateTransition(this);
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad policy";
-        }
     }
 }

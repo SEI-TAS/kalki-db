@@ -2,16 +2,10 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.DeviceCommandDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class DeviceCommand {
+public class DeviceCommand extends Model  {
     private int id;
     private String name;
     private Integer deviceTypeId;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommand() {
     }
@@ -59,13 +53,5 @@ public class DeviceCommand {
     public Integer insertOrUpdate() {
         this.id = DeviceCommandDAO.insertOrUpdateCommand(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad DeviceCommand";
-        }
     }
 }

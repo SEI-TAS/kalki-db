@@ -1,20 +1,15 @@
 package edu.cmu.sei.kalki.db.models;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.cmu.sei.kalki.db.daos.UmboxImageDAO;
 
-public class UmboxImage {
+public class UmboxImage extends Model  {
 
     private int id;
     private String name;
     private String fileName;
     private Integer dagOrder;
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public UmboxImage() {
-
     }
 
     public UmboxImage(String name, String fileName){
@@ -66,14 +61,6 @@ public class UmboxImage {
 
     public void setDagOrder(Integer dagOrder) {
         this.dagOrder = dagOrder;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad umbox image";
-        }
     }
 
     public Integer insert() {

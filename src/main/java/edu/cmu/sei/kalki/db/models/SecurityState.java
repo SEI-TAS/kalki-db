@@ -2,15 +2,9 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.SecurityStateDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class SecurityState {
+public class SecurityState extends Model  {
     private int id;
     private String name;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public SecurityState() {
     }
@@ -48,13 +42,5 @@ public class SecurityState {
     public Integer insertOrUpdate() {
         this.id = SecurityStateDAO.insertOrUpdateSecurityState(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad SecurityState";
-        }
     }
 }

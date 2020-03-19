@@ -1,20 +1,13 @@
 package edu.cmu.sei.kalki.db.models;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import edu.cmu.sei.kalki.db.daos.PolicyRuleDAO;
 
-public class PolicyRule
-{
+public class PolicyRule extends Model {
     private int id;
     private int stateTransId;
     private int policyCondId;
     private int devTypeId;
     private int samplingRate;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public PolicyRule() {}
 
@@ -74,13 +67,5 @@ public class PolicyRule
         int id = PolicyRuleDAO.insertPolicyRule(this);
         if(id > 0)
             this.id = id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad policy";
-        }
     }
 }

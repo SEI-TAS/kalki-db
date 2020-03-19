@@ -3,11 +3,8 @@ package edu.cmu.sei.kalki.db.models;
 import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class Alert {
+public class Alert extends Model {
 
     private int id;
     private String name;
@@ -17,8 +14,6 @@ public class Alert {
     private Integer deviceStatusId;
     private int alertTypeId;
     private String info;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public Alert(String name, String alerterId, int alertTypeId, String info){
         this.name = name;
@@ -129,14 +124,5 @@ public class Alert {
     public Integer insert() {
         this.id = AlertDAO.insertAlert(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad Alert";
-        }
     }
 }

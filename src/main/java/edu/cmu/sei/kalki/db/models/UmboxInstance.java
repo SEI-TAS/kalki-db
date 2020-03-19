@@ -4,11 +4,7 @@ import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class UmboxInstance {
+public class UmboxInstance extends Model  {
 
     private int id;
     private String alerterId;
@@ -16,10 +12,7 @@ public class UmboxInstance {
     private int deviceId;
     private Timestamp startedAt;
 
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-
     public UmboxInstance() {
-
     }
 
     public UmboxInstance(String alerterId, int umboxImageId, int deviceId){
@@ -84,14 +77,5 @@ public class UmboxInstance {
     public Integer insert() {
         this.id = UmboxInstanceDAO.insertUmboxInstance(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad UmboxInstance";
-        }
     }
 }

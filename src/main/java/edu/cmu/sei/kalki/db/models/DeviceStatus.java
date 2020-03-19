@@ -6,17 +6,12 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class DeviceStatus {
+public class DeviceStatus extends Model  {
 
     private int id;
     private Timestamp timestamp;
     private Map<String, String> attributes;
     private int deviceId;
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceStatus(int deviceId){
         this.attributes = new HashMap<String, String>();
@@ -74,14 +69,5 @@ public class DeviceStatus {
     public Integer insertOrUpdate(){
         this.id = DeviceStatusDAO.insertOrUpdateDeviceStatus(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad device";
-        }
     }
 }

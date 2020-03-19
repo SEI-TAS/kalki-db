@@ -2,21 +2,14 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.UmboxLookupDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class UmboxLookup {
+public class UmboxLookup extends Model  {
 
     private int id;
     private Integer policyRuleId;
     private Integer umboxImageId;
     private Integer dagOrder;
 
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-
     public UmboxLookup() {
-
     }
 
     public UmboxLookup(Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
@@ -60,14 +53,6 @@ public class UmboxLookup {
 
     public void setDagOrder(Integer dagOrder) {
         this.dagOrder = dagOrder;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad umbox lookup";
-        }
     }
 
     public Integer insert() {

@@ -2,16 +2,10 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class DeviceCommandLookup {
+public class DeviceCommandLookup extends Model  {
     private int id;
     private int commandId;
     private int policyRuleId;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceCommandLookup() {
     }
@@ -58,13 +52,5 @@ public class DeviceCommandLookup {
     public int insertOrUpdate() {
         this.id = DeviceCommandLookupDAO.insertOrUpdateCommandLookup(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad DeviceCommandLookup";
-        }
     }
 }
