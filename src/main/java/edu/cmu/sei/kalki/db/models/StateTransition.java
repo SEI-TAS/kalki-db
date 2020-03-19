@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 
 public class StateTransition extends Model  {
-    private int id;
     private int startStateId;
     private int finishStateId;
 
@@ -16,14 +15,6 @@ public class StateTransition extends Model  {
 
     public StateTransition(int id, int startStateId, int finishStateId) {
         this(startStateId, finishStateId);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 
@@ -43,10 +34,12 @@ public class StateTransition extends Model  {
         this.finishStateId = finishStateId;
     }
 
-    public void insert(){
+    public int insert(){
         int id = StateTransitionDAO.insertStateTransition(this);
         if(id>0)
             this.id = id;
+
+        return this.id;
     }
 
     public void update() {

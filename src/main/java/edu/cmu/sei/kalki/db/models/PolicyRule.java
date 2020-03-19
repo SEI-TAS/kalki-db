@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.PolicyRuleDAO;
 
 public class PolicyRule extends Model {
-    private int id;
     private int stateTransId;
     private int policyCondId;
     private int devTypeId;
@@ -20,14 +19,6 @@ public class PolicyRule extends Model {
 
     public PolicyRule(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate){
         this(stateTransId, policyCondId, devTypeId, samplingRate);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 
@@ -63,9 +54,10 @@ public class PolicyRule extends Model {
         this.samplingRate = samplingRate;
     }
 
-    public void insert() {
+    public int insert() {
         int id = PolicyRuleDAO.insertPolicyRule(this);
         if(id > 0)
             this.id = id;
+        return this.id;
     }
 }

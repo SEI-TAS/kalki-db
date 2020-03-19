@@ -3,8 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.UmboxImageDAO;
 
 public class UmboxImage extends Model  {
-
-    private int id;
     private String name;
     private String fileName;
     private Integer dagOrder;
@@ -31,14 +29,6 @@ public class UmboxImage extends Model  {
         this.dagOrder = dagOrder;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
@@ -63,12 +53,12 @@ public class UmboxImage extends Model  {
         this.dagOrder = dagOrder;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = UmboxImageDAO.insertUmboxImage(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = UmboxImageDAO.insertOrUpdateUmboxImage(this);
         return this.id;
     }

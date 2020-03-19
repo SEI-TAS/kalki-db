@@ -4,7 +4,6 @@ import edu.cmu.sei.kalki.db.daos.DataNodeDAO;
 
 public class DataNode extends Model
 {
-    private int id;
     private String name;
     private String ipAddress;
 
@@ -20,14 +19,6 @@ public class DataNode extends Model
     public DataNode(String name, String ipAddress) {
         this.name = name;
         this.ipAddress = ipAddress;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -46,12 +37,12 @@ public class DataNode extends Model
         this.ipAddress = ipAddress;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = DataNodeDAO.insertDataNode(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = DataNodeDAO.insertOrUpdateDataNode(this);
         return this.id;
     }

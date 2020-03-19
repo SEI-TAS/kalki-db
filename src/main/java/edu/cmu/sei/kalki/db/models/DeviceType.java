@@ -3,8 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 
 public class DeviceType extends Model  {
-
-    private int id;
     private String name;
 
     public DeviceType() {
@@ -20,14 +18,6 @@ public class DeviceType extends Model  {
         this.name = name;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
@@ -36,12 +26,16 @@ public class DeviceType extends Model  {
         this.name = name;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = DeviceTypeDAO.insertDeviceType(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public void update() {
+        DeviceTypeDAO.updateDeviceType(this);
+    }
+
+    public int insertOrUpdate() {
         this.id = DeviceTypeDAO.insertOrUpdateDeviceType(this);
         return this.id;
     }

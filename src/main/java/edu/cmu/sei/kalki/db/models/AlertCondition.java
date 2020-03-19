@@ -78,7 +78,7 @@ public class AlertCondition extends Model  {
         this.variables = variables;
     }
 
-    public Integer insertOrUpdate() {
+    public int insert() {
         setId(AlertConditionDAO.insertAlertCondition(this));
         return getId();
     }

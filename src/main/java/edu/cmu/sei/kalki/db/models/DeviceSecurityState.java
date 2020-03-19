@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 import edu.cmu.sei.kalki.db.daos.DeviceSecurityStateDAO;
 
 public class DeviceSecurityState extends Model  {
-    private int id;
     private int deviceId;
     private int stateId;
     private Timestamp timestamp;
@@ -45,12 +44,6 @@ public class DeviceSecurityState extends Model  {
         this.name = name;
     }
 
-    public int getId() { return  id; }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public int getDeviceId() {
         return deviceId;
     }
@@ -83,7 +76,7 @@ public class DeviceSecurityState extends Model  {
         this.name = name;
     }
 
-    public Integer insert(){
+    public int insert(){
         this.id = DeviceSecurityStateDAO.insertDeviceSecurityState(this);
         return this.id;
     }

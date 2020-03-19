@@ -5,8 +5,6 @@ import java.sql.Timestamp;
 import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
 
 public class UmboxInstance extends Model  {
-
-    private int id;
     private String alerterId;
     private int umboxImageId;
     private int deviceId;
@@ -38,14 +36,6 @@ public class UmboxInstance extends Model  {
         this.startedAt = startedAt;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getAlerterId() {
         return alerterId;
     }
@@ -74,7 +64,7 @@ public class UmboxInstance extends Model  {
         this.startedAt = startedAt;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = UmboxInstanceDAO.insertUmboxInstance(this);
         return this.id;
     }

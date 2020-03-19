@@ -5,7 +5,6 @@ import java.util.List;
 import edu.cmu.sei.kalki.db.daos.PolicyConditionDAO;
 
 public class PolicyCondition extends Model  {
-    private int id;
     private int threshold;
     private List<Integer> alertTypeIds;
 
@@ -18,14 +17,6 @@ public class PolicyCondition extends Model  {
 
     public PolicyCondition(int id, int threshold, List<Integer> alertTypeIds) {
         this(threshold, alertTypeIds);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 
@@ -45,9 +36,11 @@ public class PolicyCondition extends Model  {
         this.alertTypeIds = alertTypeIds;
     }
 
-    public void insert(){
+    public int insert(){
         int id = PolicyConditionDAO.insertPolicyCondition(this);
         if(id > 0)
             this.id = id;
+
+        return this.id;
     }
 }

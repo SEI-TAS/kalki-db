@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 import edu.cmu.sei.kalki.db.daos.UmboxLogDAO;
 
 public class UmboxLog extends Model  {
-    private int id;
     private String alerter_id;
     private String details;
     private Timestamp timestamp;
@@ -22,14 +21,6 @@ public class UmboxLog extends Model  {
         this.alerter_id = alerter_id;
         this.details = details;
         this.timestamp = timestamp;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getAlerterId() {
@@ -56,11 +47,13 @@ public class UmboxLog extends Model  {
         this.timestamp = timestamp;
     }
 
-    public void insert() {
+    public int insert() {
         this.id = UmboxLogDAO.insertUmboxLog(this);
 
         UmboxLog temp = UmboxLogDAO.findUmboxLog(this.id);
         this.timestamp = temp.getTimestamp();
+
+        return this.id;
     }
 }
 

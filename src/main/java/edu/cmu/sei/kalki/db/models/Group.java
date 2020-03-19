@@ -3,8 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.GroupDAO;
 
 public class Group  extends Model {
-
-    private int id;
     private String name;
 
     public Group() {
@@ -20,14 +18,6 @@ public class Group  extends Model {
         this.name = name;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
@@ -36,12 +26,12 @@ public class Group  extends Model {
         this.name = name;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = GroupDAO.insertGroup(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = GroupDAO.insertOrUpdateGroup(this);
         return this.id;
     }

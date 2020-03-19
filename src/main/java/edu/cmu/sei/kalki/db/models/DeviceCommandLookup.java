@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
 
 public class DeviceCommandLookup extends Model  {
-    private int id;
     private int commandId;
     private int policyRuleId;
 
@@ -17,14 +16,6 @@ public class DeviceCommandLookup extends Model  {
 
     public DeviceCommandLookup(int id, int commandId, int policyRuleId) {
         this(commandId, policyRuleId);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 

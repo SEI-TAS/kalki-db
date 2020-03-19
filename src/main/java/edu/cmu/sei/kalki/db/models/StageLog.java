@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 import edu.cmu.sei.kalki.db.daos.StageLogDAO;
 
 public class StageLog extends Model  {
-    private int id;
     private int deviceSecurityStateId;
     private Timestamp timestamp;
     private String action;
@@ -41,14 +40,6 @@ public class StageLog extends Model  {
         this.action = action;
         this.stage = stage;
         this.info = info;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public int getDeviceSecurityStateId() {
@@ -91,11 +82,13 @@ public class StageLog extends Model  {
         this.info = info;
     }
 
-    public void insert() {
+    public int insert() {
         this.id = StageLogDAO.insertStageLog(this);
 
         StageLog temp = StageLogDAO.findStageLog(id);
         setTimestamp(temp.getTimestamp());
+
+        return this.id;
     }
 
     public enum Action {

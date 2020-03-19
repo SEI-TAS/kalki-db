@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.AlertTypeDAO;
 
 public class AlertType extends Model  {
-    private int id;
     private String name;
     private String description;
     private String source;
@@ -22,14 +21,6 @@ public class AlertType extends Model  {
         this.name = name;
         this.description = description;
         this.source = source;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -56,12 +47,12 @@ public class AlertType extends Model  {
         this.source = source;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = AlertTypeDAO.insertAlertType(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = AlertTypeDAO.insertOrUpdateAlertType(this);
         return this.id;
     }

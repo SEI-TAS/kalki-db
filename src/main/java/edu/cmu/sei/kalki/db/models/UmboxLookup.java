@@ -3,8 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.UmboxLookupDAO;
 
 public class UmboxLookup extends Model  {
-
-    private int id;
     private Integer policyRuleId;
     private Integer umboxImageId;
     private Integer dagOrder;
@@ -20,14 +18,6 @@ public class UmboxLookup extends Model  {
 
     public UmboxLookup(int id, Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
         this(policyRuleId, umboxImageId, dagOrder);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 
@@ -55,12 +45,12 @@ public class UmboxLookup extends Model  {
         this.dagOrder = dagOrder;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = UmboxLookupDAO.insertUmboxLookup(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = UmboxLookupDAO.insertOrUpdateUmboxLookup(this);
         return this.id;
     }

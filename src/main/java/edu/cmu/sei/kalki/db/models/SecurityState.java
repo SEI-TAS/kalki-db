@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.SecurityStateDAO;
 
 public class SecurityState extends Model  {
-    private int id;
     private String name;
 
     public SecurityState() {
@@ -26,20 +25,12 @@ public class SecurityState extends Model  {
         return name;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public Integer insert() {
+    public int insert() {
         this.id = SecurityStateDAO.insertSecurityState(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = SecurityStateDAO.insertOrUpdateSecurityState(this);
         return this.id;
     }

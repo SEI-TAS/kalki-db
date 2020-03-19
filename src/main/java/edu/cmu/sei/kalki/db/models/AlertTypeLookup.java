@@ -5,7 +5,6 @@ import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 import java.util.Map;
 
 public class AlertTypeLookup extends Model  {
-    private int id;
     private int alertTypeId;
     private int deviceTypeId;
     private Map<String, String> variables;
@@ -20,14 +19,6 @@ public class AlertTypeLookup extends Model  {
 
     public AlertTypeLookup(int id, int alertTypeId, int deviceTypeId, Map<String, String> variables) {
         this(alertTypeId, deviceTypeId, variables);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 

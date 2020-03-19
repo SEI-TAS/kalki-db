@@ -12,7 +12,6 @@ import java.sql.Timestamp;
 
 public class Device extends Model {
 
-    private int id;
     private String name;
     private String description;
     private DeviceType type;
@@ -67,14 +66,6 @@ public class Device extends Model {
         this.samplingRate = samplingRate;
         this.defaultSamplingRate = defaultSamplingRate;
         this.dataNode = DataNodeDAO.findDataNode(dataNodeId);
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -173,14 +164,14 @@ public class Device extends Model {
         this.dataNode = dataNode;
     }
 
-    public Integer insert(){
+    public int insert(){
         Device data = DeviceDAO.insertDevice(this);
         setCurrentState(data.getCurrentState());
         setId(data.getId());
         return this.id;
     }
 
-    public Integer insertOrUpdate(){
+    public int insertOrUpdate(){
         Device data = DeviceDAO.insertOrUpdateDevice(this);
         setCurrentState(data.getCurrentState());
         setId(data.getId());

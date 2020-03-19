@@ -5,7 +5,6 @@ import edu.cmu.sei.kalki.db.daos.PolicyRuleLogDAO;
 import java.sql.Timestamp;
 
 public class PolicyRuleLog extends Model {
-    private int id;
     private int policyRuleId;
     private int deviceId;
     private Timestamp timestamp;
@@ -25,14 +24,6 @@ public class PolicyRuleLog extends Model {
         this.policyRuleId = policyRuleId;
         this.deviceId = deviceId;
         this.timestamp = timestamp;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getPolicyRuleId() {
@@ -55,9 +46,10 @@ public class PolicyRuleLog extends Model {
         this.timestamp = timestamp;
     }
 
-    public void insert() {
+    public int insert() {
         int id = PolicyRuleLogDAO.insertPolicyRuleLog(this);
         if(id>0)
             this.id = id;
+        return this.id;
     }
 }
