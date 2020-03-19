@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import edu.cmu.sei.kalki.db.daos.StageLogDAO;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
 import edu.cmu.sei.kalki.db.models.DeviceType;
@@ -56,11 +57,13 @@ public class StageLogTest extends AUsesDatabase {
         deviceType = new DeviceType(-1, "Test Device Type");
         deviceType.insert();
 
-
         securityState = new SecurityState(-1, "Normal");
         securityState.insert();
 
-        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1);
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1, dataNode);
         device.insert();
 
         deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());

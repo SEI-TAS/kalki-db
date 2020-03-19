@@ -11,7 +11,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -143,7 +142,7 @@ public class DeviceDAO extends DAO
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement
                 ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                        "status_history_size, sampling_rate, default_sampling_rate) values(?,?,?,?,?,?,?,?) RETURNING id")) {
+                        "status_history_size, sampling_rate, default_sampling_rate, data_node_id) values(?,?,?,?,?,?,?,?,?) RETURNING id")) {
             st.setString(1, device.getDescription());
             st.setString(2, device.getName());
             st.setInt(3, device.getType().getId());
@@ -157,6 +156,7 @@ public class DeviceDAO extends DAO
             st.setInt(6, device.getStatusHistorySize());
             st.setInt(7, device.getSamplingRate());
             st.setInt(8, device.getDefaultSamplingRate());
+            st.setInt(9, device.getDataNode().getId());
             st.execute();
             int serialNum = getLatestId(st);
             device.setId(serialNum);
@@ -220,7 +220,8 @@ public class DeviceDAO extends DAO
 
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE device " +
-                "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ? " +
+                "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?," +
+                    " data_node_id = ? " +
                 "WHERE id = ?")) {
             st.setString(1, device.getName());
             st.setString(2, device.getDescription());
@@ -232,8 +233,9 @@ public class DeviceDAO extends DAO
             st.setString(5, device.getIp());
             st.setInt(6, device.getStatusHistorySize());
             st.setInt(7, device.getSamplingRate());
+            st.setInt(8, device.getDataNode().getId());
 
-            st.setInt(8, device.getId());
+            st.setInt(9, device.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

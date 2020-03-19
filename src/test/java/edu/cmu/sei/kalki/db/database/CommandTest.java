@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import edu.cmu.sei.kalki.db.daos.DeviceCommandDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
 import edu.cmu.sei.kalki.db.daos.SecurityStateDAO;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceCommand;
 import edu.cmu.sei.kalki.db.models.DeviceCommandLookup;
@@ -115,11 +116,14 @@ public class CommandTest extends AUsesDatabase {
         deviceTypeTwo = new DeviceType(0, "DLink Camera");
         deviceTypeTwo.insert();
 
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
         device.insert();
 
-        deviceTwo = new Device("Device 2", "", deviceTypeTwo, "0.0.0.1", 1, 1);
+        deviceTwo = new Device("Device 2", "", deviceTypeTwo, "0.0.0.1", 1, 1, dataNode);
         deviceTwo.insert();
 
         deviceSecurityState = device.getCurrentState();

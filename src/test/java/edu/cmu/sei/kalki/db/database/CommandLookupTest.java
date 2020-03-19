@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.database;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import edu.cmu.sei.kalki.db.daos.DeviceCommandLookupDAO;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceCommand;
 import edu.cmu.sei.kalki.db.models.DeviceCommandLookup;
@@ -130,8 +131,11 @@ public class CommandLookupTest extends AUsesDatabase {
         deviceCommandLookupTwo = new DeviceCommandLookup(deviceCommandTwo.getId(), policyRuleOne.getId());
         deviceCommandLookupTwo.insert();
 
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
         device.insert();
     }
 }

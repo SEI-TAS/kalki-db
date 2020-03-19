@@ -35,8 +35,8 @@ public class Device extends Model {
     }
 
     public Device(String name, String description, DeviceType type, String ip,
-                  int statusHistorySize, int samplingRate) {
-        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null, null);
+                  int statusHistorySize, int samplingRate, DataNode dataNode) {
+        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null, dataNode);
     }
 
     public Device(String name, String description, DeviceType type, Group group, String ip,

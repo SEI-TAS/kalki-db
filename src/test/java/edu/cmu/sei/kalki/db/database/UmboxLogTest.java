@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import edu.cmu.sei.kalki.db.daos.UmboxLogDAO;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.UmboxImage;
@@ -56,7 +57,10 @@ public class UmboxLogTest extends AUsesDatabase {
         deviceType = new DeviceType(-1, "Test Device Type");
         deviceType.insert();
 
-        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1);
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1, dataNode);
         device.insert();
 
         umboxImage = new UmboxImage("Image Name", "Location");

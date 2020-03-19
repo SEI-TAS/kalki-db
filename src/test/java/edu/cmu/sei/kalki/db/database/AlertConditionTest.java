@@ -7,6 +7,7 @@ import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import org.junit.jupiter.api.Test;
@@ -98,8 +99,11 @@ public class AlertConditionTest extends AUsesDatabase {
         deviceType = new DeviceType(0, "test device type");
         deviceType.insert();
 
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
         device.insert();
 
         // insert alert_type unts-temperature

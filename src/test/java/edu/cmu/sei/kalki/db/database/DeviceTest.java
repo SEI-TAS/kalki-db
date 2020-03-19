@@ -33,13 +33,10 @@ public class DeviceTest extends AUsesDatabase {
     private static Group group;
     private static Device device;
     private static Device deviceTwo;
-    private static UmboxImage umboxImage;
-    private static UmboxInstance umboxInstance;
     private static AlertType alertType;
     private static AlertType alertTypeReset;
     private static DeviceStatus deviceStatus;
     private static Alert alertIoT;
-    private static Alert alertUmBox;
 
      /*
         Test Device Actions
@@ -47,7 +44,10 @@ public class DeviceTest extends AUsesDatabase {
 
     @Test
     public void testInsertDevice() {
-        Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000);
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000, dataNode);
         test.insert();
 
         assertNotNull(test.getCurrentState());
@@ -96,7 +96,10 @@ public class DeviceTest extends AUsesDatabase {
 
         assertEquals(2, DeviceDAO.findAllDevices().size());
 
-        Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2);
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2, dataNode);
         int newId = newDevice.insertOrUpdate();
 
         assertEquals(3, DeviceDAO.findAllDevices().size());
@@ -109,18 +112,17 @@ public class DeviceTest extends AUsesDatabase {
 
         DeviceDAO.deleteDevice(deviceTwo.getId());
 
-        Assertions.assertEquals(null, DeviceDAO.findDevice(deviceTwo.getId()));
+        Assertions.assertNull(DeviceDAO.findDevice(deviceTwo.getId()));
     }
 
     @Test
     public void testResetSecurityState() {
         List<Alert> foundAlerts = AlertDAO.findAlertsByDevice(deviceTwo.getId());
-        assertEquals(0, foundAlerts.size());
+        int initialAlertsSize = foundAlerts.size();
 
         deviceTwo.resetSecurityState();
         foundAlerts = AlertDAO.findAlertsByDevice(deviceTwo.getId());
-//        assertEquals(1, foundAlerts.size());
-//        assertEquals(deviceTwo.getCurrentState().toString(), newState.toString());
+        assertEquals(initialAlertsSize + 1, foundAlerts.size());
     }
 
     public void insertData() {
@@ -143,7 +145,7 @@ public class DeviceTest extends AUsesDatabase {
         group.insert();
 
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
         device.setTagIds(new ArrayList<Integer>());
         device.insert();
 

@@ -7,6 +7,7 @@ import edu.cmu.sei.kalki.db.daos.AlertTypeDAO;
 import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import org.junit.jupiter.api.Assertions;
@@ -107,7 +108,10 @@ public class AlertTypeLookupTest extends AUsesDatabase {
         alertType = new AlertType("Name", "Description", "Source");
         alertType.insert();
 
-        device = new Device("Name", "Description", deviceType, "1.1.1.1", 1, 1);
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        device = new Device("Name", "Description", deviceType, "1.1.1.1", 1, 1, dataNode);
         device.insert();
 
         hmap = new HashMap<String, String>();
