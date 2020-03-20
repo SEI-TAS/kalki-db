@@ -42,20 +42,3 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-today-kwh'), (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
                                                                                 '"today_kwh"=>"0.220"');
-
-----------------------------------------------
--- Policy condition for state-reset.
-----------------------------------------------
-INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(
-                                                                                                 (SELECT st.id FROM state_transition AS st WHERE st.start_sec_state_id = 3 AND st.finish_sec_state_id = 1),
-                                                                                                 1,
-                                                                                                 (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
-                                                                                                 10
-                                                                                             );
-
-INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(
-                                                                                                 (SELECT st.id FROM state_transition AS st WHERE st.start_sec_state_id = 2 AND st.finish_sec_state_id = 1),
-                                                                                                 1,
-                                                                                                 (SELECT id FROM device_type WHERE name = 'WeMo Insight'),
-                                                                                                 10
-                                                                                             );

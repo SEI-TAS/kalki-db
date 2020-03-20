@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS device_security_state(
 
 CREATE TABLE IF NOT EXISTS state_transition(
     id                  serial PRIMARY KEY,
-    start_sec_state_id  int NOT NULL REFERENCES security_state(id) ON DELETE CASCADE,
+    start_sec_state_id  int REFERENCES security_state(id) ON DELETE CASCADE,
     finish_sec_state_id int NOT NULL REFERENCES security_state(id) ON DELETE CASCADE
 );
 
@@ -74,8 +74,8 @@ CREATE TABLE IF NOT EXISTS policy_condition(
 CREATE TABLE IF NOT EXISTS policy_rule(
     id              serial PRIMARY KEY,
     state_trans_id  int NOT NULL REFERENCES state_transition(id) ON DELETE CASCADE,
-    policy_cond_id  int NOT NULL REFERENCES policy_condition(id) ON DELETE CASCADE,
-    device_type_id  int NOT NULL REFERENCES device_type(id)      ON DELETE CASCADE,
+    policy_cond_id  int REFERENCES policy_condition(id) ON DELETE CASCADE,
+    device_type_id  int REFERENCES device_type(id)      ON DELETE CASCADE,
     sampling_rate   int NOT NULL,
     UNIQUE(state_trans_id, policy_cond_id, device_type_id)
 );

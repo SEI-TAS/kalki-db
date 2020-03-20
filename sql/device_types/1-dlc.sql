@@ -23,20 +23,3 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'dlc-motion-sense'), (SELECT id FROM device_type WHERE name = 'DLink Camera'),
                                                                                 '"motion_detected"=>"true","isOn"=>"true"');
-
-----------------------------------------------
--- Policy condition for state-reset.
-----------------------------------------------
-INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(
-                                                                                              (SELECT st.id FROM state_transition AS st WHERE st.start_sec_state_id = 3 AND st.finish_sec_state_id = 1),
-                                                                                              1,
-                                                                                              (SELECT id FROM device_type WHERE name = 'DLink Camera'),
-                                                                                              10
-                                                                                             );
-
-INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(
-                                                                                                 (SELECT st.id FROM state_transition AS st WHERE st.start_sec_state_id = 2 AND st.finish_sec_state_id = 1),
-                                                                                                 1,
-                                                                                                 (SELECT id FROM device_type WHERE name = 'DLink Camera'),
-                                                                                                 10
-                                                                                             );
