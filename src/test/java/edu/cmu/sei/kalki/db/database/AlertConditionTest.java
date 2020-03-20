@@ -7,6 +7,7 @@ import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import org.junit.jupiter.api.Test;
@@ -27,14 +28,14 @@ public class AlertConditionTest extends AUsesDatabase {
     @Test
     public void testInsertAlertCondition() {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
-        alertCondition.insertOrUpdate();
+        alertCondition.insert();
         assertNotEquals(-1, alertCondition.getId());
     }
 
     @Test
     public void testFindAlertCondition() {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
-        alertCondition.insertOrUpdate();
+        alertCondition.insert();
 
         AlertCondition ac = AlertConditionDAO.findAlertCondition(alertCondition.getId());
         assertEquals(alertCondition.getAlertTypeLookupId(), ac.getAlertTypeLookupId());
@@ -45,8 +46,8 @@ public class AlertConditionTest extends AUsesDatabase {
     @Test
     public void testFindAllAlertConditions() {
         AlertCondition alertCondition = new AlertCondition(device.getId(), alertTypeLookup.getId(), alertTypeLookup.getVariables());
-        alertCondition.insertOrUpdate();
-        alertCondition.insertOrUpdate();
+        alertCondition.insert();
+        alertCondition.insert();
 
         ArrayList<AlertCondition> acList = new ArrayList<AlertCondition>(AlertConditionDAO.findAllAlertConditions());
         assertEquals(2, acList.size());
@@ -98,8 +99,11 @@ public class AlertConditionTest extends AUsesDatabase {
         deviceType = new DeviceType(0, "test device type");
         deviceType.insert();
 
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
         device.insert();
 
         // insert alert_type unts-temperature

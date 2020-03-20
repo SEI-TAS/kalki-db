@@ -3,17 +3,11 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 
 import java.util.Map;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class AlertTypeLookup {
-    private int id;
+public class AlertTypeLookup extends Model  {
     private int alertTypeId;
     private int deviceTypeId;
     private Map<String, String> variables;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public AlertTypeLookup() { }
 
@@ -25,14 +19,6 @@ public class AlertTypeLookup {
 
     public AlertTypeLookup(int id, int alertTypeId, int deviceTypeId, Map<String, String> variables) {
         this(alertTypeId, deviceTypeId, variables);
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
         this.id = id;
     }
 
@@ -68,13 +54,5 @@ public class AlertTypeLookup {
     public int insertOrUpdate() {
         setId(AlertTypeLookupDAO.insertOrUpdateAlertTypeLookup(this));
         return getId();
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad AlertTypeLookup";
-        }
     }
 }

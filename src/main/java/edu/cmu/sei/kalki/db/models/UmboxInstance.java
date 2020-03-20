@@ -4,22 +4,13 @@ import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class UmboxInstance {
-
-    private int id;
+public class UmboxInstance extends Model  {
     private String alerterId;
     private int umboxImageId;
     private int deviceId;
     private Timestamp startedAt;
 
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-
     public UmboxInstance() {
-
     }
 
     public UmboxInstance(String alerterId, int umboxImageId, int deviceId){
@@ -43,14 +34,6 @@ public class UmboxInstance {
         this.umboxImageId = umboxImageId;
         this.deviceId = deviceId;
         this.startedAt = startedAt;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getAlerterId() {
@@ -81,17 +64,8 @@ public class UmboxInstance {
         this.startedAt = startedAt;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = UmboxInstanceDAO.insertUmboxInstance(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad UmboxInstance";
-        }
     }
 }

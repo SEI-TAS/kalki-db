@@ -4,19 +4,13 @@ import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class AlertCondition {
+public class AlertCondition extends Model  {
     private int id;
     private Integer deviceId;
     private String deviceName;
     private Integer alertTypeLookupId;
     private String alertTypeName;
     private Map<String, String> variables;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public AlertCondition() {
     }
@@ -84,16 +78,8 @@ public class AlertCondition {
         this.variables = variables;
     }
 
-    public Integer insertOrUpdate() {
+    public int insert() {
         setId(AlertConditionDAO.insertAlertCondition(this));
         return getId();
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad AlertCondition";
-        }
     }
 }

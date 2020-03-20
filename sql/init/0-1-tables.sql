@@ -2,9 +2,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 
 CREATE TABLE IF NOT EXISTS device_type(
     id    serial PRIMARY KEY,
-    name  varchar(255) NOT NULL,
-    policy_file    bytea,
-    policy_file_name    varchar(255)
+    name  varchar(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS device_group(
@@ -17,6 +15,12 @@ CREATE TABLE IF NOT EXISTS tag(
     name         varchar(255) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS data_node(
+    id           serial PRIMARY KEY,
+    name         varchar(255) NOT NULL,
+    ip_address   varchar(255) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS device(
     id                     serial PRIMARY KEY,
     name                   varchar(255) NOT NULL,
@@ -27,7 +31,8 @@ CREATE TABLE IF NOT EXISTS device(
     status_history_size    int NOT NULL,
     sampling_rate          int NOT NULL,
     default_sampling_rate  int NOT NULL,
-    last_alert_id          int
+    last_alert_id          int,
+    data_node_id           int REFERENCES data_node(id)
 );
 
 CREATE TABLE IF NOT EXISTS device_tag(

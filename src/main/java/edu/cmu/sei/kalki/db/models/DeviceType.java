@@ -2,18 +2,8 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class DeviceType {
-
-    private int id;
+public class DeviceType extends Model  {
     private String name;
-    private byte[] policyFile;
-    private String policyFileName;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceType() {
 
@@ -24,25 +14,8 @@ public class DeviceType {
         this.name = name;
     }
 
-    public DeviceType(String name, byte[] policyFile, String policyFileName) {
+    public DeviceType(String name) {
         this.name = name;
-        this.policyFile = policyFile;
-        this.policyFileName = policyFileName;
-    }
-
-    public DeviceType(int id, String name, byte[] policyFile, String policyFileName) {
-        this.id = id;
-        this.name = name;
-        this.policyFile = policyFile;
-        this.policyFileName = policyFileName;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -53,37 +26,17 @@ public class DeviceType {
         this.name = name;
     }
 
-    public byte[] getPolicyFile() {
-        return policyFile;
-    }
-
-    public void setPolicyFile(byte[] policyFile) {
-        this.policyFile = policyFile;
-    }
-
-    public String getPolicyFileName() {
-        return policyFileName;
-    }
-
-    public void setPolicyFileName(String policyFileName) {
-        this.policyFileName = policyFileName;
-    }
-
-    public Integer insert() {
+    public int insert() {
         this.id = DeviceTypeDAO.insertDeviceType(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
-        this.id = DeviceTypeDAO.insertOrUpdateDeviceType(this);
-        return this.id;
+    public void update() {
+        DeviceTypeDAO.updateDeviceType(this);
     }
 
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad DeviceType";
-        }
+    public int insertOrUpdate() {
+        this.id = DeviceTypeDAO.insertOrUpdateDeviceType(this);
+        return this.id;
     }
 }

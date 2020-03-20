@@ -106,7 +106,7 @@ public class AlertConditionDAO extends DAO
         List<AlertTypeLookup> atlList = AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(d.getType().getId());
         for(AlertTypeLookup atl: atlList){
             AlertCondition ac = new AlertCondition(id, atl.getId(), atl.getVariables());
-            ac.insertOrUpdate();
+            ac.insert();
             if(ac.getId()<0) //insert failed
                 return -1;
         }

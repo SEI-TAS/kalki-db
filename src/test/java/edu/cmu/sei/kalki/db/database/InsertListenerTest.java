@@ -18,7 +18,11 @@ public class InsertListenerTest extends AUsesDatabase {
     @Test
     public void testDeviceInsert() {
         insertListener.addHandler("deviceinsert", testHandler);
-        Device d  = new Device("Test device", "test", type, "ip", 1,1);
+
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device d  = new Device("Test device", "test", type, "ip", 1,1, dataNode);
         d.insert();
 
         sleep();
@@ -29,7 +33,10 @@ public class InsertListenerTest extends AUsesDatabase {
     @Test
     public void testDeviceUpdate() {
         insertListener.addHandler("deviceupdate", testHandler);
-        Device d  = new Device("Test device", "test", type, "ip", 1,1);
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device d  = new Device("Test device", "test", type, "ip", 1,1, dataNode);
         d.insert();
         d.setSamplingRate(2);
         d.insertOrUpdate();
@@ -42,7 +49,11 @@ public class InsertListenerTest extends AUsesDatabase {
     @Test
     public void testDeviceStatusInsert() {
         insertListener.addHandler("devicestatusinsert", testHandler);
-        Device d  = new Device("Test device", "test", type, "ip", 1,1);
+
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device d  = new Device("Test device", "test", type, "ip", 1,1, dataNode);
         d.insert();
 
         DeviceStatus deviceStatus = new DeviceStatus(d.getId(), new HashMap<>());
@@ -56,7 +67,11 @@ public class InsertListenerTest extends AUsesDatabase {
     @Test
     public void testAlertHistoryInsert() {
         insertListener.addHandler("alerthistoryinsert", testHandler);
-        Device d  = new Device("Test device", "test", type, "ip", 1,1);
+
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device d  = new Device("Test device", "test", type, "ip", 1,1, dataNode);
         d.insert();
 
         DeviceStatus deviceStatus = new DeviceStatus(d.getId(), new HashMap<>());
@@ -76,7 +91,11 @@ public class InsertListenerTest extends AUsesDatabase {
     @Test
     public void testDeviceSecurityStateInsert() {
         insertListener.addHandler("devicesecuritystateinsert", testHandler);
-        Device d  = new Device("Test device", "test", type, "ip", 1,1);
+
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device d  = new Device("Test device", "test", type, "ip", 1,1, dataNode);
         d.insert(); //DSS is inserted when a new device is inserted
 
         sleep();
@@ -87,7 +106,11 @@ public class InsertListenerTest extends AUsesDatabase {
     @Test
     public void testPolicyRuleLogInsert() {
         insertListener.addHandler("policyruleloginsert", testHandler);
-        Device d  = new Device("Test device", "test", type, "ip", 1,1);
+
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
+        Device d  = new Device("Test device", "test", type, "ip", 1,1, dataNode);
         d.insert();
 
         StateTransition stateTransition = new StateTransition(1,2);

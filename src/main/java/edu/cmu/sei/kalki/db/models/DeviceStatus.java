@@ -6,17 +6,10 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class DeviceStatus {
-
-    private int id;
+public class DeviceStatus extends Model  {
     private Timestamp timestamp;
     private Map<String, String> attributes;
     private int deviceId;
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public DeviceStatus(int deviceId){
         this.attributes = new HashMap<String, String>();
@@ -41,11 +34,6 @@ public class DeviceStatus {
         this(deviceId, attributes, timestamp);
         this.id = id;
     }
-
-    public int getId() {
-        return id;
-    }
-
     public Timestamp getTimestamp() { return this.timestamp; }
 
     public void setTimestamp(Timestamp timestamp) { this.timestamp = timestamp; }
@@ -62,26 +50,17 @@ public class DeviceStatus {
 
     public void setDeviceId(int id) { this.deviceId = id; }
 
-    public Integer insert(){
+    public int insert(){
         this.id = DeviceStatusDAO.insertDeviceStatus(this);
         return this.id;
     }
 
-    public Integer update(){
+    public int update(){
         return DeviceStatusDAO.updateDeviceStatus(this);
     }
 
-    public Integer insertOrUpdate(){
+    public int insertOrUpdate(){
         this.id = DeviceStatusDAO.insertOrUpdateDeviceStatus(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        }
-        catch (JsonProcessingException e) {
-            return "Bad device";
-        }
     }
 }

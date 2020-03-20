@@ -2,16 +2,8 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.TagDAO;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-public class Tag {
-
-    private int id;
+public class Tag extends Model  {
     private String name;
-
-    private final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     public Tag() {
 
@@ -26,14 +18,6 @@ public class Tag {
         this.name = name;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
@@ -42,21 +26,13 @@ public class Tag {
         this.name = name;
     }
 
-    public Integer insert() {
+    public int insert() {
         this.id = TagDAO.insertTag(this);
         return this.id;
     }
 
-    public Integer insertOrUpdate() {
+    public int insertOrUpdate() {
         this.id = TagDAO.insertOrUpdateTag(this);
         return this.id;
-    }
-
-    public String toString() {
-        try {
-            return ow.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            return "Bad Tag";
-        }
     }
 }

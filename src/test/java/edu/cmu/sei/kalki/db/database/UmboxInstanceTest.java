@@ -3,6 +3,7 @@ package edu.cmu.sei.kalki.db.database;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import edu.cmu.sei.kalki.db.daos.UmboxInstanceDAO;
+import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
@@ -73,6 +74,9 @@ public class UmboxInstanceTest extends AUsesDatabase {
     }
 
     public void insertData() {
+        DataNode dataNode = new DataNode("Test Node", "localhost");
+        dataNode.insert();
+
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
@@ -85,10 +89,10 @@ public class UmboxInstanceTest extends AUsesDatabase {
         group.insert();
 
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
         device.insert();
 
-        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1, 1);
+        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1, 1, dataNode.getId());
         deviceTwo.insert();
 
         // insert umbox_image

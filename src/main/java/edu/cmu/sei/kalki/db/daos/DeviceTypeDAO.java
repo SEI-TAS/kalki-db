@@ -18,9 +18,7 @@ public class DeviceTypeDAO extends DAO
         if(rs == null) return null;
         int id = rs.getInt("id");
         String name = rs.getString("name");
-        byte[] policyFile = rs.getBytes("policy_file");
-        String policyFileName = rs.getString("policy_file_name");
-        return new DeviceType(id, name, policyFile, policyFileName);
+        return new DeviceType(id, name);
     }
 
     /**
@@ -52,11 +50,9 @@ public class DeviceTypeDAO extends DAO
         logger.info("Inserting DeviceType: " + type.getName());
         try(Connection con = Postgres.getConnection();
         PreparedStatement st = con.prepareStatement
-                ("INSERT INTO device_type(name, policy_file, policy_file_name)" +
-                        "values(?,?,?) RETURNING id")) {
+                ("INSERT INTO device_type(name)" +
+                        "values(?) RETURNING id")) {
             st.setString(1, type.getName());
-            st.setBytes(2, type.getPolicyFile());
-            st.setString(3, type.getPolicyFileName());
             st.execute();
             return getLatestId(st);
         } catch (SQLException e) {
@@ -75,12 +71,10 @@ public class DeviceTypeDAO extends DAO
         logger.info("Updating DeviceType with id=" + type.getId());
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement
-                ("UPDATE device_type SET name = ?, policy_file = ?, policy_file_name = ?" +
+                ("UPDATE device_type SET name = ? " +
                         "WHERE id=?")) {
             st.setString(1, type.getName());
-            st.setBytes(2, type.getPolicyFile());
-            st.setString(3, type.getPolicyFileName());
-            st.setInt(4, type.getId());
+            st.setInt(2, type.getId());
             st.executeUpdate();
             return type.getId();
         } catch (SQLException e) {

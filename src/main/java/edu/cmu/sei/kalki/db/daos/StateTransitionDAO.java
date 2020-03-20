@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class StateTransitionDAO extends DAO
 {
@@ -21,9 +22,22 @@ public class StateTransitionDAO extends DAO
         int finishSecStateId = rs.getInt("finish_sec_state_id");
         return new StateTransition(id, startSecStateId, finishSecStateId);
     }
-    
+
+    /**
+     * Finds a specific state transition.
+     * @param id
+     * @return
+     */
     public static StateTransition findStateTransition(int id) {
         return (StateTransition) findObjectByIdAndTable(id, "state_transition", StateTransitionDAO.class);
+    }
+
+    /**
+     * Find all state transitions.
+     * @return
+     */
+    public static List<StateTransition> findAll() {
+        return (List<StateTransition>) findObjectsByTable("state_transition", StateTransitionDAO.class);
     }
 
     /**
