@@ -46,7 +46,7 @@ public class PolicyRuleDAO extends DAO
             PreparedStatement st = con.prepareStatement("SELECT * FROM policy_rule WHERE " +
                 "state_trans_id = ? AND " +
                 "policy_cond_id = ? AND " +
-                "device_type_id = ?")) {
+                "(device_type_id = ? OR device_type_id IS NULL)")) {
             st.setInt(1, stateTransId);
             st.setInt(2, policyCondId);
             st.setInt(3, devTypeId);
@@ -69,7 +69,7 @@ public class PolicyRuleDAO extends DAO
      * @return
      */
     public static List<PolicyRule> findPolicyRules(int devTypeId) {
-        String query = "SELECT * FROM policy_rule WHERE device_type_id = ?";
+        String query = "SELECT * FROM policy_rule WHERE device_type_id = ? OR device_type_id IS NULL";
         return (List<PolicyRule>) findObjectsByIdAndQuery(devTypeId, query, PolicyRuleDAO.class);
     }
 
