@@ -7,10 +7,7 @@ import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
-import edu.cmu.sei.kalki.db.models.PolicyCondition;
-import edu.cmu.sei.kalki.db.models.PolicyRule;
 import edu.cmu.sei.kalki.db.models.SecurityState;
-import edu.cmu.sei.kalki.db.models.StateTransition;
 import edu.cmu.sei.kalki.db.models.UmboxImage;
 import edu.cmu.sei.kalki.db.models.UmboxLookup;
 import org.junit.jupiter.api.Assertions;
@@ -20,15 +17,11 @@ import java.util.ArrayList;
 
 public class UmboxLookupTest extends AUsesDatabase {
     private static SecurityState securityState;
-    private static SecurityState securityStateTwo;
     private static DeviceType deviceType;
     private static DeviceType deviceTypeTwo;
     private static Group group;
     private static Device device;
     private static Device deviceTwo;
-    private static PolicyCondition policyCondition;
-    private static PolicyRule policyRule;
-    private static StateTransition stateTransition;
     private static UmboxImage umboxImage;
     private static UmboxLookup umboxLookup;
 
@@ -57,7 +50,7 @@ public class UmboxLookupTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateUmboxLookup() {
-        UmboxLookup newUmboxLookup = new UmboxLookup(policyRule.getId(), deviceType.getId(), umboxImage.getId(), 2);
+        UmboxLookup newUmboxLookup = new UmboxLookup(securityState.getId(), deviceType.getId(), umboxImage.getId(), 2);
         newUmboxLookup.insertOrUpdate();
 
         Assertions.assertEquals(newUmboxLookup.toString(), UmboxLookupDAO.findUmboxLookup(newUmboxLookup.getId()).toString());
@@ -83,14 +76,6 @@ public class UmboxLookupTest extends AUsesDatabase {
         securityState = new SecurityState("Normal");
         securityState.insert();
 
-        // insert security state(s)
-        securityStateTwo = new SecurityState("Suspicious");
-        securityStateTwo.insert();
-
-        // insert state transition
-        stateTransition = new StateTransition(securityState.getId(), securityStateTwo.getId());
-        stateTransition.insert();
-
         // insert device_type
         deviceType = new DeviceType(0, "Udoo Neo");
         deviceType.insert();
@@ -113,16 +98,8 @@ public class UmboxLookupTest extends AUsesDatabase {
         umboxImage = new UmboxImage("UmboxImage", "path/to/image");
         umboxImage.insert();
 
-        // insert policy condition
-        policyCondition = new PolicyCondition(1, null);
-        policyCondition.insert();
-
-        // insert policy
-        policyRule = new PolicyRule(stateTransition.getId(), policyCondition.getId(), deviceType.getId(), 1);
-        policyRule.insert();
-
         // insert umbox_lookup (should be handle by umbox_image)
-        umboxLookup = new UmboxLookup(policyRule.getId(), umboxImage.getId(), 1);
+        umboxLookup = new UmboxLookup(securityState.getId(), deviceType.getId(), umboxImage.getId(), 1);
         umboxLookup.insertOrUpdate();
 
     }

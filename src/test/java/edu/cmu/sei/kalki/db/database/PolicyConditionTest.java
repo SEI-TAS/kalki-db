@@ -13,6 +13,8 @@ import java.util.ArrayList;
 public class PolicyConditionTest extends AUsesDatabase {
     private AlertType alertType;
 
+    private final static int BASE_POLICY_CONDITIONS = 1;
+
     @Test
     public void findPolicyCondition() {
         PolicyCondition policyCondition = new PolicyCondition(1, new ArrayList<Integer>());
@@ -27,7 +29,7 @@ public class PolicyConditionTest extends AUsesDatabase {
         PolicyCondition policyCondition = new PolicyCondition(1, new ArrayList<Integer>());
         policyCondition.insert();
 
-        assertEquals(1, policyCondition.getId());
+        assertEquals(BASE_POLICY_CONDITIONS + 1, policyCondition.getId());
     }
 
     @Test

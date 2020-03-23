@@ -17,10 +17,11 @@ public class UmboxLookupDAO extends DAO
     public static UmboxLookup createFromRs(ResultSet rs) throws SQLException {
         if(rs == null) return null;
         int id = rs.getInt("id");
-        int policyRuleId = rs.getInt("policy_rule_id");
+        int securityStateId = rs.getInt("security_state_id");
+        int devcieTypeId = rs.getInt("device_type_id");
         int umboxImageId = rs.getInt("umbox_image_id");
         int dagOrder = rs.getInt("dag_order");
-        return new UmboxLookup(id, policyRuleId, umboxImageId, dagOrder);
+        return new UmboxLookup(id, securityStateId, devcieTypeId, umboxImageId, dagOrder);
     }
 
     /**
@@ -37,8 +38,8 @@ public class UmboxLookupDAO extends DAO
      * Finds all umbox lookups based on the given device id
      */
     public static List<UmboxLookup> findUmboxLookupsByDevice(int deviceId) {
-        String query = "SELECT ul.* FROM umbox_lookup ul, device d, policy_rule p " +
-                "WHERE ul.policy_rule_id = p.id AND p.device_type_id = d.type_id AND d.id = ?";
+        String query = "SELECT ul.* FROM umbox_lookup ul, device d, device_type dt " +
+                "WHERE ul.device_type_id = dt.id AND dt.id = d.type_id AND d.id = ?";
         return (List<UmboxLookup>) findObjectsByIdAndQuery(deviceId, query, UmboxLookupDAO.class);
     }
 
@@ -55,10 +56,11 @@ public class UmboxLookupDAO extends DAO
     public static Integer insertUmboxLookup(UmboxLookup ul) {
         logger.info("Adding umbox lookup: ");
         try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("INSERT INTO umbox_lookup (policy_rule_id, umbox_image_id, dag_order) VALUES (?,?,?) RETURNING id")) {
-            st.setInt(1, ul.getPolicyRuleId());
-            st.setInt(2, ul.getUmboxImageId());
-            st.setInt(3, ul.getDagOrder());
+            PreparedStatement st = con.prepareStatement("INSERT INTO umbox_lookup (security_state_id, device_type_id, umbox_image_id, dag_order) VALUES (?,?,?,?) RETURNING id")) {
+            st.setInt(1, ul.getSecurityStateId());
+            st.setInt(2, ul.getDeviceTypeId());
+            st.setInt(3, ul.getUmboxImageId());
+            st.setInt(4, ul.getDagOrder());
             st.execute();
             return getLatestId(st);
         }
@@ -76,13 +78,13 @@ public class UmboxLookupDAO extends DAO
         logger.info(String.format("Updating UmboxLookup with id = %d with values: %s", ul.getId(), ul));
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE umbox_lookup " +
-                "SET policy_" +
-                "rule_id = ?, umbox_image_id = ?, dag_order = ?" +
+                "SET security_state_id = ?, device_type_id = ?, umbox_image_id = ?, dag_order = ?" +
                 "WHERE id = ?")) {
-            st.setInt(1, ul.getPolicyRuleId());
-            st.setInt(2, ul.getUmboxImageId());
-            st.setInt(3, ul.getDagOrder());
-            st.setInt(4, ul.getId());
+            st.setInt(1, ul.getSecurityStateId());
+            st.setInt(2, ul.getDeviceTypeId());
+            st.setInt(3, ul.getUmboxImageId());
+            st.setInt(4, ul.getDagOrder());
+            st.setInt(5, ul.getId());
             st.executeUpdate();
 
             return ul.getId();

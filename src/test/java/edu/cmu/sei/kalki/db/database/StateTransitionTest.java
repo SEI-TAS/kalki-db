@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StateTransitionTest extends AUsesDatabase
 {
+    private static final int BASE_STATE_TRANSITIONS = 12;
     private static StateTransition stateTransition;
 
     @Test
@@ -17,23 +18,23 @@ public class StateTransitionTest extends AUsesDatabase
 
     @Test
     public void testFindAll() {
-        assertEquals(1, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
     }
 
     @Test
     public void testInsert() {
-        assertEquals(1, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
 
         stateTransition.setStartStateId(2);
         stateTransition.setFinishStateId(3);
         stateTransition.update();
 
-        assertEquals(1, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
         assertEquals(stateTransition.toString(), StateTransitionDAO.findStateTransition(stateTransition.getId()).toString());
 
         StateTransition newStateTransition = new StateTransition(3,1);
         newStateTransition.insert();
-        assertEquals(2, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS + 2, StateTransitionDAO.findAll().size());
         assertEquals(newStateTransition.toString(), StateTransitionDAO.findStateTransition(newStateTransition.getId()).toString());
     }
 

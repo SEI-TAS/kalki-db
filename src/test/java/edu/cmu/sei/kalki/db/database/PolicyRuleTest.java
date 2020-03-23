@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 public class PolicyRuleTest extends AUsesDatabase {
     private static PolicyRule policyRule;
 
+    private static int BASE_POLICIE_RULES = 2;
+
     @Test
     public void testFindPolicyById(){
         policyRule = new PolicyRule(1, 1, 1, 1);
@@ -37,7 +39,7 @@ public class PolicyRuleTest extends AUsesDatabase {
         policyRule = new PolicyRule(1, 1, 1, 1);
         policyRule.insert();
 
-        assertEquals(1, policyRule.getId());
+        assertEquals(BASE_POLICIE_RULES + 1, policyRule.getId());
     }
 
     @Test

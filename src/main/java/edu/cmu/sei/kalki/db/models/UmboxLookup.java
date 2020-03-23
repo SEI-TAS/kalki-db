@@ -3,30 +3,32 @@ package edu.cmu.sei.kalki.db.models;
 import edu.cmu.sei.kalki.db.daos.UmboxLookupDAO;
 
 public class UmboxLookup extends Model  {
-    private Integer policyRuleId;
-    private Integer umboxImageId;
-    private Integer dagOrder;
+    private int securityStateId;
+    private int deviceTypeId;
+    private int umboxImageId;
+    private int dagOrder;
 
     public UmboxLookup() {
     }
 
-    public UmboxLookup(Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
-        this.policyRuleId = policyRuleId;
+    public UmboxLookup(int securityStateId, int deviceTypeId, int umboxImageId, int dagOrder) {
+        this.securityStateId = securityStateId;
+        this.deviceTypeId = deviceTypeId;
         this.umboxImageId = umboxImageId;
         this.dagOrder = dagOrder;
     }
 
-    public UmboxLookup(int id, Integer policyRuleId, Integer umboxImageId, Integer dagOrder) {
-        this(policyRuleId, umboxImageId, dagOrder);
+    public UmboxLookup(int id, int securityStateId, int deviceTypeId, int umboxImageId, int dagOrder) {
+        this(securityStateId, deviceTypeId, umboxImageId, dagOrder);
         this.id = id;
     }
 
-    public Integer getPolicyRuleId() {
-        return policyRuleId;
+    public Integer getSecurityStateId() {
+        return securityStateId;
     }
 
-    public void setPolicyRuleId(Integer policyRuleId) {
-        this.policyRuleId = policyRuleId;
+    public void setSecurityStateId(Integer securityStateId) {
+        this.securityStateId = securityStateId;
     }
 
     public Integer getUmboxImageId() {
@@ -53,5 +55,13 @@ public class UmboxLookup extends Model  {
     public int insertOrUpdate() {
         this.id = UmboxLookupDAO.insertOrUpdateUmboxLookup(this);
         return this.id;
+    }
+
+    public int getDeviceTypeId() {
+        return deviceTypeId;
+    }
+
+    public void setDeviceTypeId(int deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
     }
 }

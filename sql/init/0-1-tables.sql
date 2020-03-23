@@ -107,7 +107,8 @@ CREATE TABLE IF NOT EXISTS umbox_image(
 
 CREATE TABLE IF NOT EXISTS umbox_lookup(
     id                 serial PRIMARY KEY,
-    policy_rule_id          int NOT NULL REFERENCES policy_rule(id),
+    security_state_id  int NOT NULL REFERENCES security_state(id),
+    device_type_id     int NOT NULL REFERENCES device_type(id),
     umbox_image_id     int NOT NULL REFERENCES umbox_image(id),
     dag_order          int NOT NULL
 );
