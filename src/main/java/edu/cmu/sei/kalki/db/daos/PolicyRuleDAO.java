@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class PolicyRuleDAO extends DAO
@@ -21,7 +20,7 @@ public class PolicyRuleDAO extends DAO
         int stateTransId = rs.getInt("state_trans_id");
         int policyCondId = rs.getInt("policy_cond_id");
         int devTypeId = rs.getInt("device_type_id");
-        int samplingRate = rs.getInt("sampling_rate");
+        int samplingRate = rs.getInt("sampling_rate_factor");
         return new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
     }
 
@@ -80,11 +79,11 @@ public class PolicyRuleDAO extends DAO
      */
     public static Integer insertPolicyRule(PolicyRule policyRule) {
         try(Connection con = Postgres.getConnection();
-        PreparedStatement st = con.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate) VALUES(?,?,?,?) RETURNING id")) {
+        PreparedStatement st = con.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate_factor) VALUES(?,?,?,?) RETURNING id")) {
             st.setInt(1, policyRule.getStateTransId());
             st.setInt(2, policyRule.getPolicyCondId());
             st.setInt(3, policyRule.getDevTypeId());
-            st.setInt(4, policyRule.getSamplingRate());
+            st.setInt(4, policyRule.getSamplingRateFactor());
             st.execute();
             return getLatestId(st);
         } catch (SQLException e) {
@@ -105,12 +104,12 @@ public class PolicyRuleDAO extends DAO
                 "state_trans_id = ? " +
                 ", policy_cond_id = ? " +
                 ", device_type_id = ? " +
-                ", sampling_rate = ? " +
+                ", sampling_rate_factor = ? " +
                 "WHERE id = ?")) {
             st.setInt(1, policyRule.getStateTransId());
             st.setInt(2, policyRule.getPolicyCondId());
             st.setInt(3, policyRule.getDevTypeId());
-            st.setInt(4, policyRule.getSamplingRate());
+            st.setInt(4, policyRule.getSamplingRateFactor());
             st.setInt(5, policyRule.getId());
             st.executeUpdate();
             return policyRule.getId();

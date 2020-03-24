@@ -55,12 +55,12 @@ public class PolicyRuleTest extends AUsesDatabase {
     public void testUpdatePolicy(){
         policyRule = new PolicyRule(1, 1, 1, 1);
         policyRule.insert();
-        assertEquals(1, policyRule.getSamplingRate());
+        assertEquals(1, policyRule.getSamplingRateFactor());
 
-        policyRule.setSamplingRate(2);
+        policyRule.setSamplingRateFactor(2);
         PolicyRuleDAO.updatePolicyRule(policyRule);
 
-        assertEquals(2, policyRule.getSamplingRate());
+        assertEquals(2, policyRule.getSamplingRateFactor());
     }
 
     public void insertData() {
