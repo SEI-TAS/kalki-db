@@ -179,7 +179,16 @@ public class Postgres {
      */
     public static void recreateDB(String databaseName, String templateName) throws SQLException {
         logger.info("Resetting database to given template.");
+        // make sure no new connections can be made
+        executeCommand("UPDATE pg_database SET datallowconn = 'false' WHERE datname = '"+databaseName+"'");
+
+        // force disconnection of all clients connected
+        executeCommand("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '"+databaseName+"'");
+
+        // drop the database
         executeCommand("DROP DATABASE IF EXISTS " + databaseName);
+
+        // create new db
         executeCommand("CREATE DATABASE " + databaseName + " TEMPLATE " + templateName);
     }
 
