@@ -4,6 +4,8 @@ import edu.cmu.sei.kalki.db.daos.StateTransitionDAO;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StateTransitionTest extends AUsesDatabase
@@ -17,24 +19,37 @@ public class StateTransitionTest extends AUsesDatabase
     }
 
     @Test
+    public void testFindGivenStateIds() {
+        StateTransition transition = StateTransitionDAO.findByStateIds(1, 2);
+        assertEquals(1, transition.getStartStateId());
+        assertEquals(2, transition.getFinishStateId());
+    }
+
+    @Test
+    public void testFindGivenStateNames() {
+        StateTransition transition = StateTransitionDAO.findByStateNames("Normal", "Suspicious");
+        assertEquals(1, transition.getStartStateId());
+        assertEquals(2, transition.getFinishStateId());
+    }
+    @Test
     public void testFindAll() {
-        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS, StateTransitionDAO.findAll().size());
     }
 
     @Test
     public void testInsert() {
-        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS, StateTransitionDAO.findAll().size());
 
         stateTransition.setStartStateId(2);
         stateTransition.setFinishStateId(3);
         stateTransition.update();
 
-        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS, StateTransitionDAO.findAll().size());
         assertEquals(stateTransition.toString(), StateTransitionDAO.findStateTransition(stateTransition.getId()).toString());
 
         StateTransition newStateTransition = new StateTransition(3,1);
         newStateTransition.insert();
-        assertEquals(BASE_STATE_TRANSITIONS + 2, StateTransitionDAO.findAll().size());
+        assertEquals(BASE_STATE_TRANSITIONS + 1, StateTransitionDAO.findAll().size());
         assertEquals(newStateTransition.toString(), StateTransitionDAO.findStateTransition(newStateTransition.getId()).toString());
     }
 
@@ -47,7 +62,7 @@ public class StateTransitionTest extends AUsesDatabase
 
     public void insertData() {
         // insert Group
-        stateTransition = new StateTransition(1, 2);
-        stateTransition.insert();
+        stateTransition = StateTransitionDAO.findByStateIds(1, 2);
+        //stateTransition.insert();
     }
 }

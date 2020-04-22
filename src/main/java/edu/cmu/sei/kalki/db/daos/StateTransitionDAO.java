@@ -1,6 +1,7 @@
 package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.models.SecurityState;
 import edu.cmu.sei.kalki.db.models.StateTransition;
 
 import javax.swing.plaf.nimbus.State;
@@ -8,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class StateTransitionDAO extends DAO
@@ -38,6 +40,37 @@ public class StateTransitionDAO extends DAO
      */
     public static List<StateTransition> findAll() {
         return (List<StateTransition>) findObjectsByTable("state_transition", StateTransitionDAO.class);
+    }
+
+    /**
+     * Find a state transitions between the two given states. Assumes there is only one, returning the first one
+     * in case it is somehow duplicated.
+     */
+    public static StateTransition findByStateNames(String initStateName, String endStateName) {
+        SecurityState initState = SecurityStateDAO.findByName(initStateName);
+        SecurityState endState = SecurityStateDAO.findByName(endStateName);
+        if(initState == null || endState == null) {
+            throw new RuntimeException("State name not found");
+        }
+        return findByStateIds(initState.getId(), endState.getId());
+    }
+
+    /**
+     * Find a state transitions between the two given states. Assumes there is only one, returning the first one
+     * in case it is somehow duplicated.
+     */
+    public static StateTransition findByStateIds(int initStateId, int endStateId) {
+        List<Integer> stateIds = new ArrayList<>();
+        stateIds.add(initStateId);
+        stateIds.add(endStateId);
+        String query = "SELECT * from state_transition WHERE start_sec_state_id = ? and finish_sec_state_id = ?";
+        List<StateTransition> transitions = (List<StateTransition>) findObjectsByIntListAndQuery(stateIds, query, StateTransitionDAO.class);
+        if(transitions.size() == 0) {
+            throw new RuntimeException("No state transition found for the given states.");
+        }
+
+        // We assume there is either only one transition, or we only consider the first one anyway.
+        return transitions.get(0);
     }
 
     /**
