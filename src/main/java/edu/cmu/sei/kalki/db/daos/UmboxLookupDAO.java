@@ -1,0 +1,123 @@
+package edu.cmu.sei.kalki.db.daos;
+
+import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.models.UmboxLookup;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
+public class UmboxLookupDAO extends DAO
+{
+    /**
+     * Extract a UmboxLookup from the result set of a database query.
+     */
+    public static UmboxLookup createFromRs(ResultSet rs) throws SQLException {
+        if(rs == null) return null;
+        int id = rs.getInt("id");
+        int securityStateId = rs.getInt("security_state_id");
+        int devcieTypeId = rs.getInt("device_type_id");
+        int umboxImageId = rs.getInt("umbox_image_id");
+        int dagOrder = rs.getInt("dag_order");
+        return new UmboxLookup(id, securityStateId, devcieTypeId, umboxImageId, dagOrder);
+    }
+
+    /**
+     * Finds a UmboxLookup from the database by its id.
+     *
+     * @param id id of the UmboxLookup to find.
+     * @return the UmboxLookup if it exists in the database, else null.
+     */
+    public static UmboxLookup findUmboxLookup(int id) {
+        return (UmboxLookup) findObjectByIdAndTable(id, "umbox_lookup", UmboxLookupDAO.class);
+    }
+
+    /**
+     * Finds all umbox lookups based on the given device id
+     */
+    public static List<UmboxLookup> findUmboxLookupsByDevice(int deviceId) {
+        String query = "SELECT ul.* FROM umbox_lookup ul, device d, device_type dt " +
+                "WHERE ul.device_type_id = dt.id AND dt.id = d.type_id AND d.id = ?";
+        return (List<UmboxLookup>) findObjectsByIdAndQuery(deviceId, query, UmboxLookupDAO.class);
+    }
+
+    /**
+     * Finds all umboxLookup entries
+     */
+    public static List<UmboxLookup> findAllUmboxLookups() {
+        return (List<UmboxLookup>) findObjectsByTable("umbox_lookup", UmboxLookupDAO.class);
+    }
+
+    /**
+     * Adds the desired UmboxLookup to the database
+     */
+    public static Integer insertUmboxLookup(UmboxLookup ul) {
+        logger.info("Adding umbox lookup: ");
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("INSERT INTO umbox_lookup (security_state_id, device_type_id, umbox_image_id, dag_order) VALUES (?,?,?,?) RETURNING id")) {
+            st.setInt(1, ul.getSecurityStateId());
+            st.setInt(2, ul.getDeviceTypeId());
+            st.setInt(3, ul.getUmboxImageId());
+            st.setInt(4, ul.getDagOrder());
+            st.execute();
+            return getLatestId(st);
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            logger.severe("SQL exception adding umbox lookup: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * Edit desired UmboxLookup
+     */
+    public static Integer updateUmboxLookup(UmboxLookup ul) {
+        logger.info(String.format("Updating UmboxLookup with id = %d with values: %s", ul.getId(), ul));
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement("UPDATE umbox_lookup " +
+                "SET security_state_id = ?, device_type_id = ?, umbox_image_id = ?, dag_order = ?" +
+                "WHERE id = ?")) {
+            st.setInt(1, ul.getSecurityStateId());
+            st.setInt(2, ul.getDeviceTypeId());
+            st.setInt(3, ul.getUmboxImageId());
+            st.setInt(4, ul.getDagOrder());
+            st.setInt(5, ul.getId());
+            st.executeUpdate();
+
+            return ul.getId();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error updating UmboxLookup: " + e.getClass().toString() + ": " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * First, attempts to find the UmboxLookup in the database.
+     * If successful, updates the existing UmboxLookup with the given parameters Otherwise,
+     * inserts the given UmboxLookup.
+     *
+     * @param ul UmboxLookup to be inserted or updated.
+     */
+    public static Integer insertOrUpdateUmboxLookup(UmboxLookup ul) {
+        UmboxLookup foundUl = findUmboxLookup(ul.getId());
+
+        if (foundUl == null) {
+            return insertUmboxLookup(ul);
+        } else {
+            return updateUmboxLookup(ul);
+        }
+    }
+
+    /**
+     * Deletes a UmboxLookup by its id.
+     */
+    public static Boolean deleteUmboxLookup(int id) {
+        return deleteById("umbox_lookup", id);
+    }
+
+    
+}

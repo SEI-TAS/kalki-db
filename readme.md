@@ -1,15 +1,42 @@
 # KalkiDB
+* [Prerequisites](#prerequisites)
+* [Running Unit Tests](#running-unit-tests)
 * [Usage](#usage)
-* [Code Integration](#code-integration)
+    * [Database Engine Startup](#database-engine-startup)
+    * [Publishing the Library](#publishing-the-library)
+    * [Code Integration](#code-integration)
+* [Exporting and Importing Data](#exporting-and-importing-data)
 * [Models & Actions](#models-&-actions)
     * [Postgres Tables](#postgres-tables)
     * [Java Objects](#java-objects)
     * [Insert Notifications](#insert-notifications)
 
-## Usage
-First, clone this repo.
+## Prerequisites   
+  - To compile this program, Java JDK 8 is required. This program uses Gradle as its build system, 
+ but since it uses an included Gradle wrapper, no external Gradle setup is required.
+  - To run the tests for this program, and to run the DB this library connects to, Docker needs to be set up
+  in the system.
 
-To publish to the local maven repository, use `$ ./gradlew publishToMavenLocal`.
+## Running Unit Tests
+Running the tests is not mandatory to publish and use the library. To run the tests:
+1. Start the test database container with `bash run_test_postgres_container`
+1. Run `./gradlew build`
+
+## Usage
+### Database Engine Startup
+Start the database by running `bash run_postgres_container.sh` from the project root.
+This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+
+If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments
+are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match
+the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc"
+device types, execute `$ bash run_postgres_container.sh wemo dlc`
+
+To stop the docker container execute `$ docker container stop kalki-postgres`  
+
+### Publishing the Library
+To publish to the local maven repository:
+1. Run `./gradlew publishToMavenLocal`
 
 In whatever project you want to include this library in, make sure that your dependencies include this project
 and that mavenLocal is under the repositories in your build.gradle file.
@@ -23,18 +50,28 @@ dependencies {
     compile group: 'edu.cmu.sei.ttg', name: 'kalki-db', version: '0.0.1-SNAPSHOT'
 }
 ```
+### Code Integration
 
-### Docker
-Pull the correct postgres base image from the docker repository `$ docker pull postgres:9.5.19`
+First, initialize the Postgres singleton using 
+```
+Postgres.initialize(String ip, String port, String dbName, String dbUser);
+```
+            
+Now, you can use the database and models. See [Java Objects](#java-objects).
 
-Set up a docker network by running `$ docker network create -d bridge kalki_nw`. This initializes a container network. *This only ever needs to be done once*.
+Examples:
+```
+DeviceStatus newLight = new DeviceStatus(deviceId);
+newLight.insertOrUpdate();
+            
+Device device = DeviceDAO.findDevice(deviceId);
+```
+   
 
-Start the database by running `$ ./run_postgres_container.sh` from the project root.
-This will create a docker container named `kalki-postgres` so the data persists when the database is terminated.
+## Exporting and Importing Data
+* NOTE: Container must be started in order to import/export.
 
-Stop the docker container via `$ docker kill kalki-postgres`  
-
-To export current database to a SQL file: 
+To export the current database to a SQL file: 
 ```
 $ pg_dump kalkidb -U kalkiuser -h localhost -p 5432 > [filename].sql
     kalkipass
@@ -44,30 +81,6 @@ To import a database from a SQL file:
 ```
 $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
     kalkipass
-```
-* Container must be started in order to import/export
-
-__NOTE:__ If your application is also running in docker you must include `--net=kalki_nw` in your `docker run` command   
-(ex: `$ docker run --net=kalki_nw --name=<container-name> <image>`)
-## Code Integration
-
-First, initialize Postgres using 
-```
-Postgres.initialize(String ip, String port, String dbName, String dbUser);
-```
-and, if necessary, setup the database, creating tables, triggers, and functions:
-```
-Postgres.setupDatabase();
-```
-            
-Now, you can use the database and models. See [Java Objects](#java-objects)
-
-Examples:
-```
-DeviceStatus newLight = new DeviceStatus(deviceId);
-light.insertOrUpdate();
-            
-Device device = Postgres.findDevice(deviceId);
 ```
              
 ## Models & Actions    
@@ -82,7 +95,8 @@ Device device = Postgres.findDevice(deviceId);
 |device_id       |int      |
 |alert_type_id   |int      |
 |alerter_id      |String   |
-|device_status_id|int      |  
+|device_status_id|int      |
+|info            |String   | 
 ###### Actions:  
 |Function Definition                             |Return Type|
 |:-----------------------------------------------|:--------|
@@ -162,7 +176,7 @@ Device device = Postgres.findDevice(deviceId);
 |:-------------------------------------|:--------|
 |`findCommand(int id)`           |`DeviceCommand`|
 |`findAllCommands()`|`List<DeviceCommand>`|
-|`findCommandsByDevice(Device device)` |`List<DeviceCommand>`|
+|`findCommandsByPolicyRuleLog(int policyRuleLogId)` |`List<DeviceCommand>`|
 |`insertCommand(DeviceCommand command)`|`Integer`|
 |`insertOrUpdateCommand(DeviceCommand command)`|`Integer`|
 |`updateCommand(DeviceCommand command)`|`Integer`|
@@ -173,9 +187,7 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type     |
 |---------------:|:--------|
 |id              |serial PRIMARY KEY|  
-|current_state_id        |int NOT NULL|
-|previous_state_id       |int NOT NULL|
-|device_type_id          |int NOT NULL|
+|policy_rule_id        |int NOT NULL|
 |command_id      |int NOT NULL|
 ###### Actions:  
 |Function Definition                   |Return Type|
@@ -273,6 +285,7 @@ Device device = Postgres.findDevice(deviceId);
 |`findAllDeviceTypes()`       |`List<DeviceType>`|
 |`insertDeviceType(DeviceType type)`|`Integer`   |
 |`updateDeviceType(DeviceType type)`|`Integer`   |
+|`insertOrUpdateDeviceType(DeviceType type)`|`Integer`   |
 |`deleteDeviceType(int id)`   |`Boolean`   |
 
 #### Group
@@ -290,6 +303,54 @@ Device device = Postgres.findDevice(deviceId);
 |`updateGroup(Group group)` |`Integer`    |
 |`deleteGroup(int id)`      |`Boolean`    |
 
+
+#### PolicyRule
+###### Schema:
+|Property     |Type     |
+|------------:|:--------|
+|id           |int      |  
+|state_trans_id|int NOT NULL |
+|policy_cond_id|int NOT NULL |
+|device_type_id|int NOT NULL |
+|sampling_rate |int NOT NULL |
+###### Actions:  
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findPolicyRule(int id)`        |`Policy`      |
+|`findPolicyRule(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
+|`insertPolicyRule(PolicyRule policyRule)` |`Integer`    |
+|`updatePolicyRule(PolicyRule policyRule)` |`Integer`    |
+|`deletePolicyRule(int policyRuleId) ` |`Boolean`    |
+
+#### PolicyCondition
+###### Schema:
+|Property     |Type     |
+|------------:|:--------|
+|id           |int      |  
+|threshold    |int NOT NULL |
+###### Actions:  
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findPolicyCondition(int id)`|`PolicyCondition`      |
+|`insertPolicyCondition(PolicyCondition policyCondition)`          |`Integer`|
+|`updatePolicyCondition(PolicyCondition policyCondition)` |`Integer`    |
+|`deletePolicyCondition(int id)` |`Boolean`    |
+|`deletePolicyConditionAlertRows(int policyConditionId)`      |`Boolean`    |
+
+#### PolicyRuleLog
+###### Schema:
+|Property     |Type     |
+|------------:|:--------|
+|id           |int      |  
+|policy_rule_id|int NOT NULL |
+|timestamp|int NOT NULL |
+###### Actions:  
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findPolicyRuleLog(int id) `        |`PolicyRuleLog`      |
+|`finsertPolicyRuleLog(PolicyRuleLog policyRuleLog)`          |`Integer`|
+|`deletePolicyRuleLog(int id)` |`Boolean`    |
+
 #### SecurityState
 ###### Schema:
 |Property  |Type     |
@@ -304,6 +365,20 @@ Device device = Postgres.findDevice(deviceId);
 |`insertSecurityState(SecurityState state)` |`Integer`            |
 |`updateSecurityState(SecurityState state)` |`Integer`            |
 |`deleteSecurityState(int id)`              |`Boolean`            |
+
+#### StateTransition
+###### Schema:
+|Property  |Type     |
+|---------:|:------|
+|id        |int |  
+|name      |String NOT NULL|
+###### Actions:
+|Function Definition | Return Type |  
+|:---|:---| 
+|`findStateTransition(int id) `                |`StateTransition`      |
+|`insertStateTransition(StateTransition trans)` |`Integer`            |
+|`updateStateTransition(StateTransition trans)` |`Integer`            |
+|`deleteStateTransition(int id)`              |`Boolean`            |
 
 #### StageLog
 ###### Schema:
@@ -395,10 +470,9 @@ Device device = Postgres.findDevice(deviceId);
 |Property        |Type      |
 |---------------:|:---------|
 |id              |serial PRIMARY KEY|  
-|state_id        |int NOT NULL|  
 |umbox_image_id  |int NOT NULL|
-|device_type_id  |int NOT NULL |
-|order           |int NOT NULL|
+|policy_rule_id       |int NOT NULL |
+|dag_order       |int NOT NULL|
 ###### Actions:
 |Function Definition | Return Type |  
 |:---|:---| 
@@ -583,16 +657,14 @@ This class supports:
 |Property  |Type      |
 |------------:|:---------|
 |id           |int       |  
-|currentStateId      |int   | 
-|previousStateId     |int |
 |commandId    |int   |
-
+|policyRuleId    |int   |
 ###### Constructors:
 |Definition |  
 |:---|
 |`DeviceCommandLookup()`|
-|`DeviceCommandLookup(int commandId, int currentStateId, int previousStateId)`|'
-|`DeviceCommandLookup(int id, int commandId, int currentStateId, int previousStateId)`|
+|`DeviceCommandLookup(int commandId, int policyRuleId)`|'
+|`DeviceCommandLookup(int id, int commandId, int policyRuleId)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -701,6 +773,75 @@ This class supports:
  - ex: setName("Name")
 - `insert()`
 - `insertOrUpdate()`
+- `toString()`
+
+#### Policy
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|stateTransId     |int    |
+|policyCondId     |int    |
+|devTypeId        |int    |
+|samplingRate     |int    |
+###### Constructors:
+|Definition |  
+|:---|
+|`Policy()`|
+|`Policy(int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+|`Policy(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `toString()`
+
+#### PolicyCondition
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|threshold |int    |
+|alertTypeIds |List<Integer>    |
+###### Constructors:
+|Definition |  
+|:---|
+|`PolicyCondition()`|
+|`PolicyCondition(int threshold, List<Integer> alertTypeIds)`|
+|`PolicyCondition(int id, int threshold, List<Integer> alertTypeIds)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
+- `toString()`
+
+#### PolicyRuleLog
+###### Schema:
+|Property  |Type      |
+|---------:|:---------|
+|id        |int       |
+|policyRuleId  |int    |
+|deviceId  |int    |
+|timestamp |Timestamp    |
+###### Constructors:
+|Definition |  
+|:---|
+|`PolicyRuleLog()`|
+|`PolicyRuleLog(int policyRuleId)`|
+|`PolicyRuleLog(int id, int policyRuleId, int deviceId, Timestamp timestamp)`|
+###### Methods:
+This class supports:
+- `get<field>()`
+ - ex: getName()
+- `set<field>(<field type> value)`
+ - ex: setName("Name")
+- `insert()`
 - `toString()`
 
 #### SecurityState
@@ -864,15 +1005,15 @@ This class supports:
 |Property        |Type      |
 |---------------:|:---------|
 |id              |String    |  
-|stateId         |Integer    |
-|deviceTypeId    |Integer    |
+|policyRuleId        |Integer    |
 |umboxImageId    |Integer     |
 |dagOrder        |Integer |
 ###### Constructors:
 |Function Definition |
 |:---|
 |`UmboxLookup()`  |
-|`UmboxLookup(int id, Integer stateId, Integer deviceTypeId, Integer umboxImageId, Integer dagOrder)`|
+|`UmboxLookup(Integer policyRuleId, Integer umboxImageId, Integer dagOrder)`|
+|`UmboxLookup(int id, Integer policyRuleId, Integer umboxImageId, Integer dagOrder)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
@@ -895,6 +1036,7 @@ These triggers generate notifications on the following conditions.
 |device_security_state |INSERT      |`devicesecuritystateinsert` |
 |device_status         |INSERT      |`devicestatusinsert`        |
 |device                |INSERT      |`deviceinsert`              |
+|policy_rule_log       |INSERT      |`policyruleloginsert`              |
 
 Without taking any additional steps, the notifications will be generated with nothing listening.
 You can start listening to these notifications which will add the necessary handlers to a notification 

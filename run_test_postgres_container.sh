@@ -8,8 +8,8 @@ rm -r ${TO_LOAD_FOLDER}
 mkdir ${TO_LOAD_FOLDER}
 if [ "$#" -lt 1 ]
 then
-  # If no argument given, copy all device types.
-  cp ${SCRIPT_FOLDER}/*.sql ${TO_LOAD_FOLDER}/
+  # If no argument given, copy NO device types.
+  echo "Not loading device types."
 else
   # Copies all device types passed as parameters to temp folder.
   for TYPE in "$@"
@@ -18,6 +18,6 @@ else
   done
 fi
 
-docker container stop kalki-postgres
-docker build -t kalki/kalki-postgres .
-docker run -p 5432:5432 --rm -d --name kalki-postgres kalki/kalki-postgres
+docker container stop kalki-postgres-test
+docker build -t kalki/kalki-postgres-test -f Dockerfile.test .
+docker run -p 5433:5432 --rm -d --name kalki-postgres-test kalki/kalki-postgres-test
