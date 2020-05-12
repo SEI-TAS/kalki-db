@@ -14,6 +14,7 @@
 ## Prerequisites   
   - To compile this program, Java JDK 8 is required. This program uses Gradle as its build system, 
  but since it uses an included Gradle wrapper, no external Gradle setup is required.
+     - Alternatively, if building a kalki-db dev env image, no Java installation is required. Docker needs to be installed instead.
   - To run the tests for this program, and to run the DB this library connects to, Docker needs to be set up
   in the system.
 
@@ -27,16 +28,19 @@ Running the tests is not mandatory to publish and use the library. To run the te
 Start the database by running `bash run_postgres_container.sh` from the project root.
 This will create a docker container named `kalki-postgres` running the Postgres DB engine.
 
-If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments
-are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match
-the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc"
-device types, execute `$ bash run_postgres_container.sh wemo dlc`
+If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc" device types, execute `$ bash run_postgres_container.sh wemo dlc`
 
 To stop the docker container execute `$ docker container stop kalki-postgres`  
 
 ### Publishing the Library
 To publish to the local maven repository:
-1. Run `./gradlew publishToMavenLocal`
+- Run `./gradlew publishToMavenLocal`
+
+If using kalki-db as a base Docker image for other Docker-based build environments, you need to run this instead:
+
+- `bash build_dev_container.sh`
+
+This will create an image called kalki/kalki-db-env which can be used as the base image for building Java components that require kalki-db. 
 
 In whatever project you want to include this library in, make sure that your dependencies include this project
 and that mavenLocal is under the repositories in your build.gradle file.
