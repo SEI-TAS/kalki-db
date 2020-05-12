@@ -14,6 +14,7 @@
 
 ## Prerequisites   
  - Docker is required to build this library as a build env image, and to run the DB this library connects to.
+ - If compiling locally, Java JDK 8 is required.
 
 ## Usage
 ### Running Unit Tests Locally
