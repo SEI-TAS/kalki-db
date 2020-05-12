@@ -146,7 +146,7 @@ public class InsertListenerTest extends AUsesDatabase {
 
     private void sleep(){
         try {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.SECONDS.sleep(2);
         } catch (Exception e) {}
     }
 

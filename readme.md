@@ -1,9 +1,10 @@
 # KalkiDB
 * [Prerequisites](#prerequisites)
-* [Running Unit Tests](#running-unit-tests)
 * [Usage](#usage)
+    * [Running Unit Tests Locally](#running-unit-tests-locally)
     * [Database Engine Startup](#database-engine-startup)
     * [Publishing the Library](#publishing-the-library)
+    * [Using the Library](#using-the-library)    
     * [Code Integration](#code-integration)
 * [Exporting and Importing Data](#exporting-and-importing-data)
 * [Models & Actions](#models-&-actions)
@@ -14,13 +15,13 @@
 ## Prerequisites   
  - Docker is required to build this library as a build env image, and to run the DB this library connects to.
 
-## Running Unit Tests
-To only run the tests locally:
+## Usage
+### Running Unit Tests Locally
+If you want to run the unit tests locally:
 1. Start the test database container with `bash run_test_postgres_container`
 1. Run `./gradlew test`
 1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
 
-## Usage
 ### Database Engine Startup
 Start the database by running `bash run_postgres_container.sh` from the project root.
 This will create a docker container named `kalki-postgres` running the Postgres DB engine.
