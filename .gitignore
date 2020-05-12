@@ -199,3 +199,4 @@ gradle-app.setting
 .idea/
 
 sql/device_types/to_load/*
+gradle.properties

@@ -12,16 +12,13 @@
     * [Insert Notifications](#insert-notifications)
 
 ## Prerequisites   
-  - To compile this program, Java JDK 8 is required. This program uses Gradle as its build system, 
- but since it uses an included Gradle wrapper, no external Gradle setup is required.
-     - Alternatively, if building a kalki-db dev env image, no Java installation is required. Docker needs to be installed instead.
-  - To run the tests for this program, and to run the DB this library connects to, Docker needs to be set up
-  in the system.
+ - Docker is required to build this library as a build env image, and to run the DB this library connects to.
 
 ## Running Unit Tests
-Running the tests is not mandatory to publish and use the library. To run the tests:
+To only run the tests locally:
 1. Start the test database container with `bash run_test_postgres_container`
-1. Run `./gradlew build`
+1. Run `./gradlew test`
+1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
 
 ## Usage
 ### Database Engine Startup
@@ -33,15 +30,15 @@ If you want to only load some device types into the DB, you can pass their names
 To stop the docker container execute `$ docker container stop kalki-postgres`  
 
 ### Publishing the Library
-To publish to the local maven repository:
-- Run `./gradlew publishToMavenLocal`
-
-If using kalki-db as a base Docker image for other Docker-based build environments, you need to run this instead:
-
+To create the docker image with the compiled library, run this command:
 - `bash build_dev_container.sh`
 
-This will create an image called kalki/kalki-db-env which can be used as the base image for building Java components that require kalki-db. 
+This will create an image called kalki/kalki-db-env which can be used as the base image for building Java components that require kalki-db. It will also automatically start the test DB needed for unit tests, and run all unit tests.
 
+If instead you want to install it locally, run:
+- `./gradlew publishToMavenLocal`
+
+### Using the Library
 In whatever project you want to include this library in, make sure that your dependencies include this project
 and that mavenLocal is under the repositories in your build.gradle file.
 ```
@@ -54,6 +51,11 @@ dependencies {
     compile group: 'edu.cmu.sei.ttg', name: 'kalki-db', version: '0.0.1-SNAPSHOT'
 }
 ```
+
+If creating a docker-based project with a docker-based build environment, ensure that your Dockerfile starts from the kalki-db image, like so:
+
+`FROM kalki/kalki-db-env AS build_env`
+
 ### Code Integration
 
 First, initialize the Postgres singleton using 
