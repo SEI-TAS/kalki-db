@@ -1,0 +1,7 @@
+version: '2'
+services:
+  kalki-postgres:
+    image: kalki/kalki-postgres
+    environment:
+      - TZ=${HOST_TZ}
+    network_mode: "host"

@@ -24,12 +24,15 @@ If you want to run the unit tests locally:
 1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
 
 ### Database Engine Startup
-Start the database by running `bash run_postgres_container.sh` from the project root.
-This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+Create the docker image first with `bash build_container.sh`.
 
-If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc" device types, execute `$ bash run_postgres_container.sh wemo dlc`
+If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc" device types, execute `$ bash build_container.sh wemo dlc`
 
-To stop the docker container execute `$ docker container stop kalki-postgres`  
+Start the database by running `bash run_compose.sh` from the project root. This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+
+To see the logs of the running container, execute `bash compose_logs.sh`.
+
+To stop the docker container execute `bash stop_compose.sh`.  
 
 ### Publishing the Library
 To create the docker image with the compiled library, run this command:
