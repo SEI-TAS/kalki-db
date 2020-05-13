@@ -4,6 +4,7 @@
 build
 out
 gradle
+gradle_image
 .gitignore
 *.sh
 docker-compose.yml
