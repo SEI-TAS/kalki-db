@@ -11,5 +11,3 @@ echo -en "systemProp.https.proxyHost=${PROXY_HOST}\nsystemProp.https.proxyPort=$
 docker build --network=host -t kalki/kalki-db-env -f Dockerfile.build .
 
 rm gradle.properties
-
-docker container stop kalki-postgres-test
