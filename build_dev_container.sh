@@ -4,7 +4,7 @@
 bash run_test_postgres_container.sh
 
 # Wait for the test DB to be up.
-bash wait.sh localhost:5433
+bash wait.sh localhost 5433
 
 # Pass proxy info, if any, to gradle inside the docker first stage.
 IFS=':' read PROXY_HOST PROXY_PORT <<<"$(echo ${http_proxy/http:\/\//})"
