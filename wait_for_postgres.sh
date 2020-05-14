@@ -11,3 +11,5 @@ while ! docker logs $container 2>&1 | grep 'init process complete'; do
 done
 
 echo "Postrgres container finished initialization"
+
+exec "${@:2}"
