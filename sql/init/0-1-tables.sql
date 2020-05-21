@@ -5,6 +5,17 @@ CREATE TABLE IF NOT EXISTS device_type(
     name  varchar(255) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS device_sensor(
+    id serial PRIMARY KEY,
+    name varchar(255) NOT NULL,
+    type_id int NOT NULL REFERENCES device_type(id)
+);
+
+CREATE TABLE IF NOT EXISTS operand(
+    id serial PRIMARY KEY,
+    value varchar(5) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS device_group(
     id    serial PRIMARY KEY,
     name  varchar(255) NOT NULL
@@ -123,16 +134,30 @@ CREATE TABLE IF NOT EXISTS umbox_instance(
 
 CREATE TABLE IF NOT EXISTS alert_type_lookup(
     id                 serial PRIMARY KEY,
-    variables          hstore,
     alert_type_id      int REFERENCES alert_type(id) ON DELETE CASCADE,
     device_type_id     int REFERENCES device_type(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS alert_context(
+    id                 serial PRIMARY KEY,
+    device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
+    alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id) ON DELETE CASCADE,
+    logical_operand    int NOT NULL REFERENCES operand(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
-    variables          hstore,
     device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
-    alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id) ON DELETE CASCADE
+    attribute_id       int NOT NULL REFERENCES device_sensor(id) ON DELETE CASCADE,
+    num_statuses       int NOT NULL,
+    calculation        varchar(255),
+    threshold_id       int REFERENCES device(id),
+    threshold_value    varchar(255)
+);
+
+CREATE TABLE IF NOT EXISTS alert_circumstance(
+    context_id         serial PRIMARY KEY,
+    condition_id       serial
 );
 
 CREATE TABLE IF NOT EXISTS alert(
