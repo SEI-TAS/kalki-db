@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS umbox_instance(
 
 CREATE TABLE IF NOT EXISTS alert_type_lookup(
     id                 serial PRIMARY KEY,
+    variables          hstore,
     alert_type_id      int REFERENCES alert_type(id) ON DELETE CASCADE,
     device_type_id     int REFERENCES device_type(id) ON DELETE CASCADE
 );

@@ -1,34 +1,32 @@
 package edu.cmu.sei.kalki.db.models;
 
-import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
+import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 
 import java.util.Map;
 
-public class AlertCondition extends Model  {
+public class AlertContext extends Model  {
     private int id;
     private Integer deviceId;
     private String deviceName;
     private Integer alertTypeLookupId;
     private String alertTypeName;
-    private Map<String, String> variables;
 
-    public AlertCondition() {
+    public AlertContext() {
     }
 
-    public AlertCondition(Integer deviceId, Integer alertTypeLookupId, Map<String, String> variables) {
+    public AlertContext(Integer deviceId, Integer alertTypeLookupId) {
         this.deviceId = deviceId;
         this.alertTypeLookupId = alertTypeLookupId;
-        this.variables = variables;
     }
 
-    public AlertCondition(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
-        this(deviceId, alertTypeLookupId, variables);
+    public AlertContext(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName) {
+        this(deviceId, alertTypeLookupId);
         this.deviceName = deviceName;
         this.alertTypeName = alertTypeName;
     }
 
-    public AlertCondition(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
-        this(deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
+    public AlertContext(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName) {
+        this(deviceId, deviceName, alertTypeLookupId, alertTypeName);
         this.id = id;
     }
 
@@ -70,16 +68,8 @@ public class AlertCondition extends Model  {
         this.alertTypeName = alertTypeName;
     }
 
-    public Map<String, String> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(Map<String, String> variables) {
-        this.variables = variables;
-    }
-
     public int insert() {
-        setId(AlertConditionDAO.insertAlertCondition(this));
+        setId(AlertContextDAO.insertAlertContext(this));
         return getId();
     }
 }

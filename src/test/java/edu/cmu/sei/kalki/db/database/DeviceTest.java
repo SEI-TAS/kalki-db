@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
+import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceDAO;
@@ -52,7 +52,7 @@ public class DeviceTest extends AUsesDatabase {
 
         assertNotNull(test.getCurrentState());
         assertNotEquals(0, AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(test.getType().getId()));
-        assertNotEquals(0, AlertConditionDAO.findAlertConditionsByDevice(test.getId()).size());
+        assertNotEquals(0, AlertContextDAO.findAlertContextsByDevice(test.getId()).size());
     }
     @Test
     public void testFindDevice() {

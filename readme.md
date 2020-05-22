@@ -107,24 +107,23 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |`updateAlert(Alert alert)`                       |`Integer`           |
 |`deleteAlert(int id)`                            |`Boolean`           |
 
-#### AlertCondition
+#### AlertContext
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
-|variables       |hstore   |
 |device_id       |int NOT NULL |
 |alert_type_lookup_id   |int NOT NULL |  
 ###### Actions:  
 |Function Definition                                 |Return Type|
 |:---------------------------------------------------|:--------|
-|`findAlertCondition(int id) `                       |`AlertCondition`      |
-|`findAlertConditionsByDevice(int deviceId)`         |`List<AlertCondition>`|
-|`findAllAlertConditions()`                          |`List<AlertCondition>`|
-|`insertAlertCondition(AlertCondition condition)`    |`Integer`           |
-|`insertAlertConditionForDevice(int id) `            |`Integer`       |
-|`updateAlertConditionsForDeviceType(AlertTypeLookup alertTypeLookup)`|`Integer`|
-|`deleteAlertCondition(int id)`                      |`Boolean`           |
+|`findAlertContext(int id) `                       |`AlertContext`      |
+|`findAlertContextsByDevice(int deviceId)`         |`List<AlertContext>`|
+|`findAllAlertContexts()`                          |`List<AlertContext>`|
+|`insertAlertContext(AlertContext context)`    |`Integer`           |
+|`insertAlertContextForDevice(int id) `            |`Integer`       |
+|`updateAlertContextsForDeviceType(AlertTypeLookup alertTypeLookup)`|`Integer`|
+|`deleteAlertContext(int id)`                      |`Boolean`           |
 
 #### AlertType
 ###### Schema:
@@ -515,12 +514,11 @@ This class supports:
     - ex: setName("Name")
 - `insert()`
 - `toString()`
-#### AlertCondition
+#### AlertContext
 ###### Schema:
 |Property        |Type     |
 |---------------:|:--------|
 |id              |int      |  
-|variables       |Map<String, String>|
 |deviceId        |int   |
 |deviceName      |String|
 |alertTypeLookupId  |int   |
@@ -528,10 +526,10 @@ This class supports:
 ###### Constructors:  
 |Definition|
 |:-----------------------------------------------|
-|`AlertCondition()`|
-|`AlertCondition(Integer deviceId, Integer alertTypeLookupId, Map<String, String> variables)`|
-|`AlertCondition(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables)`|
-|`AlertCondition(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables)`|
+|`AlertContext()`|
+|`AlertContext(Integer deviceId, Integer alertTypeLookupId, Map<String, String> variables)`|
+|`AlertContext(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName)`|
+|`AlertContext(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName)`|
 ###### Methods
 This class supports:
 - `get<field>()`
