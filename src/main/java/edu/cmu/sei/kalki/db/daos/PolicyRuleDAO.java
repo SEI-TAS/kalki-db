@@ -34,6 +34,15 @@ public class PolicyRuleDAO extends DAO
     }
 
     /**
+     * Finds all PolicyRules in the database.
+     *
+     * @return a list of all PolicyRules in the database.
+     */
+    public static List<PolicyRule> findAllPolicyRules() {
+        return (List<PolicyRule>) findObjectsByTable("policy_rule", PolicyRuleDAO.class);
+    }
+
+    /**
      * Finds the policy rule given the StateTransition PolicyCondition and DeviceType id's
      * @param stateTransId
      * @param policyCondId

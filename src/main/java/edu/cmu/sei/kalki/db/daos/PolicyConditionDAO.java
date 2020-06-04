@@ -54,6 +54,15 @@ public class PolicyConditionDAO extends DAO
     }
 
     /**
+     * Finds all PolicyConditions in the database.
+     *
+     * @return a list of all PolicyConditions in the database.
+     */
+    public static List<PolicyCondition> findAllPolicyConditions() {
+        return (List<PolicyCondition>) findObjectsByTable("policy_condition", PolicyConditionDAO.class);
+    }
+
+    /**
      * Inserts a row into the policy_condition table and a row for each alert_type_id in policy_condition_alert
      * @param policyCondition
      * @return
