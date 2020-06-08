@@ -4,7 +4,6 @@ import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 
 public class AlertCondition extends Model {
-    private int id;
     private int deviceId;
     private int attributeId;
     private String attributeName;

@@ -3,10 +3,7 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 
 public class AlertConditionDAO extends DAO {
@@ -16,6 +13,14 @@ public class AlertConditionDAO extends DAO {
      */
     public static AlertCondition createFromRs(ResultSet rs) throws SQLException {
         if(rs == null) return null;
+
+        ResultSetMetaData metaData = rs.getMetaData();
+        int numColumns = metaData.getColumnCount();
+        StringBuilder str = new StringBuilder();
+        for(int i=1; i<=numColumns; i++) {
+            str.append(metaData.getColumnName(i)+": "+rs.getObject(i).toString()+"; ");
+        }
+        logger.info("RESULTSET: "+str.toString());
 
         int id = rs.getInt("id");
         int deviceId = rs.getInt("device_id");
@@ -36,8 +41,7 @@ public class AlertConditionDAO extends DAO {
     public static AlertCondition findAlertCondition(int id) {
         String query = "SELECT ac.*, ds.name AS attribute_name " +
                 "FROM alert_condition AS ac, device_sensor as ds " +
-                "WHERE ac.attribute_id = ds.id";
-
+                "WHERE ac.attribute_id = ds.id AND ac.id = ?";
         return (AlertCondition) findObjectByIdAndQuery(id, query, AlertConditionDAO.class);
     }
 
@@ -86,11 +90,12 @@ public class AlertConditionDAO extends DAO {
                     "WHERE id = ?")) {
             st.setInt(1, cond.getDeviceId());
             st.setInt(2, cond.getAttributeId());
-            st.setString(3, cond.getCompOperator());
-            st.setString(4, cond.getCalculation());
-            st.setObject(5, cond.getAttributeId());
-            st.setString(6, cond.getAttributeName());
-            st.setInt(7, cond.getId());
+            st.setInt(3, cond.getNumStatues());
+            st.setString(4, cond.getCompOperator());
+            st.setString(5, cond.getCalculation());
+            st.setObject(6, cond.getAttributeId());
+            st.setString(7, cond.getThresholdValue());
+            st.setInt(8, cond.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

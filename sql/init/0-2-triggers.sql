@@ -4,19 +4,19 @@
 ------------------------------------------------------------------------------------------------------------------------
 
 -- Function to create empty alert conditions for a given device.
-CREATE OR REPLACE FUNCTION backFillAlertConditions(deviceTypeId INTEGER, deviceId INTEGER)
-    RETURNS VOID AS $$
-        DECLARE
-            ac RECORD;
-            query TEXT;
-        BEGIN
-            query := 'SELECT * FROM alert_type_lookup WHERE device_type_id = ' || deviceTypeId;
-            FOR ac IN EXECUTE query
-                LOOP
-                    INSERT INTO alert_condition(device_id, alert_type_lookup_id) VALUES(deviceId, ac.id);
-                END LOOP;
-        END;
-    $$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION backFillAlertContext(deviceTypeId INTEGER, deviceId INTEGER)
+--     RETURNS VOID AS $$
+--         DECLARE
+--             ac RECORD;
+--             query TEXT;
+--         BEGIN
+--             query := 'SELECT * FROM alert_type_lookup WHERE device_type_id = ' || deviceTypeId;
+--             FOR ac IN EXECUTE query
+--                 LOOP
+--                     INSERT INTO alert_context(device_id, alert_type_lookup_id) VALUES(deviceId, ac.id);
+--                 END LOOP;
+--         END;
+--     $$ LANGUAGE plpgsql;
 
 -- Called by trigger when there is a new device inserted, fills out alert conditions for this device's type, and sends
 -- a notification up.
@@ -26,7 +26,6 @@ CREATE OR REPLACE FUNCTION deviceNotify ()
             payload TEXT;
         BEGIN
             payload := NEW.id;
-        PERFORM backFillAlertConditions(NEW.type_id, NEW.id);
         PERFORM pg_notify('deviceinsert', payload);
             RETURN NEW;
         END;

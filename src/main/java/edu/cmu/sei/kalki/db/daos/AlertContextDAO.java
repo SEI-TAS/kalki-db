@@ -113,7 +113,7 @@ public class AlertContextDAO extends DAO
      * Update the alert_circumstance table for the given AlertContext
      * @param cont
      */
-    private static void updateAlertCircumstance(AlertContext cont) {
+    public static void updateAlertCircumstance(AlertContext cont) {
         // remove alert context from alert circumstance
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("DELETE FROM alert_circumstance WHERE context_id = ?")) {
@@ -126,7 +126,7 @@ public class AlertContextDAO extends DAO
 
         // enter alert context and conditions into alert circumstance
         try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("INSERT INTO alert_circumstance(context_id, condition_id) VALUES (?,?) RETURNING id")) {
+            PreparedStatement st = con.prepareStatement("INSERT INTO alert_circumstance(context_id, condition_id) VALUES (?,?)")) {
             // make sure alert conditions are in alert_condition table, then add row to alert_circumstance
             for(AlertCondition cond: cont.getConditions()) {
                 cond.insertOrUpdate();

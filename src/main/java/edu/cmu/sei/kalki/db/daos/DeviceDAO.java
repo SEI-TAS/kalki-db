@@ -160,6 +160,7 @@ public class DeviceDAO extends DAO
             st.execute();
             int serialNum = getLatestId(st);
             device.setId(serialNum);
+            AlertContextDAO.insertAlertContextForDevice(serialNum);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting Device: " + e.getClass().getName() + ": " + e.getMessage());

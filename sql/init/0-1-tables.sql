@@ -152,8 +152,8 @@ CREATE TABLE IF NOT EXISTS alert_condition(
 );
 
 CREATE TABLE IF NOT EXISTS alert_circumstance(
-    context_id         serial PRIMARY KEY,
-    condition_id       serial
+    context_id         int NOT NULL REFERENCES alert_context(id) ON DELETE CASCADE,
+    condition_id       int NOT NULL REFERENCES alert_condition(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS alert(

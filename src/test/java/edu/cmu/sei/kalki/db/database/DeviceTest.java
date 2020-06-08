@@ -10,6 +10,7 @@ import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
 import edu.cmu.sei.kalki.db.models.AlertType;
+import edu.cmu.sei.kalki.db.models.AlertContext;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
@@ -173,5 +174,8 @@ public class DeviceTest extends AUsesDatabase {
 
         AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         atl.insert();
+
+        AlertContext alertContext = new AlertContext(null, atl.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
     }
 }
