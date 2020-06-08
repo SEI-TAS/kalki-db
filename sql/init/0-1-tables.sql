@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS alert_type_lookup(
 
 CREATE TABLE IF NOT EXISTS alert_context(
     id                 serial PRIMARY KEY,
-    device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
+    device_id          int REFERENCES device(id) ON DELETE CASCADE,
     alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id) ON DELETE CASCADE,
     logical_operator    varchar(255) NOT NULL
 );

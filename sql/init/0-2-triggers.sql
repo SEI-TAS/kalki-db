@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION backFillAlertConditions(deviceTypeId INTEGER, deviceI
             query := 'SELECT * FROM alert_type_lookup WHERE device_type_id = ' || deviceTypeId;
             FOR ac IN EXECUTE query
                 LOOP
-                    INSERT INTO alert_condition(variables, device_id, alert_type_lookup_id) VALUES(ac.variables, deviceId, ac.id);
+                    INSERT INTO alert_condition(device_id, alert_type_lookup_id) VALUES(deviceId, ac.id);
                 END LOOP;
         END;
     $$ LANGUAGE plpgsql;

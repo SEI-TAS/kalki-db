@@ -1,7 +1,8 @@
 package edu.cmu.sei.kalki.db.database;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import jdk.internal.jline.internal.TestAccessible;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 import edu.cmu.sei.kalki.db.models.AlertContext;
@@ -22,25 +23,29 @@ public class AlertContextTest extends AUsesDatabase {
     private static Device device;
     private static AlertType alertType;
     private static AlertTypeLookup alertTypeLookup;
+    private static AlertContext alertContext;
+
     /*
         Alert Condition Action Tests
      */
 
     @Test
     public void testInsertAlertContext() {
-        AlertContext alertCondition = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
-        alertCondition.insert();
-        assertNotEquals(-1, alertCondition.getId());
+        AlertContext alertContext = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
+        Assertions.assertNotEquals(-1, alertContext.getId());
+        Assertions.assertNotEquals(0, alertContext.getId());
+
     }
 
     @Test
     public void testFindAlertContext() {
-        AlertContext alertContext = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
-        alertContext.insert();
-
-        AlertContext ac = AlertContextDAO.findAlertContext(alertContext.getId());
-        assertEquals(alertContext.getAlertTypeLookupId(), ac.getAlertTypeLookupId());
-        assertEquals(alertContext.getDeviceId(), ac.getDeviceId());
+        AlertContext ac = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        ac.insert();
+        AlertContext testAc = AlertContextDAO.findAlertContext(ac.getId());
+        Assertions.assertEquals(ac.getId(), testAc.getId());
+        Assertions.assertEquals(ac.getAlertTypeLookupId(), testAc.getAlertTypeLookupId());
+        Assertions.assertEquals(ac.getLogicalOperator(), testAc.getLogicalOperator());
     }
 
     @Test
@@ -50,30 +55,36 @@ public class AlertContextTest extends AUsesDatabase {
         alertContext.insert();
 
         ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAllAlertContexts());
-        assertEquals(2, acList.size());
-        assertEquals(alertContext.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
-        assertEquals(alertContext.getDeviceId(), acList.get(1).getDeviceId());
+        Assertions.assertEquals(2, acList.size());
+        Assertions.assertEquals(alertContext.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
+        Assertions.assertEquals(alertContext.getDeviceId(), acList.get(1).getDeviceId());
+    }
+
+    @Test
+    public void testFindAlertContextsForDeviceType(){
+        List<AlertContext> contextList = AlertContextDAO.findAlertContextsForDeviceType(deviceType.getId());
+
+        Assertions.assertEquals(1, contextList.size());
     }
 
     @Test
     public void testInsertAlertContextForDevice(){
-//        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
-//        List<AlertContext> acList = AlertContextDAO.findAllAlertContexts();
-//        assertEquals(1, acList.size());
-//
-//        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
-//        acList = AlertContextDAO.findAllAlertContexts();
-//        assertEquals(2, acList.size()); // 1 device, 1 alert type lookup, 2 inserts by device
+        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
+        List<AlertContext> acList = AlertContextDAO.findAllAlertContexts();
+        Assertions.assertEquals(1, acList.size());
+
+        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
+        acList = AlertContextDAO.findAllAlertContexts();
+        Assertions.assertEquals(2, acList.size()); // 1 device, 1 alert type lookup, 2 inserts by device
 
     }
 
     @Test
     public void testFindAlertContextsByDevice() {
-//        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
-//        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
+        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
 
-//        List<AlertContext> acList = AlertContextDAO.findAlertContextsByDevice(device.getId());
-//        assertEquals(1, acList.size()); // should only return newest row
+        List<AlertContext> acList = AlertContextDAO.findAlertContextsByDevice(device.getId());
+        Assertions.assertEquals(1, acList.size()); // should only return newest row
     }
 
     @Test
@@ -114,9 +125,10 @@ public class AlertContextTest extends AUsesDatabase {
         alertType.insert();
 
         // insert into alert_type_lookup
-        HashMap<String, String> hmap = new HashMap<String, String>();
-        hmap.put("test", "test");
-        alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
+
+        alertContext = new AlertContext(null, alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
     }
 }

@@ -7,18 +7,16 @@ import java.util.Map;
 public class AlertTypeLookup extends Model  {
     private int alertTypeId;
     private int deviceTypeId;
-    private Map<String, String> variables;
 
     public AlertTypeLookup() { }
 
-    public AlertTypeLookup(int alertTypeId, int deviceTypeId, Map<String, String> variables) {
+    public AlertTypeLookup(int alertTypeId, int deviceTypeId) {
         this.alertTypeId = alertTypeId;
         this.deviceTypeId = deviceTypeId;
-        this.variables = variables;
     }
 
-    public AlertTypeLookup(int id, int alertTypeId, int deviceTypeId, Map<String, String> variables) {
-        this(alertTypeId, deviceTypeId, variables);
+    public AlertTypeLookup(int id, int alertTypeId, int deviceTypeId) {
+        this(alertTypeId, deviceTypeId);
         this.id = id;
     }
 
@@ -36,14 +34,6 @@ public class AlertTypeLookup extends Model  {
 
     public void setDeviceTypeId(int deviceTypeId) {
         this.deviceTypeId = deviceTypeId;
-    }
-
-    public Map<String, String> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(Map<String, String> variables) {
-        this.variables = variables;
     }
 
     public int insert() {

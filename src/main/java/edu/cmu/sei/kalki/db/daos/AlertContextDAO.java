@@ -6,6 +6,7 @@ import edu.cmu.sei.kalki.db.models.AlertContext;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.Device;
 import org.postgresql.util.HStoreConverter;
+import org.postgresql.util.PSQLException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,10 +23,17 @@ public class AlertContextDAO extends DAO
     public static AlertContext createFromRs(ResultSet rs) throws SQLException {
         if(rs == null) return null;
         int id = rs.getInt("id");
-        int deviceId = rs.getInt("device_id");
-        String deviceName = rs.getString("device_name");
+        Integer deviceId = (Integer) rs.getObject("device_id");
+        String deviceName = "";
+        String alertTypeName = "";
+        try {
+            deviceName = (String) rs.getObject("device_name");
+        } catch (PSQLException e) { logger.info("No device_name on ResultSet"); }
+        try {
+            alertTypeName = (String) rs.getObject("alert_type_name");
+        } catch (PSQLException e) { logger.info("No alert_type_name on ResultSet"); }
+
         int alertTypeLookupId = rs.getInt("alert_type_lookup_id");
-        String alertTypeName = rs.getString("alert_type_name");
         String logicalOperator = rs.getString("logical_operator");
 
         return new AlertContext(id, deviceId, deviceName, logicalOperator, alertTypeLookupId, alertTypeName);
@@ -65,7 +73,7 @@ public class AlertContextDAO extends DAO
      * @return a list of all most recent AlertContext in the database related to the given device
      */
     public static List<AlertContext> findAlertContextsByDevice(int deviceId) {
-        String query = "SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, d.name AS device_name, at.name AS alert_type_name " +
+        String query = "SELECT DISTINCT ON (atl.id) alert_type_lookup_id, ac.id, ac.device_id, ac.logical_operator, d.name AS device_name, at.name AS alert_type_name " +
                 "FROM alert_context AS ac, device AS d, alert_type AS at, alert_type_lookup AS atl " +
                 "WHERE ac.device_id = ? AND ac.device_id=d.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id";
         List<AlertContext> contextList = (List<AlertContext>) findObjectsByIdAndQuery(deviceId, query, AlertContextDAO.class);
@@ -83,10 +91,10 @@ public class AlertContextDAO extends DAO
      * @return id of new AlertContext on success. -1 on error
      */
     public static AlertContext insertAlertContext(AlertContext cont) {
-        logger.info("Inserting alert context for device: " + cont.getDeviceId());
+        logger.info("Inserting alert context");
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("INSERT INTO alert_context(device_id, alert_type_lookup_id, logical_operator) VALUES (?,?,?) RETURNING id")) {
-            st.setInt(1, cont.getDeviceId());
+            st.setObject(1, cont.getDeviceId());
             st.setInt(2, cont.getAlertTypeLookupId());
             st.setString(3, cont.getLogicalOperator());
             st.execute();
@@ -132,11 +140,16 @@ public class AlertContextDAO extends DAO
         }
     }
 
-
     /**
-     * TODO: figure out a solution for default AlertContext/AlertConditions
-     * Because of restructure of database, AlertConditions are not stored on the Context anymore
-     **/
+     * Finds all default AlertContexts for the given device type id
+     * @param typeId
+     * @return
+     */
+    public static List<AlertContext> findAlertContextsForDeviceType(int typeId) {
+        logger.info("Finding AlertContexts for DeviceType id: "+typeId);
+        String query = "SELECT ac.*, at.name AS alert_type_name FROM alert_context AS ac, alert_type_lookup AS atl, alert_type AS at WHERE atl.device_type_id = ? AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id AND ac.device_id IS NULL";
+        return (List<AlertContext>) findObjectsByIdAndQuery(typeId, query, AlertContextDAO.class);
+    }
 
     /**
      * Insert row(s) into the AlertContext table based on the given Device's type
@@ -144,20 +157,23 @@ public class AlertContextDAO extends DAO
      * @param id the Id of the device
      * @return 1 on success. -1 on error
      */
-//    public static Integer insertAlertContextForDevice(int id) {
-//        logger.info("Inserting alert contexts for device: " + id);
-//
-//        Device d = DeviceDAO.findDevice(id);
-//        List<AlertTypeLookup> atlList = AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(d.getType().getId());
-//        for(AlertTypeLookup atl: atlList){
-//            AlertContext ac = new AlertContext(id, atl.getId(), AlertContext.LogicalOperator.NONE);
-//            ac.insert();
-//            if(ac.getId()<0) //insert failed
-//                return -1;
-//        }
-//
-//        return 1;
-//    }
+    public static Integer insertAlertContextForDevice(int id) {
+        logger.info("Inserting alert contexts for device: " + id);
+        Device d = DeviceDAO.findDevice(id);
+        List<AlertContext> typeContexts = findAlertContextsForDeviceType(d.getType().getId());
+        for(AlertContext c: typeContexts) {
+            c.setDeviceId(d.getId());
+            c.insert();
+
+            if(c.getId() < 0)
+                return -1;
+        }
+
+        return 1;
+    }
+
+
+    // TODO: i don't see a need for this function, so going to remove.
 
     /**
      * Insert row(s) into the AlertContext table for devices in type specified on the AlertTypeLookup

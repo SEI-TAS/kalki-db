@@ -19,11 +19,10 @@ public class AlertTypeLookupTest extends AUsesDatabase {
     private AlertType alertType;
     private DeviceType deviceType;
     private Device device;
-    private HashMap<String, String> hmap;
 
     @Test
     public void testFindAlertTypeLookupBy() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
 
         assertNotEquals(-1, alertTypeLookup.getId());
@@ -31,7 +30,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindAlertTypeLookupsByDeviceType() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
 
         List<AlertTypeLookup> atlList = AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(deviceType.getId());
@@ -41,7 +40,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindAllAlertTypeLookups() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
 
         List<AlertTypeLookup> atlList = AlertTypeLookupDAO.findAllAlertTypeLookups();
@@ -51,7 +50,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
     @Test
     public void testInsertAlertTypeLookup() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
 
         assertNotEquals(-1, alertTypeLookup.getId());
@@ -59,7 +58,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
     @Test
     public void testUpdateAlertTypeLookup() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
 
         AlertType alertType1 = new AlertType("Name2", "Description", "Source");
@@ -72,7 +71,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
     @Test
     public void testInsertOrUpdateAlertTypeLookup() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insertOrUpdate();
         assertNotEquals(-1, alertTypeLookup.getId());
 
@@ -87,7 +86,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
     @Test
     public void testFindAlertTypesByDeviceType() {
-        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId(), hmap);
+        AlertTypeLookup alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
 
         List<AlertType> atList = AlertTypeDAO.findAlertTypesByDeviceType(deviceType.getId());
@@ -113,8 +112,5 @@ public class AlertTypeLookupTest extends AUsesDatabase {
 
         device = new Device("Name", "Description", deviceType, "1.1.1.1", 1, 1, dataNode);
         device.insert();
-
-        hmap = new HashMap<String, String>();
-        hmap.put("test", "test-var");
     }
 }

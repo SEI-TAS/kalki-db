@@ -171,7 +171,7 @@ public class DeviceTest extends AUsesDatabase {
         alertTypeReset = new AlertType("state-reset", "state reset", "Dashboard");
         alertTypeReset.insert();
 
-        AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId(), null);
+        AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         atl.insert();
     }
 }

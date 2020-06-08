@@ -22,11 +22,8 @@ public class AlertTypeLookupDAO extends DAO
         int id = rs.getInt("id");
         int alertTypeId = rs.getInt("alert_type_id");
         int deviceTypeId = rs.getInt("device_type_id");
-        Map<String, String> variables = null;
-        if (rs.getString("variables") != null) {
-            variables = HStoreConverter.fromString(rs.getString("variables"));
-        }
-        return new AlertTypeLookup(id, alertTypeId, deviceTypeId, variables);
+
+        return new AlertTypeLookup(id, alertTypeId, deviceTypeId);
     }
 
     /**
@@ -74,10 +71,9 @@ public class AlertTypeLookupDAO extends DAO
     public static int insertAlertTypeLookup(AlertTypeLookup atl){
         logger.info("Inserting AlertTypeLookup: " + atl.toString());
         try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES (?,?,?) RETURNING id")) {
+            PreparedStatement st = con.prepareStatement("INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (?,?) RETURNING id")) {
             st.setInt(1, atl.getAlertTypeId());
             st.setInt(2, atl.getDeviceTypeId());
-            st.setObject(3, atl.getVariables());
             st.execute();
             return getLatestId(st);
         } catch (SQLException e) {
@@ -95,11 +91,10 @@ public class AlertTypeLookupDAO extends DAO
     public static int updateAlertTypeLookup(AlertTypeLookup atl){
         logger.info("Updating AlertTypeLookup; atlId: " +atl.getId());
         try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ?, variables = ? WHERE id = ?")) {
+            PreparedStatement st = con.prepareStatement("UPDATE alert_type_lookup SET alert_type_id = ?, device_type_id = ? WHERE id = ?")) {
             st.setInt(1, atl.getAlertTypeId());
             st.setInt(2, atl.getDeviceTypeId());
-            st.setObject(3, atl.getVariables());
-            st.setInt(4, atl.getId());
+            st.setInt(3, atl.getId());
             st.executeUpdate();
 
             return atl.getId();
