@@ -200,3 +200,5 @@ gradle-app.setting
 
 sql/device_types/to_load/*
 gradle.properties
+
+postgres-data/

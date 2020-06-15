@@ -14,3 +14,4 @@ gradlew
 gradlew.*
 *.md
 *.iml
+postgres-data
