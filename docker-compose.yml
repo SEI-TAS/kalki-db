@@ -15,4 +15,7 @@ services:
       start_period: 60s
     user: ${CURRENT_UID}
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - kalki-pgdata:/var/lib/postgres/data
+
+volumes:
+  kalki-pgdata:
