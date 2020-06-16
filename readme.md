@@ -29,7 +29,7 @@ Create the docker image first with `bash build_container.sh`.
 
 If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc" device types, execute `$ bash build_container.sh wemo dlc`
 
-Start the database by running `bash run_compose.sh` from the project root. This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+Start the database by running `bash run_compose.sh` from the project root. This will create a docker container named `kalki-postgres` running the Postgres DB engine. NOTE: if you want to recreate the DB, add the `--reset` command line argument.
 
 To see the logs of the running container, execute `bash compose_logs.sh`.
 
