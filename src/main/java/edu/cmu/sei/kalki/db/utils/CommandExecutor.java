@@ -6,16 +6,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class CommandExecutor
 {
+    protected static final Logger logger = Logger.getLogger(CommandExecutor.class.getName());
+
     /**
      * Executes the given external command.
      * @param commandAndParams
      */
     public static List<String> executeCommand(List<String> commandAndParams, String workingDir)
     {
-        System.out.println("Command will be executed from dir: " + workingDir);
+        logger.info("Command will be executed from dir: " + workingDir);
 
         List<String> outputs = new ArrayList<>();
         ProcessBuilder processBuilder = new ProcessBuilder();
@@ -25,26 +28,26 @@ public class CommandExecutor
 
         try
         {
-            System.out.println("Executing command: " + commandAndParams.toString());
+            logger.info("Executing command: " + commandAndParams.toString());
             Process process = processBuilder.start();
             BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            System.out.println("Command output: ");
+            logger.info("Command output: ");
             String line;
             while((line = outputReader.readLine()) != null)
             {
                 outputs.add(line);
-                System.out.println(line);
+                logger.info(line);
             }
 
             int exitVal = process.waitFor();
             if(exitVal == 0)
             {
-                System.out.println("Command execution returned successfully.");
+                logger.info("Command execution returned successfully.");
             }
             else
             {
-                System.out.println("Command execution returned unsuccessfully.");
+                logger.info("Command execution returned unsuccessfully.");
                 throw new RuntimeException("Command was not executed successfully!");
             }
 

@@ -10,7 +10,6 @@ import java.util.logging.Level;
 public abstract class AUsesDatabase {
     @BeforeEach
     public void resetDB() {
-        //System.out.println("Resetting Test DB.");
         try {
             Postgres.setLoggingLevel(Level.SEVERE);
 

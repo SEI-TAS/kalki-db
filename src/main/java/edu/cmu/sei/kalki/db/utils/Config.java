@@ -20,7 +20,6 @@ public class Config
 
     public static void load(String configFilePath) throws IOException
     {
-        //System.out.println(System.getProperty("user.dir"));
         InputStream fs = new FileInputStream(configFilePath);
         JSONTokener parser = new JSONTokener(fs);
         JSONObject config = new JSONObject(parser);

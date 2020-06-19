@@ -207,7 +207,7 @@ public class DAO
         List<Object> allObjects = new ArrayList<>();
         try (Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement(String.format("SELECT * FROM %s WHERE %s in (%s)", tableName, column, idList))) {
-            System.out.println(st.toString());
+            //logger.info(st.toString());
             try(ResultSet rs = st.executeQuery()) {
                 while (rs.next()) {
                     allObjects.add(createFromRs(objectClass, rs));
