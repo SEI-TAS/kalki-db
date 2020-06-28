@@ -103,6 +103,21 @@ public class PolicyRuleDAO extends DAO
     }
 
     /**
+     * First, attempts to find the Policy Rule in the database.
+     * If successful, updates the existing Policy Rule with the given Policy Rule's parameters Otherwise,
+     * inserts the given Policy Rule.
+     * @param policyRule Policy Rule to be inserted or updated.
+     */
+    public static Integer insertOrUpdatePolicyRule(PolicyRule policyRule) {
+        PolicyRule pr = findPolicyRule(policyRule.getId());
+        if (pr == null) {
+            return insertPolicyRule(policyRule);
+        } else {
+            return updatePolicyRule(policyRule);
+        }
+    }
+
+    /**
      * Updates the row in the policy table with the given id
      * @param policyRule
      * @return The id of the given policy on success. -1 otherwise

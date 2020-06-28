@@ -66,4 +66,11 @@ public class PolicyRule extends Model {
             this.id = id;
         return this.id;
     }
+
+    public int insertOrUpdate(){
+        int id = PolicyRuleDAO.insertOrUpdatePolicyRule(this);
+        if(id > 0)
+            this.id = id;
+        return this.id;
+    }
 }
