@@ -17,11 +17,11 @@ public class PolicyRuleDAO extends DAO
     public static PolicyRule createFromRs(ResultSet rs) throws SQLException {
         if(rs == null) return null;
         int id = rs.getInt("id");
-        int stateTransId = rs.getInt("state_trans_id");
-        int policyCondId = rs.getInt("policy_cond_id");
-        int devTypeId = rs.getInt("device_type_id");
+        int stateTransitionId = rs.getInt("state_trans_id");
+        int policyConditionId = rs.getInt("policy_cond_id");
+        int deviceTypeId = rs.getInt("device_type_id");
         int samplingRate = rs.getInt("sampling_rate_factor");
-        return new PolicyRule(id, stateTransId, policyCondId, devTypeId, samplingRate);
+        return new PolicyRule(id, stateTransitionId, policyConditionId, deviceTypeId, samplingRate);
     }
 
     /**
@@ -44,20 +44,20 @@ public class PolicyRuleDAO extends DAO
 
     /**
      * Finds the policy rule given the StateTransition PolicyCondition and DeviceType id's
-     * @param stateTransId
-     * @param policyCondId
-     * @param devTypeId
+     * @param stateTransitionId
+     * @param policyConditionId
+     * @param deviceTypeId
      * @return
      */
-    public static PolicyRule findPolicyRule(int stateTransId, int policyCondId, int devTypeId) {
+    public static PolicyRule findPolicyRule(int stateTransitionId, int policyConditionId, int deviceTypeId) {
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("SELECT * FROM policy_rule WHERE " +
                 "state_trans_id = ? AND " +
                 "policy_cond_id = ? AND " +
                 "(device_type_id = ? OR device_type_id IS NULL)")) {
-            st.setInt(1, stateTransId);
-            st.setInt(2, policyCondId);
-            st.setInt(3, devTypeId);
+            st.setInt(1, stateTransitionId);
+            st.setInt(2, policyConditionId);
+            st.setInt(3, deviceTypeId);
 
             ResultSet rs = st.executeQuery();
             if(rs.next()) {
@@ -73,12 +73,12 @@ public class PolicyRuleDAO extends DAO
     /**
      * Finds all policy rules given the DeviceType ids
      * @param securityStateId
-     * @param devTypeId
+     * @param deviceTypeId
      * @return
      */
-    public static List<PolicyRule> findPolicyRules(int devTypeId) {
+    public static List<PolicyRule> findPolicyRules(int deviceTypeId) {
         String query = "SELECT * FROM policy_rule WHERE device_type_id = ? OR device_type_id IS NULL";
-        return (List<PolicyRule>) findObjectsByIdAndQuery(devTypeId, query, PolicyRuleDAO.class);
+        return (List<PolicyRule>) findObjectsByIdAndQuery(deviceTypeId, query, PolicyRuleDAO.class);
     }
 
     /**
@@ -89,9 +89,9 @@ public class PolicyRuleDAO extends DAO
     public static Integer insertPolicyRule(PolicyRule policyRule) {
         try(Connection con = Postgres.getConnection();
         PreparedStatement st = con.prepareStatement("INSERT INTO policy_rule(state_trans_id, policy_cond_id, device_type_id, sampling_rate_factor) VALUES(?,?,?,?) RETURNING id")) {
-            st.setInt(1, policyRule.getStateTransId());
-            st.setInt(2, policyRule.getPolicyCondId());
-            st.setInt(3, policyRule.getDevTypeId());
+            st.setInt(1, policyRule.getStateTransitionId());
+            st.setInt(2, policyRule.getPolicyConditionId());
+            st.setInt(3, policyRule.getDeviceTypeId());
             st.setInt(4, policyRule.getSamplingRateFactor());
             st.execute();
             return getLatestId(st);
@@ -115,9 +115,9 @@ public class PolicyRuleDAO extends DAO
                 ", device_type_id = ? " +
                 ", sampling_rate_factor = ? " +
                 "WHERE id = ?")) {
-            st.setInt(1, policyRule.getStateTransId());
-            st.setInt(2, policyRule.getPolicyCondId());
-            st.setInt(3, policyRule.getDevTypeId());
+            st.setInt(1, policyRule.getStateTransitionId());
+            st.setInt(2, policyRule.getPolicyConditionId());
+            st.setInt(3, policyRule.getDeviceTypeId());
             st.setInt(4, policyRule.getSamplingRateFactor());
             st.setInt(5, policyRule.getId());
             st.executeUpdate();
