@@ -20,7 +20,7 @@
 ## Usage
 ### Running Unit Tests Locally
 If you want to run the unit tests locally:
-1. Start the test database container with `bash run_test_postgres_container`
+1. Start the test database container with `bash run_test_postgres_container.sh`
 1. Run `./gradlew test`
 1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
 
@@ -329,7 +329,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findPolicyRule(int id)`        |`Policy`      |
-|`findPolicyRule(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
+|`findPolicyRule(int stateTransitionId, int policyConditionId, int deviceTypeId)`          |`Policy`|
 |`insertPolicyRule(PolicyRule policyRule)` |`Integer`    |
 |`updatePolicyRule(PolicyRule policyRule)` |`Integer`    |
 |`deletePolicyRule(int policyRuleId) ` |`Boolean`    |
@@ -436,7 +436,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxImage(int id)`         |`UmboxImage`      |
-|`findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId)`|`List<UmboxImage>`|
+|`findUmboxImagesByDeviceTypeAndSecState(int deviceTypeId, int secStateId)`|`List<UmboxImage>`|
 |`findAllUmboxImages()`           |`List<UmboxImage>`|
 |`insertUmboxImage(UmboxImage u)` |`Integer`            |
 |`updateUmboxImage(UmboxImage u)` |`Integer`            |
@@ -792,16 +792,16 @@ This class supports:
 |Property  |Type      |
 |---------:|:---------|
 |id        |int       |
-|stateTransId     |int    |
-|policyCondId     |int    |
-|devTypeId        |int    |
+|stateTransitionId     |int    |
+|policyConditionId     |int    |
+|deviceTypeId        |int    |
 |samplingRate     |int    |
 ###### Constructors:
 |Definition |  
 |:---|
 |`Policy()`|
-|`Policy(int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
-|`Policy(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+|`Policy(int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRate)`|
+|`Policy(int id, int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRate)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
