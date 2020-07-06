@@ -42,18 +42,18 @@ public class UmboxImageDAO extends DAO
     /**
      * Finds the UmboxImages relating to the device type and the security state
      *
-     * @param devTypeId id of the device type
+     * @param deviceTypeId id of the device type
      * @param secStateId id of the security state
      * @return A list of UmboxImages for the given device type id and state id
      */
-    public static List<UmboxImage> findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId) {
+    public static List<UmboxImage> findUmboxImagesByDeviceTypeAndSecState(int deviceTypeId, int secStateId) {
         try(Connection con = Postgres.getConnection();
         PreparedStatement st = con.prepareStatement("SELECT ui.id, ui.name, ui.file_name, ul.dag_order " +
                 "FROM umbox_image ui, umbox_lookup ul, device_type dt, security_state st " +
                 "WHERE dt.id = ? " +
                 "AND st.id = ? " +
                 "AND ul.umbox_image_id = ui.id AND ul.device_type_id = dt.id AND ul.security_state_id = st.id")) {
-            st.setInt(1, devTypeId);
+            st.setInt(1, deviceTypeId);
             st.setInt(2, secStateId);
             List<UmboxImage> umboxImageList = new ArrayList<>();
             try(ResultSet rs = st.executeQuery()) {

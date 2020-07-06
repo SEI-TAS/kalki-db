@@ -104,6 +104,26 @@ public class DeviceCommandLookupDAO extends DAO
     }
 
     /**
+     * Deletes all Command Lookups by a policy rule id.
+     *
+     * @param id id of the Policy Rule to delete Command Lookups by.
+     * @return true if the deletions succeeded, false otherwise.
+     */
+    public static Boolean deleteCommandLookupsByPolicyRule(int id) {
+        logger.info(String.format("Deleting command lookups associated with policy rule with id = %d", id));
+        try (Connection con = Postgres.getConnection();
+             PreparedStatement st = con.prepareStatement("DELETE FROM command_lookup WHERE policy_rule_id=?")) {
+            st.setInt(1, id);
+            st.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            logger.severe("Error deleting id: " + id + " from table: command_lookup. " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
      * Deletes a Command Lookup by its id.
      *
      * @param id id of the Command Lookup to delete.

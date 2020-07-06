@@ -59,7 +59,32 @@ public class PolicyConditionDAO extends DAO
      * @return a list of all PolicyConditions in the database.
      */
     public static List<PolicyCondition> findAllPolicyConditions() {
-        return (List<PolicyCondition>) findObjectsByTable("policy_condition", PolicyConditionDAO.class);
+        try {
+            List<PolicyCondition> policyConditions = (List<PolicyCondition>) findObjectsByTable("policy_condition", PolicyConditionDAO.class);
+            if (policyConditions != null) {
+                for(int i=0; i<policyConditions.size(); i++) {
+                    PolicyCondition policyCondition = policyConditions.get(i);
+                    List<Integer> alertTypeIds = new ArrayList<>();
+                    try (Connection con = Postgres.getConnection();
+                         PreparedStatement st = con.prepareStatement("SELECT * FROM policy_condition_alert WHERE policy_cond_id = ?")) {
+                        st.setInt(1, policyCondition.getId());
+                        try (ResultSet rs = st.executeQuery()) {
+                            while (rs.next()) {
+                                alertTypeIds.add(rs.getInt("alert_type_id"));
+                            }
+                        }
+                    }
+                    policyCondition.setAlertTypeIds(alertTypeIds);
+                }
+            }
+
+            return policyConditions;
+        } catch (SQLException e) {
+            logger.severe("Error finding PolicyCondition: "+e.getClass().getName() +": "+e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     /**

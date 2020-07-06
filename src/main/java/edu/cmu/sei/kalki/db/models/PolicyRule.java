@@ -5,51 +5,51 @@ import edu.cmu.sei.kalki.db.daos.PolicyRuleDAO;
 public class PolicyRule extends Model {
     private static final int DEFAULT_SAMPLING_RATE_FACTOR = 1;
 
-    private int stateTransId;
-    private int policyCondId;
-    private int devTypeId;
+    private int stateTransitionId;
+    private int policyConditionId;
+    private int deviceTypeId;
     private int samplingRateFactor;
 
     public PolicyRule() {}
 
-    public PolicyRule(int stateTransId, int policyCondId, int devTypeId){
-        this(stateTransId, policyCondId, devTypeId, DEFAULT_SAMPLING_RATE_FACTOR);
+    public PolicyRule(int stateTransitionId, int policyConditionId, int deviceTypeId){
+        this(stateTransitionId, policyConditionId, deviceTypeId, DEFAULT_SAMPLING_RATE_FACTOR);
     }
 
-    public PolicyRule(int stateTransId, int policyCondId, int devTypeId, int samplingRateFactor){
-        this.stateTransId = stateTransId;
-        this.policyCondId = policyCondId;
-        this.devTypeId = devTypeId;
+    public PolicyRule(int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRateFactor){
+        this.stateTransitionId = stateTransitionId;
+        this.policyConditionId = policyConditionId;
+        this.deviceTypeId = deviceTypeId;
         this.samplingRateFactor = samplingRateFactor;
     }
 
-    public PolicyRule(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRateFactor){
-        this(stateTransId, policyCondId, devTypeId, samplingRateFactor);
+    public PolicyRule(int id, int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRateFactor){
+        this(stateTransitionId, policyConditionId, deviceTypeId, samplingRateFactor);
         this.id = id;
     }
 
-    public int getStateTransId() {
-        return stateTransId;
+    public int getStateTransitionId() {
+        return stateTransitionId;
     }
 
-    public void setStateTransId(int stateTransId) {
-        this.stateTransId = stateTransId;
+    public void setStateTransitionId(int stateTransitionId) {
+        this.stateTransitionId = stateTransitionId;
     }
 
-    public int getPolicyCondId() {
-        return policyCondId;
+    public int getPolicyConditionId() {
+        return policyConditionId;
     }
 
-    public void setPolicyCondId(int policyCondId) {
-        this.policyCondId = policyCondId;
+    public void setPolicyConditionId(int policyConditionId) {
+        this.policyConditionId = policyConditionId;
     }
 
-    public int getDevTypeId() {
-        return devTypeId;
+    public int getDeviceTypeId() {
+        return deviceTypeId;
     }
 
-    public void setDevTypeId(int devTypeId) {
-        this.devTypeId = devTypeId;
+    public void setDeviceTypeId(int deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
     }
 
     public int getSamplingRateFactor() {
@@ -62,6 +62,13 @@ public class PolicyRule extends Model {
 
     public int insert() {
         int id = PolicyRuleDAO.insertPolicyRule(this);
+        if(id > 0)
+            this.id = id;
+        return this.id;
+    }
+
+    public int insertOrUpdate(){
+        int id = PolicyRuleDAO.insertOrUpdatePolicyRule(this);
         if(id > 0)
             this.id = id;
         return this.id;
