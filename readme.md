@@ -20,7 +20,7 @@
 ## Usage
 ### Running Unit Tests Locally
 If you want to run the unit tests locally:
-1. Start the test database container with `bash run_test_postgres_container`
+1. Start the test database container with `bash run_test_postgres_container.sh`
 1. Run `./gradlew test`
 1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
 
@@ -29,7 +29,7 @@ Create the docker image first with `bash build_container.sh`.
 
 If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc" device types, execute `$ bash build_container.sh wemo dlc`
 
-Start the database by running `bash run_compose.sh` from the project root. This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+Start the database by running `bash run_compose.sh` from the project root. This will create a docker container named `kalki-postgres` running the Postgres DB engine. NOTE: if you want to recreate the DB, add the `--reset` command line argument.
 
 To see the logs of the running container, execute `bash compose_logs.sh`.
 
@@ -329,7 +329,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findPolicyRule(int id)`        |`Policy`      |
-|`findPolicyRule(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
+|`findPolicyRule(int stateTransitionId, int policyConditionId, int deviceTypeId)`          |`Policy`|
 |`insertPolicyRule(PolicyRule policyRule)` |`Integer`    |
 |`updatePolicyRule(PolicyRule policyRule)` |`Integer`    |
 |`deletePolicyRule(int policyRuleId) ` |`Boolean`    |
@@ -436,7 +436,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxImage(int id)`         |`UmboxImage`      |
-|`findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId)`|`List<UmboxImage>`|
+|`findUmboxImagesByDeviceTypeAndSecState(int deviceTypeId, int secStateId)`|`List<UmboxImage>`|
 |`findAllUmboxImages()`           |`List<UmboxImage>`|
 |`insertUmboxImage(UmboxImage u)` |`Integer`            |
 |`updateUmboxImage(UmboxImage u)` |`Integer`            |
@@ -792,16 +792,16 @@ This class supports:
 |Property  |Type      |
 |---------:|:---------|
 |id        |int       |
-|stateTransId     |int    |
-|policyCondId     |int    |
-|devTypeId        |int    |
+|stateTransitionId     |int    |
+|policyConditionId     |int    |
+|deviceTypeId        |int    |
 |samplingRate     |int    |
 ###### Constructors:
 |Definition |  
 |:---|
 |`Policy()`|
-|`Policy(int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
-|`Policy(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+|`Policy(int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRate)`|
+|`Policy(int id, int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRate)`|
 ###### Methods:
 This class supports:
 - `get<field>()`

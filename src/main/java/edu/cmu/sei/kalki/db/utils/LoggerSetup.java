@@ -29,76 +29,35 @@
  * DM20-0543
  *
  */
-package edu.cmu.sei.kalki.db.database;
+package edu.cmu.sei.kalki.db.utils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
-import edu.cmu.sei.kalki.db.daos.StageLogDAO;
-import edu.cmu.sei.kalki.db.models.DataNode;
-import edu.cmu.sei.kalki.db.models.Device;
-import edu.cmu.sei.kalki.db.models.DeviceSecurityState;
-import edu.cmu.sei.kalki.db.models.DeviceType;
-import edu.cmu.sei.kalki.db.models.SecurityState;
-import edu.cmu.sei.kalki.db.models.StageLog;
-import org.junit.jupiter.api.Test;
+public class LoggerSetup
+{
+    private static final String DEFAULT_LOGS_FOLDER = "/logs";
 
-import java.util.List;
+    public static void setup() {
+        try(InputStream loggingConfigFile = LoggerSetup.class.getClassLoader().getResourceAsStream("logging.properties"))
+        {
+            // Load config file.
+            LogManager.getLogManager().readConfiguration(loggingConfigFile);
 
-public class StageLogTest extends AUsesDatabase {
-    private Device device;
-    private DeviceType deviceType;
-    private SecurityState securityState;
-    private DeviceSecurityState deviceSecurityState;
-//    private StageLog log;
-    /*
-        Test StageLog Actions
-     */
-
-    @Test
-    public void testFindStageLog() {
-        StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.INCREASE_SAMPLE_RATE, StageLog.Stage.TRIGGER, "Info");
-        log.insert();
-
-        StageLog log1 = StageLogDAO.findStageLog(log.getId());
-        assertNotNull(log1);
-        assertEquals(log.toString(), log1.toString());
-    }
-
-    @Test
-    public void testFindAllStageLogs() {
-        StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.SEND_COMMAND, StageLog.Stage.REACT, "Info");
-        log.insert();
-
-        List<StageLog> stageLogList = StageLogDAO.findAllStageLogs();
-        assertNotEquals(0, stageLogList.size());
-    }
-
-    @Test
-    public void testFindAllStageLogsForDevice() {
-        StageLog log = new StageLog(deviceSecurityState.getId(), StageLog.Action.DEPLOY_UMBOX, StageLog.Stage.FINISH, "Info");
-        log.insert();
-
-        List<StageLog> stageLogList = StageLogDAO.findAllStageLogsForDevice(device.getId());
-        assertNotEquals(0, stageLogList.size());
-    }
-
-    public void insertData() {
-        deviceType = new DeviceType(-1, "Test Device Type");
-        deviceType.insert();
-
-        securityState = new SecurityState(-1, "Normal");
-        securityState.insert();
-
-        DataNode dataNode = new DataNode("Test Node", "localhost");
-        dataNode.insert();
-
-        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1, dataNode);
-        device.insert();
-
-        deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());
-        deviceSecurityState.insert();
-
+            if(Files.notExists(Paths.get(DEFAULT_LOGS_FOLDER))) {
+                // Load handlers to trigger lazy loading exception since folder doesn't exist.
+                Logger rootLogger = LogManager.getLogManager().getLogger("");
+                System.out.println("***NOTE: Ignore FileHandler exception trace, folder for file handler was not found.");
+                rootLogger.getHandlers();
+            }
+        }
+        catch (final IOException e)
+        {
+            throw new IllegalStateException("Could not load default logging.properties file", e);
+        }
     }
 }
