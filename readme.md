@@ -1,4 +1,20 @@
 # KalkiDB
+
+Kalki-DB is a library used by several Kalki components. It provides DB access, as well as some other common functionality. It also sets up a docker-based PostgresSQL DB server that acts as the main DB for the Control Node of Kalki.
+
+Kalki is an IoT platform for allowing untrusted IoT devices to connect to a network in a secure way, protecting both the IoT device and the network from malicious attackers.
+
+Kalki comprises a total of 8 GitHub projects:
+- kalki-node-setup (Kalki Main Repository, composes all non-UI components)
+- kalki-controller (Kalki Main Controller)
+- kalki-umbox-controller (Kalki Umbox Controller)
+- kalki-device-controller (Kalki Device Controller)
+- kalki-dashboard (Kalki Dashboard)
+- kalki-db (Kalki Database Library)
+- kalki-iot-interface (Kalki IoT Interface)
+- kalki-umboxes (Kalki Umboxes, sample umboxes and umboxes components)
+
+## Table of Contents
 * [Prerequisites](#prerequisites)
 * [Usage](#usage)
     * [Running Unit Tests Locally](#running-unit-tests-locally)
