@@ -26,9 +26,7 @@ INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.
 
 INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name='brute-force'), (SELECT id FROM device_type WHERE name='Phillips Hue Light Emulator'));
 
-INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-time-on'), (SELECT id FROM device_type WHERE name = 'Philips Hue Light Emulator'),
-                                                                                '"isOn"=>"false","time-last-change"=>"30"');
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-time-on'), (SELECT id FROM device_type WHERE name = 'Philips Hue Light Emulator'));
 
-INSERT INTO alert_type_lookup(alert_type_id, device_type_id, variables) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-odd-one-out'), (SELECT id FROM device_type WHERE name = 'Philips Hue Light Emulator'),
-                                                                                '"isOn"=>"false","group_isOn"=>"true"');
+INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'phle-odd-one-out'), (SELECT id FROM device_type WHERE name = 'Philips Hue Light Emulator'));
 
