@@ -30,7 +30,7 @@ Kalki comprises a total of 8 GitHub projects:
 
 ## Prerequisites   
  - Docker is required to build this library as a build env image, and to run the DB this library connects to.
- - Docker Compose 1.16.0+ is required to run the DB.
+ - Docker Compose 1.18.0+ is required to run the DB.
  - If compiling locally, Java JDK 8 is required.
 
 ## Usage
