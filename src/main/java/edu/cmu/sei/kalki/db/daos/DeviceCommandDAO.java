@@ -68,6 +68,15 @@ public class DeviceCommandDAO extends DAO
         return (List<DeviceCommand>) findObjectsByTable("command", DeviceCommandDAO.class);
     }
 
+    
+    /**
+     * Finds all rows in the command table with the specified device type id
+     */
+    public static List<DeviceCommand> findAllCommandsByDeviceType(int id) {
+        String query = "SELECT * FROM command where device_type_id=" + id;
+        return (List<DeviceCommand>) findObjectsByQuery(query, DeviceCommandDAO.class);
+    }
+
     /**
      * Finds the commands for the device from the policy rule log
      *

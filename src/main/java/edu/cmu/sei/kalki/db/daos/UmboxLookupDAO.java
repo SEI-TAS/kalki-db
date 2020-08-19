@@ -75,6 +75,14 @@ public class UmboxLookupDAO extends DAO
     }
 
     /**
+     * Finds all umbox lookups based on the given device type
+     */
+    public static List<UmboxLookup> findUmboxLookupsByDeviceType(int deviceId) {
+        String query = "SELECT * FROM umbox_lookup WHERE device_type_id = " + deviceId;
+        return (List<UmboxLookup>) findObjectsByQuery(query, UmboxLookupDAO.class);
+    }
+
+    /**
      * Finds all umboxLookup entries
      */
     public static List<UmboxLookup> findAllUmboxLookups() {
