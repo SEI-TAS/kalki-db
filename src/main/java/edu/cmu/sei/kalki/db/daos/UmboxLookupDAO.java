@@ -69,9 +69,11 @@ public class UmboxLookupDAO extends DAO
      * Finds all umbox lookups based on the given device id
      */
     public static List<UmboxLookup> findUmboxLookupsByDevice(int deviceId) {
-        String query = "SELECT ul.* FROM umbox_lookup ul, device d, device_type dt " +
+        /*String query = "SELECT ul.* FROM umbox_lookup ul, device d, device_type dt " +
                 "WHERE ul.device_type_id = dt.id AND dt.id = d.type_id AND d.id = ?";
-        return (List<UmboxLookup>) findObjectsByIdAndQuery(deviceId, query, UmboxLookupDAO.class);
+        return (List<UmboxLookup>) findObjectsByIdAndQuery(deviceId, query, UmboxLookupDAO.class);*/
+        String query = "SELECT * FROM umbox_lookup WHERE device_type_id = " + deviceId;
+        return (List<UmboxLookup>) findObjectsByQuery(query, UmboxLookupDAO.class);
     }
 
     /**
