@@ -62,7 +62,8 @@ public class DeviceDAO extends DAO
         int samplingRate = rs.getInt("sampling_rate");
         int defaultSamplingRate = rs.getInt("default_sampling_rate");
         int dataNodeId = rs.getInt("data_node_id");
-        return new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate, dataNodeId);
+        String credentials = rs.getString("credentials");
+        return new Device(id, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate, dataNodeId, credentials);
     }
 
     /**
@@ -173,7 +174,7 @@ public class DeviceDAO extends DAO
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement
                 ("INSERT INTO device(description, name, type_id, group_id, ip_address," +
-                        "status_history_size, sampling_rate, default_sampling_rate, data_node_id) values(?,?,?,?,?,?,?,?,?) RETURNING id")) {
+                        "status_history_size, sampling_rate, default_sampling_rate, data_node_id, credentials) values(?,?,?,?,?,?,?,?,?,?) RETURNING id")) {
             st.setString(1, device.getDescription());
             st.setString(2, device.getName());
             st.setInt(3, device.getType().getId());
@@ -188,6 +189,7 @@ public class DeviceDAO extends DAO
             st.setInt(7, device.getSamplingRate());
             st.setInt(8, device.getDefaultSamplingRate());
             st.setInt(9, device.getDataNode().getId());
+            st.setString(10, device.getCredentials());
             st.execute();
             int serialNum = getLatestId(st);
             device.setId(serialNum);
@@ -252,7 +254,7 @@ public class DeviceDAO extends DAO
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE device " +
                 "SET name = ?, description = ?, type_id = ?, group_id = ?, ip_address = ?, status_history_size = ?, sampling_rate = ?," +
-                    " data_node_id = ? " +
+                    " data_node_id = ?, credentials = ? " +
                 "WHERE id = ?")) {
             st.setString(1, device.getName());
             st.setString(2, device.getDescription());
@@ -265,8 +267,10 @@ public class DeviceDAO extends DAO
             st.setInt(6, device.getStatusHistorySize());
             st.setInt(7, device.getSamplingRate());
             st.setInt(8, device.getDataNode().getId());
+            st.setString(9, device.getCredentials());
 
-            st.setInt(9, device.getId());
+            st.setInt(10, device.getId());
+
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
