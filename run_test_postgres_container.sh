@@ -1,5 +1,4 @@
 #!/bin/bash
-bash build_test_container.sh
 
 test_db_name='kalki-postgres-test'
 #[[ $(docker ps -f "name=$test_db_name" --format '{{.Names}}') == $test_db_name ]] || \
