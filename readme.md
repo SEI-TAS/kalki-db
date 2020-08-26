@@ -36,6 +36,7 @@ Kalki comprises a total of 8 GitHub projects:
 ## Usage
 ### Running Unit Tests Locally
 If you want to run the unit tests locally:
+1. Build the test database image with `bash build_test_container.sh`
 1. Start the test database container with `bash run_test_postgres_container.sh`
 1. Run `./gradlew test`
 1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
