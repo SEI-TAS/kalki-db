@@ -4,4 +4,5 @@ COPY --chown=gradle:gradle . /home/gradle/kalki-db
 RUN mkdir -p /home/gradle/src/
 RUN cp /home/gradle/kalki-db/gradle.properties /home/gradle/src/
 WORKDIR /home/gradle/kalki-db
-RUN gradle build publishToMavenLocal --no-daemon
+ARG SKIP_TESTS
+RUN gradle build $SKIP_TESTS publishToMavenLocal --no-daemon
