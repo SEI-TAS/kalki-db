@@ -124,7 +124,17 @@ public class Postgres {
         String dbUser = Config.getValue("db_user");
         String dbPass = Config.getValue("db_password");
 
-        Postgres.initialize(dbName, dbUser, dbPass);
+        // Optional parameters, only use if they are there.
+        String dbHost = Config.getValue("db_host");
+        if(dbHost == null) {
+            dbHost = DEFAULT_IP;
+        }
+        String dbPort = Config.getValue("db_port");
+        if(dbHost == null) {
+            dbHost = DEFAULT_PORT;
+        }
+
+        Postgres.initialize(dbHost, dbPort, dbName, dbUser, dbPass);
     }
 
     /**
