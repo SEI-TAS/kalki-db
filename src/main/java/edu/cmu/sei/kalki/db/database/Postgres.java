@@ -130,8 +130,8 @@ public class Postgres {
             dbHost = DEFAULT_IP;
         }
         String dbPort = Config.getValue("db_port");
-        if(dbHost == null) {
-            dbHost = DEFAULT_PORT;
+        if(dbPort == null) {
+            dbPort = DEFAULT_PORT;
         }
 
         Postgres.initialize(dbHost, dbPort, dbName, dbUser, dbPass);
