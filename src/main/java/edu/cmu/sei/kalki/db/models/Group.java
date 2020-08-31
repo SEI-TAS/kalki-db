@@ -32,6 +32,7 @@
 package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.GroupDAO;
+import org.json.JSONObject;
 
 public class Group  extends Model {
     private String name;
@@ -47,6 +48,15 @@ public class Group  extends Model {
     public Group(int id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    /**
+     * Create a a Group from a JSONObject
+     * @param group
+     */
+    public Group(JSONObject group) {
+        id = group.getInt("id");
+        String name = group.getString("name");
     }
 
     public String getName() {

@@ -34,6 +34,7 @@ package edu.cmu.sei.kalki.db.models;
 import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.DeviceSecurityStateDAO;
+import org.json.JSONObject;
 
 public class DeviceSecurityState extends Model  {
     private int deviceId;
@@ -73,6 +74,19 @@ public class DeviceSecurityState extends Model  {
         this.stateId = stateId;
         this.timestamp = timestamp;
         this.name = name;
+    }
+
+    /**
+     * Creates from a JSONObject
+     * @param state
+     * @return
+     */
+    public DeviceSecurityState(JSONObject state) {
+        id = state.getInt("id");
+        deviceId = state.getInt("deviceId");
+        stateId = state.getInt("stateId");
+        timestamp = new Timestamp(state.getLong("timestamp"));
+        name = state.getString("name");
     }
 
     public int getDeviceId() {

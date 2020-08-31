@@ -36,6 +36,8 @@ import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 import edu.cmu.sei.kalki.db.daos.GroupDAO;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Map;
@@ -100,6 +102,27 @@ public class Device extends Model {
         this.defaultSamplingRate = defaultSamplingRate;
         this.dataNode = DataNodeDAO.findDataNode(dataNodeId);
         this.credentials = credentials;
+    }
+
+    /**
+     * Creates a Device from a JSON object
+     * @param deviceData
+     * @return a device object
+     */
+    public Device(JSONObject deviceData) {
+        id = deviceData.getInt("id");
+        name = deviceData.getString("name");
+        description = deviceData.getString("description");
+        type = deviceData.optJSONObject("type")!=null ? new DeviceType(deviceData.getJSONObject("type")):null;
+        group = deviceData.optJSONObject("group")!=null ? new Group(deviceData.getJSONObject("group")):null;
+        ip = deviceData.getString("ip");
+        statusHistorySize = deviceData.getInt("statusHistorySize");
+        samplingRate = deviceData.getInt("samplingRate");
+        defaultSamplingRate = deviceData.getInt("defaultSamplingRate");
+        currentState = deviceData.optJSONObject("currentState")!=null ? new DeviceSecurityState(deviceData.getJSONObject("currentState")):null;
+        lastAlert = deviceData.optJSONObject("lastAlert")!=null ? new Alert(deviceData.getJSONObject("lastAlert")):null;
+        dataNode = deviceData.optJSONObject("dataNode")!=null ? new DataNode(deviceData.getJSONObject("dataNode")):null;
+        credentials = deviceData.getString("credentials");
     }
 
     public String getName() {
