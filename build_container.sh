@@ -4,7 +4,8 @@ LOAD_EMPTY_MODE="all"
 
 # Avoiding issue when passing skip tests param.
 if [ "$1" == "--skip_tests" ]; then
-  bash load_device_types.sh
+  $#=0
+  source load_device_types.sh
 else
   source load_device_types.sh "$@"
 fi
