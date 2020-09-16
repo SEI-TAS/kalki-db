@@ -1,13 +1,5 @@
 #!/bin/bash
 
 LOAD_EMPTY_MODE="all"
-
-# Avoiding issue when passing skip tests param.
-if [ "$1" == "--skip_tests" ]; then
-  $#=0
-  source load_device_types.sh
-else
-  source load_device_types.sh "$@"
-fi
-
+source load_device_types.sh "$@"
 docker build -t kalki/kalki-postgres .
