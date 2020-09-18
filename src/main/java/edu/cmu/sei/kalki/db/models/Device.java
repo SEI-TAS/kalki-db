@@ -36,6 +36,8 @@ import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 import edu.cmu.sei.kalki.db.daos.GroupDAO;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Map;
@@ -55,18 +57,19 @@ public class Device extends Model {
     private DeviceSecurityState currentState;
     private Alert lastAlert;
     private DataNode dataNode;
+    private String credentials;
 
     public Device() {
 
     }
 
     public Device(String name, String description, DeviceType type, String ip,
-                  int statusHistorySize, int samplingRate, DataNode dataNode) {
-        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null, dataNode);
+                  int statusHistorySize, int samplingRate, DataNode dataNode, String credentials) {
+        this(name, description, type, null, ip, statusHistorySize, samplingRate, samplingRate, null, null, dataNode, credentials);
     }
 
     public Device(String name, String description, DeviceType type, Group group, String ip,
-                  int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert, DataNode dataNode){
+                  int statusHistorySize, int samplingRate,int defaultSamplingRate, DeviceSecurityState currentState, Alert lastAlert, DataNode dataNode, String credentials){
         this.name = name;
         this.description = description;
         this.type = type;
@@ -78,15 +81,16 @@ public class Device extends Model {
         this.currentState = currentState;
         this.lastAlert = lastAlert;
         this.dataNode = dataNode;
+        this.credentials = credentials;
     }
 
     public Device(String name, String description, int typeId, int groupId, String ip,
-                  int statusHistorySize, int samplingRate, int defaultSamplingRate, int dataNodeId){
-        this(0, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate, dataNodeId);
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate, int dataNodeId, String credentials){
+        this(0, name, description, typeId, groupId, ip, statusHistorySize, samplingRate, defaultSamplingRate, dataNodeId, credentials);
     }
 
     public Device(int id, String name, String description, int typeId, int groupId, String ip,
-                  int statusHistorySize, int samplingRate, int defaultSamplingRate, int dataNodeId) {
+                  int statusHistorySize, int samplingRate, int defaultSamplingRate, int dataNodeId, String credentials) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -97,6 +101,28 @@ public class Device extends Model {
         this.samplingRate = samplingRate;
         this.defaultSamplingRate = defaultSamplingRate;
         this.dataNode = DataNodeDAO.findDataNode(dataNodeId);
+        this.credentials = credentials;
+    }
+
+    /**
+     * Creates a Device from a JSON object
+     * @param deviceData
+     * @return a device object
+     */
+    public Device(JSONObject deviceData) {
+        id = deviceData.getInt("id");
+        name = deviceData.getString("name");
+        description = deviceData.getString("description");
+        type = deviceData.optJSONObject("type")!=null ? new DeviceType(deviceData.getJSONObject("type")):null;
+        group = deviceData.optJSONObject("group")!=null ? new Group(deviceData.getJSONObject("group")):null;
+        ip = deviceData.getString("ip");
+        statusHistorySize = deviceData.getInt("statusHistorySize");
+        samplingRate = deviceData.getInt("samplingRate");
+        defaultSamplingRate = deviceData.getInt("defaultSamplingRate");
+        currentState = deviceData.optJSONObject("currentState")!=null ? new DeviceSecurityState(deviceData.getJSONObject("currentState")):null;
+        lastAlert = deviceData.optJSONObject("lastAlert")!=null ? new Alert(deviceData.getJSONObject("lastAlert")):null;
+        dataNode = deviceData.optJSONObject("dataNode")!=null ? new DataNode(deviceData.getJSONObject("dataNode")):null;
+        credentials = deviceData.getString("credentials");
     }
 
     public String getName() {
@@ -224,4 +250,12 @@ public class Device extends Model {
     public Map<Device, DeviceStatus> statusesOfSameType() { return DeviceStatusDAO.findDeviceStatusesByType(this.type.getId()); }
 
     public Map<Device, DeviceStatus> statusesOfSameGroup() { return DeviceStatusDAO.findDeviceStatusesByGroup(this.group.getId()); }
+
+    public String getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(String credentials) {
+        this.credentials = credentials;
+    }
 }

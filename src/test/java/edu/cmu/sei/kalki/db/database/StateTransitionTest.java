@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StateTransitionTest extends AUsesDatabase
 {
-    private static final int BASE_STATE_TRANSITIONS = 12;
+    private static final int BASE_STATE_TRANSITIONS = 9;
     private static StateTransition stateTransition;
 
     @Test

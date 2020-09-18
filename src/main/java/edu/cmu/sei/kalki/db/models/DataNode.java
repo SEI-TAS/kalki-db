@@ -32,6 +32,7 @@
 package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.DataNodeDAO;
+import org.json.JSONObject;
 
 public class DataNode extends Model
 {
@@ -50,6 +51,16 @@ public class DataNode extends Model
     public DataNode(String name, String ipAddress) {
         this.name = name;
         this.ipAddress = ipAddress;
+    }
+    /**
+     * Creates from a JSONObject
+     * @param dataNode
+     * @return
+     */
+    public DataNode(JSONObject dataNode) {
+        id = dataNode.getInt("id");
+        name = dataNode.getString("name");
+        ipAddress = dataNode.getString("ipAddress");
     }
 
     public String getName() {

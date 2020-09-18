@@ -119,7 +119,7 @@ public class TagTest extends AUsesDatabase {
         dataNode.insert();
 
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode, "");
         device.setTagIds(tagIds);
         device.insert();
     }
