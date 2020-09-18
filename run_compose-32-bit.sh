@@ -2,8 +2,8 @@
 
 if [ "$1" == "--reset" ]; then
   echo "Reset requested, removing existing DB volume if any..."
-  docker volume rm kalki-pgdata
+  docker volume rm kalkidb_kalki-pgdata
 fi
 
 export HOST_TZ=$(cat /etc/timezone)
-docker-compose -f docker-compose-32-bit.yml up -d
+docker-compose -f docker-compose-32-bit.ymld up -d
