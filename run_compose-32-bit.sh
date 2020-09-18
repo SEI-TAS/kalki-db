@@ -6,4 +6,4 @@ if [ "$1" == "--reset" ]; then
 fi
 
 export HOST_TZ=$(cat /etc/timezone)
-docker-compose -f docker-compose-32-bit.ymld up
+docker-compose -f docker-compose-32-bit.yml up
