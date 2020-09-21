@@ -9,4 +9,4 @@ export HOST_TZ=$(cat /etc/timezone)
 docker-compose -f d20-docker-compose.yml up -d
 
 # Show logs.
-bash -f d20-docker-compose.yml compose_logs.sh
+bash compose_logs.sh
