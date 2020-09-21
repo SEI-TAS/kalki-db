@@ -6,4 +6,7 @@ if [ "$1" == "--reset" ]; then
 fi
 
 export HOST_TZ=$(cat /etc/timezone)
-docker-compose up
+docker-compose up -d
+
+# Show logs.
+bash compose_logs.sh
