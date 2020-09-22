@@ -36,7 +36,6 @@ import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceStatusDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 import edu.cmu.sei.kalki.db.daos.GroupDAO;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -110,6 +109,7 @@ public class Device extends Model {
      * @return a device object
      */
     public Device(JSONObject deviceData) {
+        System.out.println("Creating device from json: " + deviceData.toString());
         id = deviceData.getInt("id");
         name = deviceData.getString("name");
         description = deviceData.getString("description");
