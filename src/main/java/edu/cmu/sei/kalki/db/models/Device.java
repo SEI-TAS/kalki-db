@@ -122,7 +122,7 @@ public class Device extends Model {
         currentState = deviceData.optJSONObject("currentState")!=null ? new DeviceSecurityState(deviceData.getJSONObject("currentState")):null;
         lastAlert = deviceData.optJSONObject("lastAlert")!=null ? new Alert(deviceData.getJSONObject("lastAlert")):null;
         dataNode = deviceData.optJSONObject("dataNode")!=null ? new DataNode(deviceData.getJSONObject("dataNode")):null;
-        credentials = deviceData.optJSONObject("credentials")!=null ? deviceData.getString("credentials") :"";
+        credentials = deviceData.get("credentials")!=null ? deviceData.getString("credentials") :"";
     }
 
     public String getName() {
