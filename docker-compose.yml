@@ -1,0 +1,21 @@
+version: '2.3'
+services:
+  kalki-postgres:
+    image: kalki/kalki-postgres
+    container_name: kalki-postgres
+    environment:
+      - TZ=${HOST_TZ}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: "pg_isready -q -h kalki-postgres"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    volumes:
+      - kalki-pgdata:/var/lib/postgresql/data
+
+volumes:
+  kalki-pgdata:
+    name: kalki-pgdata

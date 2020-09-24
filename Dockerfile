@@ -4,6 +4,7 @@ FROM postgres:9.6.17
 ENV POSTGRES_USER=kalkiuser
 ENV POSTGRES_PASSWORD=kalkipass
 ENV POSTGRES_DB=kalkidb
+ENV PGDATA=/var/lib/postgresql/data/pgdata
 
 # Copy init scripts to be automatically executed by PG entrypoint.
 ADD sql/init /docker-entrypoint-initdb.d/

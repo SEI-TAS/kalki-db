@@ -1,0 +1,14 @@
+version: '2.0'
+services:
+  kalki-postgres:
+    image: kalki/kalki-postgres
+    container_name: kalki-postgres
+    environment:
+      - TZ=${HOST_TZ}
+    ports:
+      - "5432:5432"
+    volumes:
+      - kalki-pgdata:/var/lib/postgresql/data
+
+volumes:
+  kalki-pgdata:

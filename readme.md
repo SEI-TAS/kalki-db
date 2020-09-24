@@ -1,9 +1,26 @@
 # KalkiDB
+
+Kalki-DB is a library used by several Kalki components. It provides DB access, as well as some other common functionality. It also sets up a docker-based PostgresSQL DB server that acts as the main DB for the Control Node of Kalki.
+
+Kalki is an IoT platform for allowing untrusted IoT devices to connect to a network in a secure way, protecting both the IoT device and the network from malicious attackers.
+
+Kalki comprises a total of 8 GitHub projects:
+- kalki-node-setup (Kalki Main Repository, composes all non-UI components)
+- kalki-controller (Kalki Main Controller)
+- kalki-umbox-controller (Kalki Umbox Controller)
+- kalki-device-controller (Kalki Device Controller)
+- kalki-dashboard (Kalki Dashboard)
+- kalki-db (Kalki Database Library)
+- kalki-iot-interface (Kalki IoT Interface)
+- kalki-umboxes (Kalki Umboxes, sample umboxes and umboxes components)
+
+## Table of Contents
 * [Prerequisites](#prerequisites)
-* [Running Unit Tests](#running-unit-tests)
 * [Usage](#usage)
+    * [Running Unit Tests Locally](#running-unit-tests-locally)
     * [Database Engine Startup](#database-engine-startup)
     * [Publishing the Library](#publishing-the-library)
+    * [Using the Library](#using-the-library)    
     * [Code Integration](#code-integration)
 * [Exporting and Importing Data](#exporting-and-importing-data)
 * [Models & Actions](#models-&-actions)
@@ -12,32 +29,39 @@
     * [Insert Notifications](#insert-notifications)
 
 ## Prerequisites   
-  - To compile this program, Java JDK 8 is required. This program uses Gradle as its build system, 
- but since it uses an included Gradle wrapper, no external Gradle setup is required.
-  - To run the tests for this program, and to run the DB this library connects to, Docker needs to be set up
-  in the system.
-
-## Running Unit Tests
-Running the tests is not mandatory to publish and use the library. To run the tests:
-1. Start the test database container with `bash run_test_postgres_container`
-1. Run `./gradlew build`
+ - Docker is required to build this library as a build env image, and to run the DB this library connects to.
+ - Docker Compose 1.18.0+ is required to run the DB.
+ - If compiling locally, Java JDK 8 is required.
 
 ## Usage
+### Running Unit Tests Locally
+If you want to run the unit tests locally:
+1. Build the test database image with `bash build_test_container.sh`
+1. Start the test database container with `bash run_test_postgres_container.sh`
+1. Run `./gradlew test`
+1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`
+
 ### Database Engine Startup
-Start the database by running `bash run_postgres_container.sh` from the project root.
-This will create a docker container named `kalki-postgres` running the Postgres DB engine.
+Create the docker image first with `bash build_container.sh`.
 
-If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments
-are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match
-the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc"
-device types, execute `$ bash run_postgres_container.sh wemo dlc`
+If you want to only load some device types into the DB, you can pass their names as arguments to the script. If no arguments are passed, all device types defined in `sql/device_types` are loaded. The device type name to pass must match the file name after the "1-" and before the ".sql" parts of it. For example, to load only the "wemo" and "dlc" device types, execute `$ bash build_container.sh wemo dlc`
 
-To stop the docker container execute `$ docker container stop kalki-postgres`  
+Start the database by running `bash run_compose.sh` from the project root. This will create a docker container named `kalki-postgres` running the Postgres DB engine. NOTE: if you want to recreate the DB, add the `--reset` command line argument.
+
+To see the logs of the running container, execute `bash compose_logs.sh`.
+
+To stop the docker container execute `bash stop_compose.sh`.  
 
 ### Publishing the Library
-To publish to the local maven repository:
-1. Run `./gradlew publishToMavenLocal`
+To create the docker image with the compiled library, run this command:
+- `bash build_dev_container.sh`
 
+This will create an image called kalki/kalki-db-env which can be used as the base image for building Java components that require kalki-db. It will also automatically start the test DB needed for unit tests, and run all unit tests.
+
+If instead you want to install it locally, run:
+- `./gradlew publishToMavenLocal`
+
+### Using the Library
 In whatever project you want to include this library in, make sure that your dependencies include this project
 and that mavenLocal is under the repositories in your build.gradle file.
 ```
@@ -50,6 +74,11 @@ dependencies {
     compile group: 'edu.cmu.sei.ttg', name: 'kalki-db', version: '0.0.1-SNAPSHOT'
 }
 ```
+
+If creating a docker-based project with a docker-based build environment, ensure that your Dockerfile starts from the kalki-db image, like so:
+
+`FROM kalki/kalki-db-env AS build_env`
+
 ### Code Integration
 
 First, initialize the Postgres singleton using 
@@ -316,7 +345,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findPolicyRule(int id)`        |`Policy`      |
-|`findPolicyRule(int stateTransId, int policyCondId, int devTypeId)`          |`Policy`|
+|`findPolicyRule(int stateTransitionId, int policyConditionId, int deviceTypeId)`          |`Policy`|
 |`insertPolicyRule(PolicyRule policyRule)` |`Integer`    |
 |`updatePolicyRule(PolicyRule policyRule)` |`Integer`    |
 |`deletePolicyRule(int policyRuleId) ` |`Boolean`    |
@@ -423,7 +452,7 @@ $ psql kalkidb -U kalkiuser -h localhost -p 5432 < [filename].sql
 |Function Definition | Return Type |  
 |:---|:---| 
 |`findUmboxImage(int id)`         |`UmboxImage`      |
-|`findUmboxImagesByDeviceTypeAndSecState(int devTypeId, int secStateId)`|`List<UmboxImage>`|
+|`findUmboxImagesByDeviceTypeAndSecState(int deviceTypeId, int secStateId)`|`List<UmboxImage>`|
 |`findAllUmboxImages()`           |`List<UmboxImage>`|
 |`insertUmboxImage(UmboxImage u)` |`Integer`            |
 |`updateUmboxImage(UmboxImage u)` |`Integer`            |
@@ -778,16 +807,16 @@ This class supports:
 |Property  |Type      |
 |---------:|:---------|
 |id        |int       |
-|stateTransId     |int    |
-|policyCondId     |int    |
-|devTypeId        |int    |
+|stateTransitionId     |int    |
+|policyConditionId     |int    |
+|deviceTypeId        |int    |
 |samplingRate     |int    |
 ###### Constructors:
 |Definition |  
 |:---|
 |`Policy()`|
-|`Policy(int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
-|`Policy(int id, int stateTransId, int policyCondId, int devTypeId, int samplingRate)`|
+|`Policy(int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRate)`|
+|`Policy(int id, int stateTransitionId, int policyConditionId, int deviceTypeId, int samplingRate)`|
 ###### Methods:
 This class supports:
 - `get<field>()`
