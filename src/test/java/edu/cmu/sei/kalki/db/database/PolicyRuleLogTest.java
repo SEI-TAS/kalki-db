@@ -87,7 +87,7 @@ public class PolicyRuleLogTest extends AUsesDatabase {
         DataNode dataNode = new DataNode("Test Node", "localhost");
         dataNode.insert();
 
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode, "");
         device.insert();
 
         stateTransition = new StateTransition(1, 2);

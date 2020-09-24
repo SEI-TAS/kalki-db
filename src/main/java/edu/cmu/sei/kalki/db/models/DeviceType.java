@@ -32,6 +32,7 @@
 package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,16 @@ public class DeviceType extends Model  {
     public DeviceType(int id, String name, List<DeviceSensor> sensors) {
         this(name, sensors);
         this.id = id;
+    }
+
+    /**
+     * Creates from a JSONObject
+     * @param type
+     * @return
+     */
+    public DeviceType(JSONObject type) {
+        id = type.getInt("id");
+        name = type.getString("name");
     }
 
     public String getName() {

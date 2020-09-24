@@ -141,7 +141,7 @@ public class AlertTypeLookupTest extends AUsesDatabase {
         DataNode dataNode = new DataNode("Test Node", "localhost");
         dataNode.insert();
 
-        device = new Device("Name", "Description", deviceType, "1.1.1.1", 1, 1, dataNode);
+        device = new Device("Name", "Description", deviceType, "1.1.1.1", 1, 1, dataNode, "");
         device.insert();
     }
 }

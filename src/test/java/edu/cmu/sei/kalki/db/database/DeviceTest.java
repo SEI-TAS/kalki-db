@@ -79,7 +79,7 @@ public class DeviceTest extends AUsesDatabase {
         DataNode dataNode = new DataNode("Test Node", "localhost");
         dataNode.insert();
 
-        Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000, dataNode);
+        Device test = new Device("test", "test desc", deviceType, "1.1.1.1", 1000, 1000, dataNode, "");
         test.insert();
 
         assertNotNull(test.getCurrentState());
@@ -131,7 +131,7 @@ public class DeviceTest extends AUsesDatabase {
         DataNode dataNode = new DataNode("Test Node", "localhost");
         dataNode.insert();
 
-        Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2, dataNode);
+        Device newDevice = new Device("Device 3", "this is a newly added device", deviceType, "0.0.0.0", 2, 2, dataNode, "");
         int newId = newDevice.insertOrUpdate();
 
         assertEquals(3, DeviceDAO.findAllDevices().size());
@@ -177,11 +177,11 @@ public class DeviceTest extends AUsesDatabase {
         group.insert();
 
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode, "");
         device.setTagIds(new ArrayList<Integer>());
         device.insert();
 
-        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1, 1, dataNode.getId());
+        deviceTwo = new Device("Device 2", "this is also a test device", deviceTypeTwo.getId(), group.getId(), "0.0.0.1", 1, 1, 1, dataNode.getId(), "");
         deviceTwo.insert();
 
         // insert alert_type unts-temperature
