@@ -30,12 +30,13 @@ Kalki comprises a total of 8 GitHub projects:
 
 ## Prerequisites   
  - Docker is required to build this library as a build env image, and to run the DB this library connects to.
- - Docker Compose 1.16.0+ is required to run the DB.
+ - Docker Compose 1.18.0+ is required to run the DB.
  - If compiling locally, Java JDK 8 is required.
 
 ## Usage
 ### Running Unit Tests Locally
 If you want to run the unit tests locally:
+1. Build the test database image with `bash build_test_container.sh`
 1. Start the test database container with `bash run_test_postgres_container.sh`
 1. Run `./gradlew test`
 1. If you want to stop the test DB, run `docker container stop kalki-postgres-test`

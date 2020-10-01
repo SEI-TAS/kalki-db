@@ -94,7 +94,7 @@ public class StageLogTest extends AUsesDatabase {
         DataNode dataNode = new DataNode("Test Node", "localhost");
         dataNode.insert();
 
-        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1, dataNode);
+        device = new Device("Device Name", "Dev Description", deviceType, "ip", 1, 1, dataNode, "");
         device.insert();
 
         deviceSecurityState = new DeviceSecurityState(device.getId(), securityState.getId());

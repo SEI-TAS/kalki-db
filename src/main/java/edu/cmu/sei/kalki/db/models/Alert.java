@@ -34,6 +34,7 @@ package edu.cmu.sei.kalki.db.models;
 import java.sql.Timestamp;
 
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
+import org.json.JSONObject;
 
 public class Alert extends Model {
 
@@ -97,6 +98,22 @@ public class Alert extends Model {
         this.deviceId = deviceId;
         this.alertTypeId = alertTypeId;
         this.info = info;
+    }
+
+    /**
+     * Creates from a JSONObjet
+     * @param alert
+     * @return
+     */
+    public Alert(JSONObject alert) {
+        id = alert.getInt("id");
+        name = alert.getString("name");
+        timestamp = new Timestamp(alert.getLong("timestamp"));
+        alerterId = alert.getString("alerterId");
+        deviceId = alert.getInt("deviceId");
+        deviceStatusId = alert.getInt("deviceStatusId");
+        alertTypeId = alert.getInt("alertTypeId");
+        info = alert.getString("info");
     }
 
     public String getName() {

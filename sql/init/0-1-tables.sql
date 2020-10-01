@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS device(
     sampling_rate          int NOT NULL,
     default_sampling_rate  int NOT NULL,
     last_alert_id          int,
-    data_node_id           int REFERENCES data_node(id)
+    data_node_id           int REFERENCES data_node(id),
+    credentials            varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS device_tag(
