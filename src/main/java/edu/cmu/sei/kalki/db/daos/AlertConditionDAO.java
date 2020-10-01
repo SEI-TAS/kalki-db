@@ -77,6 +77,19 @@ public class AlertConditionDAO extends DAO {
     }
 
     /**
+     * Finds all AlertConditions in the database
+     *
+     * @return a list of AlertCondition
+     */
+    public static List<AlertCondition> findAllAlertConditions() {
+        String query = "SELECT ac.*, ds.name AS attribute_name " +
+                "FROM alert_condition AS ac, device_sensor as ds " +
+                "WHERE ac.attribute_id = ds.id";
+        return (List<AlertCondition>) findObjectsByQuery(query, AlertConditionDAO.class);
+    }
+
+
+    /**
      * Finds all AlertConditions for a specific AlertContext
      */
     public static List<AlertCondition> findAlertConditionsForContext(int contextId) {
@@ -84,6 +97,20 @@ public class AlertConditionDAO extends DAO {
                 "FROM alert_condition AS ac, device_sensor as ds, alert_circumstance AS circ " +
                 "WHERE circ.context_id = ? AND circ.condition_id = ac.id AND ac.attribute_id = ds.id";
         return (List<AlertCondition>) findObjectsByIdAndQuery(contextId, query, AlertConditionDAO.class);
+    }
+
+    /**
+     * Finds all AlertConditions for a specific device
+     */
+    public static List<AlertCondition> findAlertConditionsByDevice(int deviceId) {
+        String query = "SELECT ac.*, ds.name AS attribute_name " +
+                "FROM alert_condition AS ac, device_sensor as ds, device AS d " +
+                "WHERE ac.attribute_id = ds.id AND ac.device_id = ?";
+        return (List<AlertCondition>) findObjectsByIdAndQuery(deviceId, query, AlertConditionDAO.class);
+    }
+
+    public static Boolean deleteAlertCondition(int id) {
+        return deleteById("alert_condition", id);
     }
 
     /**
