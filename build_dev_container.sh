@@ -16,7 +16,7 @@ if [ "$1" == "--skip_tests" ]; then
   SKIP_TESTS_ARG=" -x test "
 fi
 
-VERSION=1.7.0
+VERSION=1.8.0
 docker build --network=host --build-arg SKIP_TESTS="${SKIP_TESTS_ARG}" -t kalki/kalki-db-env -t kalki/kalki-db-env:${VERSION} -f Dockerfile.dev .
 
 rm gradle.properties
