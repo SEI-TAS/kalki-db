@@ -1,6 +1,5 @@
 package edu.cmu.sei.kalki.db.database;
 
-import jdk.internal.jline.internal.TestAccessible;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,11 +11,9 @@ import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.SecurityState;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.HashMap;
 
 public class AlertContextTest extends AUsesDatabase {
     private static DeviceType deviceType;
@@ -117,7 +114,7 @@ public class AlertContextTest extends AUsesDatabase {
         dataNode.insert();
 
         // insert device
-        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode);
+        device = new Device("Device 1", "this is a test device", deviceType, "0.0.0.0", 1, 1, dataNode, "");
         device.insert();
 
         // insert alert_type unts-temperature

@@ -1,12 +1,10 @@
 package edu.cmu.sei.kalki.db.database;
 
-import jdk.internal.jline.internal.TestAccessible;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-//import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceSensorDAO;
 
 import edu.cmu.sei.kalki.db.models.DeviceType;

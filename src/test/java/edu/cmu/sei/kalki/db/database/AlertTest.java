@@ -34,7 +34,6 @@ package edu.cmu.sei.kalki.db.database;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
-import edu.cmu.sei.kalki.db.daos.DataNodeDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.DataNode;
