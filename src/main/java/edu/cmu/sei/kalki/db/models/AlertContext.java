@@ -1,7 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
-import sun.rmi.runtime.Log;
 
 import java.util.ArrayList;
 import java.util.List;
