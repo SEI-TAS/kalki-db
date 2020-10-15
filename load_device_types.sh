@@ -4,7 +4,7 @@ SCRIPT_FOLDER="sql/device_types"
 TO_LOAD_FOLDER="${SCRIPT_FOLDER}/to_load"
 
 DEVICES_PROVIDED="NO"
-if [ "$#" -lt 1 ]; then
+if [ "$#" -gt 0 ]; then
   DEVICES_PROVIDED="YES"
 fi
 if [ "$1" == "--skip_tests" ]; then
@@ -25,6 +25,7 @@ if [ "${DEVICES_PROVIDED}" == "NO" ]; then
   fi
 else
   # Copies all device types passed as parameters to temp folder.
+  echo "Copying provided devices:"
   for TYPE in "$@"; do
     cp "${SCRIPT_FOLDER}/1-${TYPE}.sql" "${TO_LOAD_FOLDER}/"
   done
