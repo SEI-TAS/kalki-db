@@ -52,6 +52,8 @@ public class Postgres {
 
     private static final String POSTGRES_URL_SCHEMA = "jdbc:postgresql://";
 
+    public static final String TRIGGER_NOTIF_NEW_DEVICE = "deviceinsert";
+    public static final String TRIGGER_NOTIF_UPDATE_DEVICE = "deviceupdate";
     public static final String TRIGGER_NOTIF_NEW_DEV_SEC_STATE = "devicesecuritystateinsert";
     public static final String TRIGGER_NOTIF_NEW_DEV_STATUS = "devicestatusinsert";
     public static final String TRIGGER_NOTIF_NEW_POLICY_INSTANCE = "policyruleloginsert";
