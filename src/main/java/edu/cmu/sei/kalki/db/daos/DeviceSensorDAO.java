@@ -64,6 +64,26 @@ public class DeviceSensorDAO extends DAO
     }
 
     /**
+     * Updates DeviceSensor with given id to have the parameters of the given DeviceSensor.
+     * @param type DeviceSensor holding new parameters to be saved in the database.
+     */
+    public static DeviceSensor updateDeviceSensor(DeviceSensor sensor) {
+        logger.info("Updating DeviceSensor with id=" + sensor.getId());
+        try(Connection con = Postgres.getConnection();
+            PreparedStatement st = con.prepareStatement
+                    ("UPDATE device_sensor SET name = ? " +
+                            "WHERE id=?")) {
+            st.setString(1, sensor.getName());
+            st.setInt(2, sensor.getId());
+            st.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.severe("Error updating DeviceSensor: " + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return sensor;
+    }
+
+    /**
      * Inserts DeviceSensors for a DeviceType
      * @param type The DeviceType with associated DeviceSensors
      * @return
