@@ -96,8 +96,9 @@ public class DeviceSensorDAO extends DAO
         logger.info("Updating DeviceSensors for deviceType: " + type.getName());
 
         try(Connection con = Postgres.getConnection();
-        PreparedStatement st = con.prepareStatement("DELETE FROM device_sensor WHERE type_id=?")){
+            PreparedStatement st = con.prepareStatement("DELETE FROM device_sensor WHERE type_id=?")){
             st.setInt(1, type.getId());
+            st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error deleting DeviceSensors: " + e.getClass().getName() + ": " + e.getMessage());

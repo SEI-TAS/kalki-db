@@ -72,7 +72,12 @@ public class DeviceTypeDAO extends DAO
      * @return a list of all DeviceTypes in the database.
      */
     public static List<DeviceType> findAllDeviceTypes() {
-        return (List<DeviceType>) findObjectsByTable("device_type", DeviceTypeDAO.class);
+        List<DeviceType> deviceTypes = (List<DeviceType>) findObjectsByTable("device_type", DeviceTypeDAO.class);
+        for(DeviceType deviceType : deviceTypes) {
+            List<DeviceSensor> sensors = DeviceSensorDAO.findSensorsForDeviceType(deviceType.getId());
+            deviceType.setSensors(sensors);
+        }
+        return deviceTypes;
     }
 
     /**
