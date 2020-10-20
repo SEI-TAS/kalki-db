@@ -2,6 +2,7 @@ package edu.cmu.sei.kalki.db.daos;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
@@ -95,16 +96,57 @@ public class DeviceSensorDAO extends DAO
     public static DeviceType updateDeviceSensorForDeviceType(DeviceType type) {
         logger.info("Updating DeviceSensors for deviceType: " + type.getName());
 
-        try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("DELETE FROM device_sensor WHERE type_id=?")){
-            st.setInt(1, type.getId());
-            st.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            logger.severe("Error deleting DeviceSensors: " + e.getClass().getName() + ": " + e.getMessage());
+        // Remove deleted sensors.
+        List<DeviceSensor> sensorsToDelete = new ArrayList<>();
+        List<DeviceSensor> oldSensors = findSensorsForDeviceType(type.getId());
+        for (DeviceSensor oldSensor : oldSensors) {
+            boolean oldSensorFound = false;
+            for (DeviceSensor currentSensor : type.getSensors()) {
+                if(oldSensor.getId() == currentSensor.getId()) {
+                    oldSensorFound = true;
+                    break;
+                }
+            }
+            if(!oldSensorFound) {
+                sensorsToDelete.add(oldSensor);
+            }
         }
 
-        return insertDeviceSensorForDeviceType(type);
+        // Actually delete all sensors that were not sent back with the request.
+        if(!sensorsToDelete.isEmpty()) {
+            StringBuilder inClauseBuilder = new StringBuilder();
+            for(int i=0; i<sensorsToDelete.size(); i++) {
+                inClauseBuilder.append("?,");
+            }
+            String inClause = inClauseBuilder.substring(0, inClauseBuilder.length()-1);
+
+            try (Connection con = Postgres.getConnection();
+                 PreparedStatement st = con.prepareStatement("DELETE FROM device_sensor WHERE id IN (" + inClause + ")")) {
+                for(int i=0; i<sensorsToDelete.size(); i++) {
+                    st.setInt(i+1, sensorsToDelete.get(i).getId());
+                }
+                st.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                logger.severe("Error deleting DeviceSensors: " + e.getClass().getName() + ": " + e.getMessage());
+            }
+        }
+
+        // Create a temp devicetype object with only the new sensors to be inserted.
+        DeviceType typeWithNewSensors = new DeviceType();
+        typeWithNewSensors.setId(type.getId());
+        typeWithNewSensors.setName(type.getName());
+        List<DeviceSensor> newSensors = new ArrayList<>();
+        typeWithNewSensors.setSensors(newSensors);
+        for(DeviceSensor sensor : type.getSensors()) {
+            if(sensor.getId() == 0) {
+                newSensors.add(sensor);
+            }
+        }
+        insertDeviceSensorForDeviceType(typeWithNewSensors);
+
+        // Return the updated object will all sensors with proper ids.
+        return DeviceTypeDAO.findDeviceType(type.getId());
     }
 
 

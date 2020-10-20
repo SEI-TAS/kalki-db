@@ -53,7 +53,7 @@ public class DeviceSensorTest extends AUsesDatabase {
     }
 
     @Test
-    public void testUpdateDeviceSensorForDeviceType() {
+    public void testUpdateDeviceSensorForDeviceTypeAdd() {
         DeviceSensor newSensor = new DeviceSensor("Sensor two", deviceType.getId());
         deviceType.addSensor(newSensor);
 
@@ -63,11 +63,35 @@ public class DeviceSensorTest extends AUsesDatabase {
         Assertions.assertEquals(2, sensorList.size());
     }
 
+    @Test
+    public void testUpdateDeviceSensorForDeviceTypeRemove() {
+        deviceType.removeSensor(deviceSensor);
+
+        DeviceSensorDAO.updateDeviceSensorForDeviceType(deviceType);
+
+        List<DeviceSensor> sensorList = DeviceSensorDAO.findSensorsForDeviceType(deviceType.getId());
+        Assertions.assertEquals(0, sensorList.size());
+    }
+
+    @Test
+    public void testUpdateDeviceSensorForDeviceTypeExchange() {
+        DeviceSensor newSensor = new DeviceSensor("Sensor two", deviceType.getId());
+        deviceType.addSensor(newSensor);
+        deviceType.removeSensor((deviceSensor));
+
+        DeviceSensorDAO.updateDeviceSensorForDeviceType(deviceType);
+
+        List<DeviceSensor> sensorList = DeviceSensorDAO.findSensorsForDeviceType(deviceType.getId());
+        Assertions.assertEquals(1, sensorList.size());
+    }
+
     public void insertData() {
         deviceType = new DeviceType("Test Type");
         deviceType.insert();
 
         deviceSensor = new DeviceSensor("Test sensor", deviceType.getId());
         deviceSensor.insert();
+
+        deviceType.addSensor(deviceSensor);
     }
 }
