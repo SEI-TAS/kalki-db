@@ -107,7 +107,8 @@ public class DeviceTypeDAO extends DAO
 
     /**
      * Updates DeviceType with given id to have the parameters of the given DeviceType.
-     *
+     * NOTE: does NOT update associated device sensors. This is very inconsistent, but more definitive
+     * solution would imply removing sensors as part of the DeviceType object, which would require too many changes.
      * @param type DeviceType holding new parameters to be saved in the database.
      */
     public static DeviceType updateDeviceType(DeviceType type) {
@@ -119,7 +120,7 @@ public class DeviceTypeDAO extends DAO
             st.setString(1, type.getName());
             st.setInt(2, type.getId());
             st.executeUpdate();
-            DeviceSensorDAO.updateDeviceSensorForDeviceType(type);
+            //DeviceSensorDAO.updateDeviceSensorForDeviceType(type);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
