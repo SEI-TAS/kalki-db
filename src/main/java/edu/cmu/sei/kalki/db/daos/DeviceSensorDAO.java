@@ -46,6 +46,20 @@ public class DeviceSensorDAO extends DAO
     }
 
     /**
+     * First, attempts to find the DeviceSensor id in the database.
+     * If successful, updates the existing DeviceSensor with the given DeviceSensor's parameters. Otherwise,
+     * inserts the given DeviceSensor.
+     */
+    public static Integer insertOrUpdateCommand(DeviceSensor sensor) {
+        DeviceSensor existinSensor = findDeviceSensor(sensor.getId());
+        if (existinSensor == null) {
+            return insertDeviceSensor(sensor);
+        } else {
+            return updateDeviceSensor(sensor);
+        }
+    }
+
+    /**
      * Inserts a row into the DeviceSensor table
      */
     public static Integer insertDeviceSensor(DeviceSensor sensor) {
@@ -67,7 +81,7 @@ public class DeviceSensorDAO extends DAO
      * Updates DeviceSensor with given id to have the parameters of the given DeviceSensor.
      * @param type DeviceSensor holding new parameters to be saved in the database.
      */
-    public static DeviceSensor updateDeviceSensor(DeviceSensor sensor) {
+    public static Integer updateDeviceSensor(DeviceSensor sensor) {
         logger.info("Updating DeviceSensor with id=" + sensor.getId());
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement
@@ -76,11 +90,12 @@ public class DeviceSensorDAO extends DAO
             st.setString(1, sensor.getName());
             st.setInt(2, sensor.getId());
             st.executeUpdate();
+            return sensor.getId();
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating DeviceSensor: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return sensor;
+        return -1;
     }
 
     /**

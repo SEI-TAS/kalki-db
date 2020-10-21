@@ -1,5 +1,6 @@
 package edu.cmu.sei.kalki.db.models;
 
+import edu.cmu.sei.kalki.db.daos.DeviceCommandDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceSensorDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceTypeDAO;
 
@@ -46,5 +47,10 @@ public class DeviceSensor extends Model {
 
     public void update() {
         DeviceSensorDAO.updateDeviceSensor(this);
+    }
+
+    public int insertOrUpdate() {
+        this.id = DeviceSensorDAO.insertOrUpdateCommand(this);
+        return this.id;
     }
 }
