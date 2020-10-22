@@ -86,14 +86,14 @@ BEGIN
     -- Get state transitions.
     ----------------------------------------------
     SELECT INTO normalToNormal id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO normalToSuspicious id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO normalToAttack id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO suspiciousToNormal id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO suspiciousToSuspicious id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO suspiciousToAttack id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO attackToNormal id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO attackToSuspicious id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
-    SELECT INTO attackToAttack id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 1;
+    SELECT INTO normalToSuspicious id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 2;
+    SELECT INTO normalToAttack id FROM state_transistion WHERE start_sec_state_id = 1 AND finish_sec_state_id = 3;
+    SELECT INTO suspiciousToNormal id FROM state_transistion WHERE start_sec_state_id = 2 AND finish_sec_state_id = 1;
+    SELECT INTO suspiciousToSuspicious id FROM state_transistion WHERE start_sec_state_id = 2 AND finish_sec_state_id = 2;
+    SELECT INTO suspiciousToAttack id FROM state_transistion WHERE start_sec_state_id = 2 AND finish_sec_state_id = 3;
+    SELECT INTO attackToNormal id FROM state_transistion WHERE start_sec_state_id = 3 AND finish_sec_state_id = 1;
+    SELECT INTO attackToSuspicious id FROM state_transistion WHERE start_sec_state_id = 3 AND finish_sec_state_id = 2;
+    SELECT INTO attackToAttack id FROM state_transistion WHERE start_sec_state_id = 3 AND finish_sec_state_id = 3;
 
     ----------------------------------------------
     -- Get the device.
