@@ -96,7 +96,9 @@ public class DeviceTypeDAO extends DAO
             st.execute();
             int id = getLatestId(st);
             type.setId(id);
-            DeviceSensorDAO.insertDeviceSensorForDeviceType(type);
+            if(type.getSensors().size() > 0) {
+                DeviceSensorDAO.insertDeviceSensorForDeviceType(type);
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();

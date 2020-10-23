@@ -39,7 +39,7 @@ import java.util.List;
 
 public class DeviceType extends Model  {
     private String name;
-    private List<DeviceSensor> sensors;
+    private List<DeviceSensor> sensors = new ArrayList<>();
 
     public DeviceType() {
 
