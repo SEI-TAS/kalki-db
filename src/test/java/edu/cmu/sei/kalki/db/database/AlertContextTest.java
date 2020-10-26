@@ -10,7 +10,6 @@ import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
-import edu.cmu.sei.kalki.db.models.SecurityState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,17 +17,14 @@ import java.util.List;
 public class AlertContextTest extends AUsesDatabase {
     private static DeviceType deviceType;
     private static Device device;
-    private static AlertType alertType;
     private static AlertTypeLookup alertTypeLookup;
-    private static AlertContext alertContext;
 
     /*
         Alert Condition Action Tests
      */
-
     @Test
     public void testInsertAlertContext() {
-        AlertContext alertContext = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
         alertContext.insert();
         Assertions.assertNotEquals(-1, alertContext.getId());
         Assertions.assertNotEquals(0, alertContext.getId());
@@ -37,7 +33,7 @@ public class AlertContextTest extends AUsesDatabase {
 
     @Test
     public void testFindAlertContext() {
-        AlertContext ac = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        AlertContext ac = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
         ac.insert();
         AlertContext testAc = AlertContextDAO.findAlertContext(ac.getId());
         Assertions.assertEquals(ac.getId(), testAc.getId());
@@ -47,14 +43,14 @@ public class AlertContextTest extends AUsesDatabase {
 
     @Test
     public void testFindAllAlertContexts() {
-        AlertContext alertContext = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
         alertContext.insert();
         alertContext.insert();
 
         ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAllAlertContexts());
         Assertions.assertEquals(2, acList.size());
         Assertions.assertEquals(alertContext.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
-        Assertions.assertEquals(alertContext.getDeviceId(), acList.get(1).getDeviceId());
+        Assertions.assertEquals(alertContext.getDeviceTypeId(), acList.get(1).getDeviceTypeId());
     }
 
     @Test
@@ -102,10 +98,6 @@ public class AlertContextTest extends AUsesDatabase {
     }
 
     public void insertData() {
-        // insert normal security state
-        SecurityState normal = new SecurityState("Normal");
-        normal.insert();
-
         // insert device_type
         deviceType = new DeviceType(0, "test device type");
         deviceType.insert();
@@ -118,14 +110,11 @@ public class AlertContextTest extends AUsesDatabase {
         device.insert();
 
         // insert alert_type unts-temperature
-        alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
+        AlertType alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
         alertType.insert();
 
         // insert into alert_type_lookup
         alertTypeLookup = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         alertTypeLookup.insert();
-
-        alertContext = new AlertContext(null, alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
-        alertContext.insert();
     }
 }

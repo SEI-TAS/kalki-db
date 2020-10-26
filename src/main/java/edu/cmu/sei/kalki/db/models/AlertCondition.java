@@ -32,22 +32,23 @@
 package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
-import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 
 public class AlertCondition extends Model {
-    private int deviceId;
+    private int contextId;
     private int attributeId;
     private String attributeName;
     private int numStatues;
     private String compOperator;
     private String calculation;
-    private int thresholdId;
+    private Integer thresholdId;
     private String thresholdValue;
+    private Integer deviceId;
 
     public AlertCondition() {}
 
-    public AlertCondition(int deviceId, int attributeId, String attributeName, int numStatues, String compOperator, String calculation, int thresholdId, String thresholdValue) {
-        this.deviceId = deviceId;
+    public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
+                          String calculation, Integer thresholdId, String thresholdValue, Integer deviceId) {
+        this.contextId = contextId;
         this.attributeId = attributeId;
         this.attributeName = attributeName;
         this.numStatues = numStatues;
@@ -55,23 +56,34 @@ public class AlertCondition extends Model {
         this.calculation = calculation;
         this.thresholdId = thresholdId;
         this.thresholdValue = thresholdValue;
+        this.deviceId = deviceId;
     }
 
-    public AlertCondition(int deviceId, int attributeId, String attributeName, int numStatues, ComparisonOperator compOperator, Calculation calc, int thresholdId, String thresholdValue) {
-        this(deviceId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdId, thresholdValue);
+    public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, ComparisonOperator compOperator,
+                          Calculation calc, Integer thresholdId, String thresholdValue, Integer deviceId) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdId, thresholdValue, deviceId);
     }
 
 
-    public AlertCondition(int id, int deviceId, int attributeId, String attributeName, int numStatues, String compOperator, String calculation, int thresholdId, String thresholdValue) {
-        this(deviceId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdId, thresholdValue);
+    public AlertCondition(int id, int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
+                          String calculation, Integer thresholdId, String thresholdValue, Integer deviceId) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdId, thresholdValue, deviceId);
         this.id = id;
     }
 
-    public int getDeviceId() {
+    public int getContextId() {
+        return contextId;
+    }
+
+    public void setContextId(int contextId) {
+        this.contextId = contextId;
+    }
+
+    public Integer getDeviceId() {
         return deviceId;
     }
 
-    public void setDeviceId(int deviceId) {
+    public void setDeviceId(Integer deviceId) {
         this.deviceId = deviceId;
     }
 
@@ -121,11 +133,11 @@ public class AlertCondition extends Model {
 
     public void setCalculation(Calculation calculation) { this.calculation = calculation.convert(); }
 
-    public int getThresholdId() {
+    public Integer getThresholdId() {
         return thresholdId;
     }
 
-    public void setThresholdId(int thresholdId) {
+    public void setThresholdId(Integer thresholdId) {
         this.thresholdId = thresholdId;
     }
 
@@ -156,7 +168,7 @@ public class AlertCondition extends Model {
         LESS,
         LESS_OR_EQUAL;
 
-        private ComparisonOperator() {}
+        ComparisonOperator() {}
 
         public String convert() {
             switch (this) {
@@ -181,7 +193,7 @@ public class AlertCondition extends Model {
         SUM,
         NONE;
 
-        private Calculation() {}
+        Calculation() {}
 
         public String convert() {
             switch (this) {

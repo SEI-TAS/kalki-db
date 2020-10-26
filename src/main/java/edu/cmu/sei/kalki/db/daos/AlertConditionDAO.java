@@ -33,6 +33,7 @@ package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
+import org.postgresql.util.PSQLException;
 
 import java.sql.*;
 import java.util.List;
@@ -45,25 +46,24 @@ public class AlertConditionDAO extends DAO {
     public static AlertCondition createFromRs(ResultSet rs) throws SQLException {
         if(rs == null) return null;
 
-        ResultSetMetaData metaData = rs.getMetaData();
-        int numColumns = metaData.getColumnCount();
-        StringBuilder str = new StringBuilder();
-        for(int i=1; i<=numColumns; i++) {
-            str.append(metaData.getColumnName(i)+": "+rs.getObject(i).toString()+"; ");
-        }
-        logger.info("RESULTSET: "+str.toString());
-
         int id = rs.getInt("id");
-        int deviceId = rs.getInt("device_id");
+        int contextId = rs.getInt("context_id");
         int attributeId = rs.getInt("attribute_id");
         String attributeName = rs.getString("attribute_name");
         int numStatuses = rs.getInt("num_statuses");
         String compOperator = rs.getString("comparison_operator");
         String calculation = rs.getString("calculation");
-        int thresholdId = rs.getInt("threshold_id");
+        Integer thresholdId = 0;
+        try {
+            thresholdId = (Integer) rs.getObject("threshold_id");
+        } catch (PSQLException e) { logger.info("No threshold_id on ResultSet"); }
         String thresholdValue = rs.getString("threshold_value");
+        Integer deviceId = 0;
+        try {
+            deviceId = (Integer) rs.getObject("device_id");
+        } catch (PSQLException e) { logger.info("No device_id on ResultSet"); }
 
-        return new AlertCondition(id, deviceId, attributeId, attributeName, numStatuses, compOperator, calculation, thresholdId, thresholdValue);
+        return new AlertCondition(id, contextId, attributeId, attributeName, numStatuses, compOperator, calculation, thresholdId, thresholdValue, deviceId);
     }
 
     /**
@@ -84,28 +84,30 @@ public class AlertConditionDAO extends DAO {
     public static List<AlertCondition> findAllAlertConditions() {
         String query = "SELECT ac.*, ds.name AS attribute_name " +
                 "FROM alert_condition AS ac, device_sensor as ds " +
-                "WHERE ac.attribute_id = ds.id";
+                "WHERE ac.attribute_id = ds.id " +
+                "ORDER BY ac.id";
         return (List<AlertCondition>) findObjectsByQuery(query, AlertConditionDAO.class);
     }
-
 
     /**
      * Finds all AlertConditions for a specific AlertContext
      */
     public static List<AlertCondition> findAlertConditionsForContext(int contextId) {
         String query = "SELECT ac.*, ds.name AS attribute_name " +
-                "FROM alert_condition AS ac, device_sensor as ds, alert_circumstance AS circ " +
-                "WHERE circ.context_id = ? AND circ.condition_id = ac.id AND ac.attribute_id = ds.id";
+                "FROM alert_condition AS ac, device_sensor as ds " +
+                "WHERE ac.context_id = ? AND ac.attribute_id = ds.id " +
+                "ORDER BY ac.id";
         return (List<AlertCondition>) findObjectsByIdAndQuery(contextId, query, AlertConditionDAO.class);
     }
 
     /**
      * Finds all AlertConditions for a specific device
      */
-    public static List<AlertCondition> findAlertConditionsByDevice(int deviceId) {
+    public static List<AlertCondition> findAlertConditionsForDevice(int deviceId) {
         String query = "SELECT ac.*, ds.name AS attribute_name " +
                 "FROM alert_condition AS ac, device_sensor as ds, device AS d " +
-                "WHERE ac.attribute_id = ds.id AND ac.device_id = ?";
+                "WHERE ac.attribute_id = ds.id AND ac.device_id = ? " +
+                "ORDER BY ac.id";
         return (List<AlertCondition>) findObjectsByIdAndQuery(deviceId, query, AlertConditionDAO.class);
     }
 
@@ -117,16 +119,19 @@ public class AlertConditionDAO extends DAO {
      * Insert a row into the AlertCondition table
      */
     public static AlertCondition insertAlertCondition(AlertCondition cond) {
-        logger.info("Inserting alert condition for device: "+ cond.getDeviceId());
+        logger.info("Inserting alert condition");
         try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES(?,?,?,?,?,?,?) RETURNING  id")) {
-            st.setInt(1, cond.getDeviceId());
+            PreparedStatement st = con.prepareStatement(
+                    "INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, " +
+                            "calculation, threshold_id, threshold_value, device_id) VALUES(?,?,?,?,?,?,?,?) RETURNING  id")) {
+            st.setInt(1, cond.getContextId());
             st.setInt(2, cond.getAttributeId());
             st.setInt(3, cond.getNumStatues());
             st.setString(4, cond.getCompOperator());
             st.setString(5, cond.getCalculation());
             st.setObject(6, cond.getThresholdId());
             st.setString(7, cond.getThresholdValue());
+            st.setObject(8, cond.getDeviceId());
             st.execute();
             int id = getLatestId(st);
             cond.setId(id);
@@ -144,16 +149,17 @@ public class AlertConditionDAO extends DAO {
         logger.info("Updating alert condition: "+cond.getId());
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE alert_condition " +
-                    "SET device_id = ?, attribute_id = ?, num_statuses = ?, comparison_operator = ?, calculation = ?, threshold_id = ?, threshold_value = ? " +
+                    "SET context_id = ?, attribute_id = ?, num_statuses = ?, comparison_operator = ?, calculation = ?, threshold_id = ?, threshold_value = ?, device_id = ? " +
                     "WHERE id = ?")) {
-            st.setInt(1, cond.getDeviceId());
+            st.setInt(1, cond.getContextId());
             st.setInt(2, cond.getAttributeId());
             st.setInt(3, cond.getNumStatues());
             st.setString(4, cond.getCompOperator());
             st.setString(5, cond.getCalculation());
             st.setObject(6, cond.getAttributeId());
             st.setString(7, cond.getThresholdValue());
-            st.setInt(8, cond.getId());
+            st.setObject(8, cond.getDeviceId());
+            st.setInt(9, cond.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

@@ -206,7 +206,7 @@ public class DeviceTest extends AUsesDatabase {
         AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         atl.insert();
 
-        AlertContext alertContext = new AlertContext(null, atl.getId(), AlertContext.LogicalOperator.NONE);
+        AlertContext alertContext = new AlertContext(atl.getId(), AlertContext.LogicalOperator.NONE);
         alertContext.insert();
     }
 }

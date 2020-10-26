@@ -31,17 +31,13 @@
  */
 package edu.cmu.sei.kalki.db.database;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import java.util.HashMap;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 import edu.cmu.sei.kalki.db.models.AlertContext;
-import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 import edu.cmu.sei.kalki.db.models.AlertType;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
@@ -49,46 +45,55 @@ import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.DeviceSensor;
-import edu.cmu.sei.kalki.db.models.SecurityState;
 
 public class AlertConditionTest extends AUsesDatabase {
-    private static DeviceType deviceType;
     private static DeviceSensor deviceSensor;
     private static Device device;
-    private static AlertType alertType;
-    private static AlertTypeLookup alertTypeLookup;
     private static AlertContext alertContext;
+    private static AlertTypeLookup alertTypeLookup;
 
     /*
         Alert Condition Action Tests
      */
-
     @Test
     public void testInsertAlertCondition() {
-        AlertCondition alertCondition = new AlertCondition(device.getId(), deviceSensor.getId(), deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, 1, "");
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(),
+                deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL,
+                AlertCondition.Calculation.AVERAGE, 1, "", null);
         alertCondition.insert();
         Assertions.assertNotEquals(-1, alertCondition.getId());
     }
 
     @Test
+    public void testInsertAlertConditionForDevice() {
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(),
+                deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL,
+                AlertCondition.Calculation.AVERAGE, 1, "", device.getId());
+        alertCondition.insert();
+        Assertions.assertNotEquals(-1, alertCondition.getId());
+        AlertCondition insertedAlert = AlertConditionDAO.findAlertCondition(alertCondition.getId());
+        Assertions.assertEquals(device.getId(), (int) insertedAlert.getDeviceId());
+    }
+
+    @Test
     public void testUpdateAlertCondition() {
-        AlertCondition alertCondition = new AlertCondition(device.getId(), deviceSensor.getId(), deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, 1, "");
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, null, "", null);
         alertCondition.insert();
 
-        String newThrehsold = "test";
-        alertCondition.setThresholdValue(newThrehsold);
+        String newThreshold = "test";
+        alertCondition.setThresholdValue(newThreshold);
 
         AlertConditionDAO.updateAlertCondition(alertCondition);
 
-
         AlertCondition test = AlertConditionDAO.findAlertCondition(alertCondition.getId());
-        Assertions.assertEquals(newThrehsold, test.getThresholdValue());
-
+        Assertions.assertEquals(newThreshold, test.getThresholdValue());
     }
 
     @Test
     public void testFindAlertCondition() {
-        AlertCondition alertCondition = new AlertCondition(device.getId(), deviceSensor.getId(), deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, 1, "");
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, null, "", null);
         alertCondition.insert();
 
         AlertCondition ac = AlertConditionDAO.findAlertCondition(alertCondition.getId());
@@ -97,41 +102,78 @@ public class AlertConditionTest extends AUsesDatabase {
 
     @Test
     public void testFindAlertConditionsForContext() {
-        AlertCondition alertCondition = new AlertCondition(device.getId(), deviceSensor.getId(), deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, 1, "");
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, null, "", null);
         alertCondition.insert();
-
-        alertContext.addCondition(alertCondition);
-        AlertContextDAO.updateAlertCircumstance(alertContext);
+        AlertCondition alertCondition2 = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.GREATER, AlertCondition.Calculation.NONE, null, "", null);
+        alertCondition2.insert();
 
         List<AlertCondition> testList = AlertConditionDAO.findAlertConditionsForContext(alertContext.getId());
 
-        Assertions.assertEquals(1, testList.size());
+        Assertions.assertEquals(2, testList.size());
         Assertions.assertEquals(alertCondition.toString(), testList.get(0).toString());
+        Assertions.assertEquals(alertCondition2.toString(), testList.get(1).toString());
     }
 
     @Test
     public void testInsertOrUpdateAlertCondition() {
-        AlertCondition alertCondition = new AlertCondition(device.getId(), deviceSensor.getId(), deviceSensor.getName(), 1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, 1, "");
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, null, "", null);
         alertCondition.insertOrUpdate();
         int insertId = alertCondition.getId();
 
         Assertions.assertEquals(1, insertId);
 
-        alertCondition.setThresholdValue("testing");
+        String newThreshold = "testing";
+        alertCondition.setThresholdValue(newThreshold);
         alertCondition.insertOrUpdate();
         int updateId = alertCondition.getId();
 
         Assertions.assertEquals(insertId, updateId);
-        Assertions.assertEquals("testing", alertCondition.getThresholdValue());
+        Assertions.assertEquals(newThreshold, alertCondition.getThresholdValue());
+    }
+
+    @Test
+    public void testFindAllAlertConditions() {
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, null, "", null);
+        alertCondition.insert();
+
+        AlertContext alertContext2 = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext2.insert();
+        AlertCondition alertCondition2 = new AlertCondition(alertContext2.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.GREATER, AlertCondition.Calculation.NONE, null, "", device.getId());
+        alertCondition2.insert();
+
+        List<AlertCondition> testList = AlertConditionDAO.findAllAlertConditions();
+
+        Assertions.assertEquals(2, testList.size());
+        Assertions.assertEquals(alertCondition.toString(), testList.get(0).toString());
+        Assertions.assertEquals(alertCondition2.toString(), testList.get(1).toString());
+    }
+
+    @Test
+    public void testFindAlertConditionsForDevice() {
+        AlertCondition alertCondition = new AlertCondition(alertContext.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.EQUAL, AlertCondition.Calculation.AVERAGE, null, "", null);
+        alertCondition.insert();
+
+        AlertContext alertContext2 = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext2.insert();
+        AlertCondition alertCondition2 = new AlertCondition(alertContext2.getId(), deviceSensor.getId(), deviceSensor.getName(),
+                1, AlertCondition.ComparisonOperator.GREATER, AlertCondition.Calculation.NONE, null, "", device.getId());
+        alertCondition2.insert();
+
+        List<AlertCondition> testList = AlertConditionDAO.findAlertConditionsForDevice(device.getId());
+
+        Assertions.assertEquals(1, testList.size());
+        Assertions.assertEquals(alertCondition2.toString(), testList.get(0).toString());
     }
 
     public void insertData() {
-        // insert normal security state
-        SecurityState normal = new SecurityState("Normal");
-        normal.insert();
-
         // insert device_type
-        deviceType = new DeviceType(0, "test device type");
+        DeviceType deviceType = new DeviceType(0, "test device type");
         deviceType.insert();
 
         deviceSensor = new DeviceSensor("test sensor", deviceType.getId());
@@ -145,7 +187,7 @@ public class AlertConditionTest extends AUsesDatabase {
         device.insert();
 
         // insert alert_type unts-temperature
-        alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
+        AlertType alertType = new AlertType("UNTS-Temperature", "test alert type", "IoT Monitor");
         alertType.insert();
 
         // insert into alert_type_lookup
@@ -153,8 +195,7 @@ public class AlertConditionTest extends AUsesDatabase {
         alertTypeLookup.insert();
 
         // insert into alert_context
-        alertContext = new AlertContext(device.getId(), alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
         alertContext.insert();
-
     }
 }

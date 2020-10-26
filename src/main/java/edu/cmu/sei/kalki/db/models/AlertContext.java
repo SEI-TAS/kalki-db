@@ -7,39 +7,41 @@ import java.util.List;
 
 public class AlertContext extends Model  {
     private int id;
-    private Integer deviceId;
-    private String deviceName;
+    private Integer deviceTypeId;
+    private String deviceTypeName;
     private Integer alertTypeLookupId;
     private String alertTypeName;
     private String logicalOperator;
     private List<AlertCondition> conditions;
+    private Integer deviceId;
 
     public AlertContext() {
     }
 
-    public AlertContext(Integer deviceId, Integer alertTypeLookupId, String logicalOperator) {
-        this.deviceId = deviceId;
+    public AlertContext(Integer alertTypeLookupId, String logicalOperator) {
         this.alertTypeLookupId = alertTypeLookupId;
         this.logicalOperator = logicalOperator;
-        this.conditions = new ArrayList<AlertCondition>();
+        this.conditions = new ArrayList<>();
     }
 
-    public AlertContext(Integer deviceId, Integer alertTypeLookupId, LogicalOperator logicalOperator) {
-        this(deviceId, alertTypeLookupId, logicalOperator.convert());
+    public AlertContext(Integer alertTypeLookupId, LogicalOperator logicalOperator) {
+        this(alertTypeLookupId, logicalOperator.convert());
     }
 
-    public AlertContext(Integer deviceId, String deviceName, String logicalOperator, Integer alertTypeLookupId, String alertTypeName) {
-        this(deviceId, alertTypeLookupId, logicalOperator);
-        this.deviceName = deviceName;
+    public AlertContext(Integer deviceTypeId, String deviceTypeName, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+        this(alertTypeLookupId, logicalOperator);
+        this.deviceTypeId = deviceTypeId;
+        this.deviceTypeName = deviceTypeName;
         this.alertTypeName = alertTypeName;
+        this.deviceId = deviceId;
     }
 
-    public AlertContext(Integer deviceId, String deviceName, LogicalOperator logicalOperator, Integer alertTypeLookupId, String alertTypeName) {
-        this(deviceId, deviceName, logicalOperator.convert(), alertTypeLookupId, alertTypeName);
+    public AlertContext(Integer deviceTypeId, String deviceTypeName, LogicalOperator logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+        this(deviceTypeId, deviceTypeName, logicalOperator.convert(), alertTypeLookupId, alertTypeName, deviceId);
     }
 
-    public AlertContext(int id, Integer deviceId, String deviceName, String logicalOperator, Integer alertTypeLookupId, String alertTypeName) {
-        this(deviceId, deviceName, logicalOperator, alertTypeLookupId, alertTypeName);
+    public AlertContext(int id, Integer deviceTypeId, String deviceTypeName, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+        this(deviceTypeId, deviceTypeName, logicalOperator, alertTypeLookupId, alertTypeName, deviceId);
         this.id = id;
     }
 
@@ -51,6 +53,14 @@ public class AlertContext extends Model  {
         this.id = id;
     }
 
+    public Integer getDeviceTypeId() {
+        return deviceTypeId;
+    }
+
+    public void setDeviceTypeId(Integer deviceTypeId) {
+        this.deviceTypeId = deviceTypeId;
+    }
+
     public Integer getDeviceId() {
         return deviceId;
     }
@@ -59,10 +69,10 @@ public class AlertContext extends Model  {
         this.deviceId = deviceId;
     }
 
-    public String getDeviceName() { return this.deviceName; }
+    public String getDeviceName() { return this.deviceTypeName; }
 
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
+    public void setDeviceName(String deviceTypeName) {
+        this.deviceTypeName = deviceTypeName;
     }
 
     public Integer getAlertTypeLookupId() {

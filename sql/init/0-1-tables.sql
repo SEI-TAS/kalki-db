@@ -136,25 +136,21 @@ CREATE TABLE IF NOT EXISTS alert_type_lookup(
 
 CREATE TABLE IF NOT EXISTS alert_context(
     id                 serial PRIMARY KEY,
-    device_id          int REFERENCES device(id) ON DELETE CASCADE,
     alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id) ON DELETE CASCADE,
-    logical_operator    varchar(255) NOT NULL
+    logical_operator   varchar(255) NOT NULL,
+    device_id          varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS alert_condition(
     id                 serial PRIMARY KEY,
-    device_id          int NOT NULL REFERENCES device(id) ON DELETE CASCADE,
+    context_id         int NOT NULL REFERENCES alert_context(id) ON DELETE CASCADE,
     attribute_id       int NOT NULL REFERENCES device_sensor(id) ON DELETE CASCADE,
     num_statuses       int NOT NULL,
     comparison_operator varchar(255) NOT NULL,
     calculation        varchar(255) NOT NULL,
-    threshold_id       int REFERENCES device(id),
-    threshold_value    varchar(255)
-);
-
-CREATE TABLE IF NOT EXISTS alert_circumstance(
-    context_id         int NOT NULL REFERENCES alert_context(id) ON DELETE CASCADE,
-    condition_id       int NOT NULL REFERENCES alert_condition(id) ON DELETE CASCADE
+    threshold_id       int REFERENCES device_type(id),
+    threshold_value    varchar(255),
+    device_id          int REFERENCES device(id)
 );
 
 CREATE TABLE IF NOT EXISTS alert(
