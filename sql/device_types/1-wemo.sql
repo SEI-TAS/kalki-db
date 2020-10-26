@@ -41,12 +41,12 @@ BEGIN
     ----------------------------------------------
     -- Alert types specifically for this dev type.
     ----------------------------------------------
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low', 'wemo.currentmw > X', 'Iot Interface') RETURNING id INTO alertMwGL;
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low-suspicious', 'wemo.currentmw > X for Y minutes', 'Iot Interface') RETURNING id INTO alertMwGLS;
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-high', 'wemo.currentmw > Y', 'Iot Interface') RETURNING id INTO alertMwH;
-    INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Iot Interface') RETURNING id INTO alertTO;
-    INSERT INTO alert_type(name, description, source) values('wemo-today-kwh', 'wemo.today_kwh > K', 'Iot Interface') RETURNING id INTO alertTK;
-    INSERT INTO alert_type(name, description, source) values('wemo-last-change', '', 'Iot Interface') RETURNING id INTO alertLC;
+    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low', 'wemo.currentmw > X', 'Device') RETURNING id INTO alertMwGL;
+    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low-suspicious', 'wemo.currentmw > X for Y minutes', 'Device') RETURNING id INTO alertMwGLS;
+    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-high', 'wemo.currentmw > Y', 'Device') RETURNING id INTO alertMwH;
+    INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Device') RETURNING id INTO alertTO;
+    INSERT INTO alert_type(name, description, source) values('wemo-today-kwh', 'wemo.today_kwh > K', 'Device') RETURNING id INTO alertTK;
+    INSERT INTO alert_type(name, description, source) values('wemo-last-change', '', 'Device') RETURNING id INTO alertLC;
 
     ----------------------------------------------
     -- Associating alert types to the device type.

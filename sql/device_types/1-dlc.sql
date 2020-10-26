@@ -21,7 +21,7 @@ BEGIN
     ----------------------------------------------
     -- Alert types specifically for this dev type.
     ----------------------------------------------
-    INSERT INTO alert_type(name, description, source) values('dlc-motion-sense', 'DLC.motion && PHLE.on/off = off', 'Iot Interface');
+    INSERT INTO alert_type(name, description, source) values('dlc-motion-sense', 'DLC.motion && PHLE.on/off = off', 'Device');
 
     ----------------------------------------------
     -- Associating alert types to the device type.
