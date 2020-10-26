@@ -40,34 +40,32 @@ public class AlertCondition extends Model {
     private int numStatues;
     private String compOperator;
     private String calculation;
-    private Integer thresholdId;
     private String thresholdValue;
-    private Integer deviceId;
+    private Integer targetDeviceId;
 
     public AlertCondition() {}
 
     public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
-                          String calculation, Integer thresholdId, String thresholdValue, Integer deviceId) {
+                          String calculation, String thresholdValue, Integer targetDeviceId) {
         this.contextId = contextId;
         this.attributeId = attributeId;
         this.attributeName = attributeName;
         this.numStatues = numStatues;
         this.compOperator = compOperator;
         this.calculation = calculation;
-        this.thresholdId = thresholdId;
         this.thresholdValue = thresholdValue;
-        this.deviceId = deviceId;
+        this.targetDeviceId = targetDeviceId;
     }
 
     public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, ComparisonOperator compOperator,
-                          Calculation calc, Integer thresholdId, String thresholdValue, Integer deviceId) {
-        this(contextId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdId, thresholdValue, deviceId);
+                          Calculation calc, String thresholdValue, Integer targetDeviceId) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdValue, targetDeviceId);
     }
 
 
     public AlertCondition(int id, int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
-                          String calculation, Integer thresholdId, String thresholdValue, Integer deviceId) {
-        this(contextId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdId, thresholdValue, deviceId);
+                          String calculation, String thresholdValue, Integer targetDeviceId) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdValue, targetDeviceId);
         this.id = id;
     }
 
@@ -79,12 +77,12 @@ public class AlertCondition extends Model {
         this.contextId = contextId;
     }
 
-    public Integer getDeviceId() {
-        return deviceId;
+    public Integer getTargetDeviceId() {
+        return targetDeviceId;
     }
 
-    public void setDeviceId(Integer deviceId) {
-        this.deviceId = deviceId;
+    public void setTargetDeviceId(Integer targetDeviceId) {
+        this.targetDeviceId = targetDeviceId;
     }
 
     public int getAttributeId() {
@@ -132,14 +130,6 @@ public class AlertCondition extends Model {
     }
 
     public void setCalculation(Calculation calculation) { this.calculation = calculation.convert(); }
-
-    public Integer getThresholdId() {
-        return thresholdId;
-    }
-
-    public void setThresholdId(Integer thresholdId) {
-        this.thresholdId = thresholdId;
-    }
 
     public String getThresholdValue() {
         return thresholdValue;

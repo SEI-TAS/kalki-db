@@ -61,15 +61,15 @@ BEGIN
     SELECT INTO alertTypeLookup1 id FROM alert_type_lookup WHERE alert_type_id = alertType1.id AND device_type_id = dType.id;
 
     INSERT INTO alert_context(device_id, alert_type_lookup_id, logical_operator) VALUES (d.id, alertTypeLookup1.id, 'AND') RETURNING id INTO alertContext;
-    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d.id, isOn.id, 1, '<','None', null, '10') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d.id, isOn.id, 1, '=','None', null, 'true') RETURNING id INTO alertCondition;
     INSERT INTO alert_circumstance(context_id, condition_id) VALUES (alertContext.id, alertCondition.id);
-    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d2.id, isOn.id, 1, '<','None', null, '10') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d2.id, isOn.id, 1, '=','None', null, 'false') RETURNING id INTO alertCondition;
     INSERT INTO alert_circumstance(context_id, condition_id) VALUES (alertContext.id, alertCondition.id);
 
     INSERT INTO alert_context(device_id, alert_type_lookup_id, logical_operator) VALUES (d2.id, alertTypeLookup1.id, 'AND') RETURNING id INTO alertContext;
-    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d.id, isOn.id, 1, '<','None', null, '10') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d.id, isOn.id, 1, '=','None', null, 'true') RETURNING id INTO alertCondition;
     INSERT INTO alert_circumstance(context_id, condition_id) VALUES (alertContext.id, alertCondition.id);
-    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d2.id, isOn.id, 1, '<','None', null, '10') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(device_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_id, threshold_value) VALUES (d2.id, isOn.id, 1, '=','None', null, 'false') RETURNING id INTO alertCondition;
     INSERT INTO alert_circumstance(context_id, condition_id) VALUES (alertContext.id, alertCondition.id);
 
 END;

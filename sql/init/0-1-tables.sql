@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS alert_context(
     id                 serial PRIMARY KEY,
     alert_type_lookup_id      int NOT NULL REFERENCES alert_type_lookup(id) ON DELETE CASCADE,
     logical_operator   varchar(255) NOT NULL,
-    device_id          varchar(255)
+    device_id          int  /* Will be null for generic conditions, only used for device-specific ones */
 );
 
 CREATE TABLE IF NOT EXISTS alert_condition(
@@ -148,9 +148,8 @@ CREATE TABLE IF NOT EXISTS alert_condition(
     num_statuses       int NOT NULL,
     comparison_operator varchar(255) NOT NULL,
     calculation        varchar(255) NOT NULL,
-    threshold_id       int REFERENCES device_type(id),
     threshold_value    varchar(255),
-    device_id          int REFERENCES device(id)
+    target_device_id   int REFERENCES device(id) /* For device-specific conditions, the specific device to check this against. */
 );
 
 CREATE TABLE IF NOT EXISTS alert(

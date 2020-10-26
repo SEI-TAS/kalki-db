@@ -12,7 +12,6 @@ import edu.cmu.sei.kalki.db.models.Device;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AlertContextTest extends AUsesDatabase {
     private static DeviceType deviceType;
@@ -28,7 +27,20 @@ public class AlertContextTest extends AUsesDatabase {
         alertContext.insert();
         Assertions.assertNotEquals(-1, alertContext.getId());
         Assertions.assertNotEquals(0, alertContext.getId());
+    }
 
+    @Test
+    public void testUpdateAlertCondition() {
+        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
+
+        String newLogicalOperator = AlertContext.LogicalOperator.AND.convert();
+        alertContext.setLogicalOperator(newLogicalOperator);
+
+        AlertContextDAO.updateAlertContext(alertContext);
+
+        AlertContext test = AlertContextDAO.findAlertContext(alertContext.getId());
+        Assertions.assertEquals(newLogicalOperator, test.getLogicalOperator());
     }
 
     @Test
@@ -42,64 +54,61 @@ public class AlertContextTest extends AUsesDatabase {
     }
 
     @Test
-    public void testFindAllAlertContexts() {
+    public void testFindAlertContextsForDeviceType() {
+        // Inserting it twice inserts two contexts.
         AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
         alertContext.insert();
         alertContext.insert();
 
-        ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAllAlertContexts());
+        // Should not find this one.
+        DeviceType deviceType2 = new DeviceType("test device type2");
+        deviceType2.insert();
+        AlertType alertType2 = new AlertType("ALERT2", "test alert type2", "IoT Interface");
+        alertType2.insert();
+        AlertTypeLookup alertTypeLookup2 = new AlertTypeLookup(alertType2.getId(), deviceType2.getId());
+        alertTypeLookup2.insert();
+        AlertContext alertContext3 = new AlertContext(alertTypeLookup2.getId(), AlertContext.LogicalOperator.AND);
+        alertContext3.insert();
+
+        ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAlertContextsForDeviceType(deviceType.getId()));
         Assertions.assertEquals(2, acList.size());
         Assertions.assertEquals(alertContext.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
-        Assertions.assertEquals(alertContext.getDeviceTypeId(), acList.get(1).getDeviceTypeId());
+        Assertions.assertEquals(alertContext.getLogicalOperator(), acList.get(1).getLogicalOperator());
     }
 
     @Test
-    public void testFindAlertContextsForDeviceType(){
-        List<AlertContext> contextList = AlertContextDAO.findAlertContextsForDeviceType(deviceType.getId());
+    public void testFindAlertContextsForDevice() {
+        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
+        AlertContext alertContext2 = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.OR);
+        alertContext2.setDeviceId(device.getId());
+        alertContext2.insert();
 
-        Assertions.assertEquals(1, contextList.size());
-    }
-
-    @Test
-    public void testInsertAlertContextForDevice(){
-        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
-        List<AlertContext> acList = AlertContextDAO.findAllAlertContexts();
+        ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAlertContextsForDevice(device.getId()));
         Assertions.assertEquals(1, acList.size());
-
-        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
-        acList = AlertContextDAO.findAllAlertContexts();
-        Assertions.assertEquals(2, acList.size()); // 1 device, 1 alert type lookup, 2 inserts by device
-
+        Assertions.assertEquals(alertContext2.getLogicalOperator(), acList.get(0).getLogicalOperator());
+        Assertions.assertEquals(alertContext2.getDeviceId(), acList.get(0).getDeviceId());
     }
 
     @Test
-    public void testFindAlertContextsByDevice() {
-        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
+    public void testFindAlertContextsForDeviceOrType() {
+        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
+        AlertContext alertContext2 = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.OR);
+        alertContext2.setDeviceId(device.getId());
+        alertContext2.insert();
 
-        List<AlertContext> acList = AlertContextDAO.findAlertContextsByDevice(device.getId());
-        Assertions.assertEquals(1, acList.size()); // should only return newest row
-    }
-
-    @Test
-    public void testUpdateAlertContextsForDeviceType() {
-//        AlertContextDAO.insertAlertContextForDevice(device.getId()); //should insert 1
-//
-//        alertTypeLookup.getVariables().replace("test", "testing");
-//        alertTypeLookup.insertOrUpdate();
-//
-//        int result = AlertContextDAO.updateAlertContextsForDeviceType(alertTypeLookup);
-//        assertEquals(1, result); // returns 1 on success
-//
-//        List<AlertContext> allAlertContexts = AlertContextDAO.findAllAlertContexts();
-//        assertEquals(2, allAlertContexts.size());
-//
-//        List<AlertContext> deviceAlertContexts = AlertContextDAO.findAlertContextsByDevice(device.getId());
-//        assertEquals(alertTypeLookup.getVariables().get("test"), deviceAlertContexts.get(0).getVariables().get("test"));
+        ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAlertContextsForDeviceOrType(device.getId()));
+        Assertions.assertEquals(2, acList.size());
+        Assertions.assertEquals(alertContext.getLogicalOperator(), acList.get(0).getLogicalOperator());
+        Assertions.assertEquals(alertContext.getAlertTypeLookupId(), acList.get(0).getAlertTypeLookupId());
+        Assertions.assertEquals(alertContext2.getLogicalOperator(), acList.get(1).getLogicalOperator());
+        Assertions.assertEquals(alertContext2.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
     }
 
     public void insertData() {
         // insert device_type
-        deviceType = new DeviceType(0, "test device type");
+        deviceType = new DeviceType("test device type");
         deviceType.insert();
 
         DataNode dataNode = new DataNode("Test Node", "localhost");

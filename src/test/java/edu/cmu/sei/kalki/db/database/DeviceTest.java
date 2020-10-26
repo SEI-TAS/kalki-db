@@ -49,8 +49,6 @@ import edu.cmu.sei.kalki.db.models.DeviceStatus;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
 import edu.cmu.sei.kalki.db.models.SecurityState;
-import edu.cmu.sei.kalki.db.models.UmboxImage;
-import edu.cmu.sei.kalki.db.models.UmboxInstance;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -84,7 +82,7 @@ public class DeviceTest extends AUsesDatabase {
 
         assertNotNull(test.getCurrentState());
         assertNotEquals(0, AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(test.getType().getId()));
-        assertNotEquals(0, AlertContextDAO.findAlertContextsByDevice(test.getId()).size());
+        assertNotEquals(0, AlertContextDAO.findAlertContextsForDevice(test.getId()).size());
     }
     @Test
     public void testFindDevice() {

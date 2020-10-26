@@ -53,17 +53,13 @@ public class AlertConditionDAO extends DAO {
         int numStatuses = rs.getInt("num_statuses");
         String compOperator = rs.getString("comparison_operator");
         String calculation = rs.getString("calculation");
-        Integer thresholdId = 0;
-        try {
-            thresholdId = (Integer) rs.getObject("threshold_id");
-        } catch (PSQLException e) { logger.info("No threshold_id on ResultSet"); }
         String thresholdValue = rs.getString("threshold_value");
-        Integer deviceId = 0;
+        Integer targetDeviceId = 0;
         try {
-            deviceId = (Integer) rs.getObject("device_id");
+            targetDeviceId = (Integer) rs.getObject("target_device_id");
         } catch (PSQLException e) { logger.info("No device_id on ResultSet"); }
 
-        return new AlertCondition(id, contextId, attributeId, attributeName, numStatuses, compOperator, calculation, thresholdId, thresholdValue, deviceId);
+        return new AlertCondition(id, contextId, attributeId, attributeName, numStatuses, compOperator, calculation, thresholdValue, targetDeviceId);
     }
 
     /**
@@ -77,19 +73,6 @@ public class AlertConditionDAO extends DAO {
     }
 
     /**
-     * Finds all AlertConditions in the database
-     *
-     * @return a list of AlertCondition
-     */
-    public static List<AlertCondition> findAllAlertConditions() {
-        String query = "SELECT ac.*, ds.name AS attribute_name " +
-                "FROM alert_condition AS ac, device_sensor as ds " +
-                "WHERE ac.attribute_id = ds.id " +
-                "ORDER BY ac.id";
-        return (List<AlertCondition>) findObjectsByQuery(query, AlertConditionDAO.class);
-    }
-
-    /**
      * Finds all AlertConditions for a specific AlertContext
      */
     public static List<AlertCondition> findAlertConditionsForContext(int contextId) {
@@ -98,17 +81,6 @@ public class AlertConditionDAO extends DAO {
                 "WHERE ac.context_id = ? AND ac.attribute_id = ds.id " +
                 "ORDER BY ac.id";
         return (List<AlertCondition>) findObjectsByIdAndQuery(contextId, query, AlertConditionDAO.class);
-    }
-
-    /**
-     * Finds all AlertConditions for a specific device
-     */
-    public static List<AlertCondition> findAlertConditionsForDevice(int deviceId) {
-        String query = "SELECT ac.*, ds.name AS attribute_name " +
-                "FROM alert_condition AS ac, device_sensor as ds, device AS d " +
-                "WHERE ac.attribute_id = ds.id AND ac.device_id = ? " +
-                "ORDER BY ac.id";
-        return (List<AlertCondition>) findObjectsByIdAndQuery(deviceId, query, AlertConditionDAO.class);
     }
 
     public static Boolean deleteAlertCondition(int id) {
@@ -123,15 +95,14 @@ public class AlertConditionDAO extends DAO {
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement(
                     "INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, " +
-                            "calculation, threshold_id, threshold_value, device_id) VALUES(?,?,?,?,?,?,?,?) RETURNING  id")) {
+                            "calculation, threshold_value, target_device_id) VALUES(?,?,?,?,?,?,?) RETURNING id")) {
             st.setInt(1, cond.getContextId());
             st.setInt(2, cond.getAttributeId());
             st.setInt(3, cond.getNumStatues());
             st.setString(4, cond.getCompOperator());
             st.setString(5, cond.getCalculation());
-            st.setObject(6, cond.getThresholdId());
-            st.setString(7, cond.getThresholdValue());
-            st.setObject(8, cond.getDeviceId());
+            st.setString(6, cond.getThresholdValue());
+            st.setObject(7, cond.getTargetDeviceId());
             st.execute();
             int id = getLatestId(st);
             cond.setId(id);
@@ -149,17 +120,17 @@ public class AlertConditionDAO extends DAO {
         logger.info("Updating alert condition: "+cond.getId());
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE alert_condition " +
-                    "SET context_id = ?, attribute_id = ?, num_statuses = ?, comparison_operator = ?, calculation = ?, threshold_id = ?, threshold_value = ?, device_id = ? " +
+                    "SET context_id = ?, attribute_id = ?, num_statuses = ?, comparison_operator = ?, calculation = ?, " +
+                    "threshold_value = ?, target_device_id = ? " +
                     "WHERE id = ?")) {
             st.setInt(1, cond.getContextId());
             st.setInt(2, cond.getAttributeId());
             st.setInt(3, cond.getNumStatues());
             st.setString(4, cond.getCompOperator());
             st.setString(5, cond.getCalculation());
-            st.setObject(6, cond.getAttributeId());
-            st.setString(7, cond.getThresholdValue());
-            st.setObject(8, cond.getDeviceId());
-            st.setInt(9, cond.getId());
+            st.setString(6, cond.getThresholdValue());
+            st.setObject(7, cond.getTargetDeviceId());
+            st.setInt(8, cond.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

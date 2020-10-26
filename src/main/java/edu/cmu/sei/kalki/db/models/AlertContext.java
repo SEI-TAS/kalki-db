@@ -8,11 +8,10 @@ import java.util.List;
 public class AlertContext extends Model  {
     private int id;
     private Integer deviceTypeId;
-    private String deviceTypeName;
-    private Integer alertTypeLookupId;
+    private int alertTypeLookupId;
     private String alertTypeName;
     private String logicalOperator;
-    private List<AlertCondition> conditions;
+    private List<AlertCondition> conditions = new ArrayList<>();
     private Integer deviceId;
 
     public AlertContext() {
@@ -21,27 +20,25 @@ public class AlertContext extends Model  {
     public AlertContext(Integer alertTypeLookupId, String logicalOperator) {
         this.alertTypeLookupId = alertTypeLookupId;
         this.logicalOperator = logicalOperator;
-        this.conditions = new ArrayList<>();
     }
 
     public AlertContext(Integer alertTypeLookupId, LogicalOperator logicalOperator) {
         this(alertTypeLookupId, logicalOperator.convert());
     }
 
-    public AlertContext(Integer deviceTypeId, String deviceTypeName, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+    public AlertContext(Integer deviceTypeId, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
         this(alertTypeLookupId, logicalOperator);
         this.deviceTypeId = deviceTypeId;
-        this.deviceTypeName = deviceTypeName;
         this.alertTypeName = alertTypeName;
         this.deviceId = deviceId;
     }
 
-    public AlertContext(Integer deviceTypeId, String deviceTypeName, LogicalOperator logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
-        this(deviceTypeId, deviceTypeName, logicalOperator.convert(), alertTypeLookupId, alertTypeName, deviceId);
+    public AlertContext(Integer deviceTypeId, LogicalOperator logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+        this(deviceTypeId, logicalOperator.convert(), alertTypeLookupId, alertTypeName, deviceId);
     }
 
-    public AlertContext(int id, Integer deviceTypeId, String deviceTypeName, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
-        this(deviceTypeId, deviceTypeName, logicalOperator, alertTypeLookupId, alertTypeName, deviceId);
+    public AlertContext(int id, Integer deviceTypeId, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+        this(deviceTypeId, logicalOperator, alertTypeLookupId, alertTypeName, deviceId);
         this.id = id;
     }
 
@@ -67,12 +64,6 @@ public class AlertContext extends Model  {
 
     public void setDeviceId(Integer deviceId) {
         this.deviceId = deviceId;
-    }
-
-    public String getDeviceName() { return this.deviceTypeName; }
-
-    public void setDeviceName(String deviceTypeName) {
-        this.deviceTypeName = deviceTypeName;
     }
 
     public Integer getAlertTypeLookupId() {
@@ -125,6 +116,10 @@ public class AlertContext extends Model  {
         return getId();
     }
 
+    public void insertOrUpdate() {
+        AlertContext data = AlertContextDAO.insertOrUpdateAlertContext(this);
+        this.id = data.getId();
+    }
 
     public enum LogicalOperator {
         AND,
@@ -146,5 +141,4 @@ public class AlertContext extends Model  {
             }
         }
     }
-
 }
