@@ -11,6 +11,12 @@ DECLARE
     todayStandby RECORD;
     lastChange RECORD;
     isOn RECORD;
+    alertMwGL RECORD;
+    alertMwGLS RECORD;
+    alertMwH RECORD;
+    alertTO RECORD;
+    alertTK RECORD;
+    alertLC RECORD;
 BEGIN
     ----------------------------------------------
     -- Device type itself.
@@ -20,11 +26,11 @@ BEGIN
     ----------------------------------------------
     -- Device type sensors.
     ----------------------------------------------
-    INSERT INTO device_sensor(name, type_id) values ('today_kwh', deviceType.id);
-    INSERT INTO device_sensor(name, type_id) values ('current_power', deviceType.id);
-    INSERT INTO device_sensor(name, type_id) values ('today_standby_time', deviceType.id);
-    INSERT INTO device_sensor(name, type_id) values ('lastchange', deviceType.id);
-    INSERT INTO device_sensor(name, type_id) values ('isOn', deviceType.id);
+    INSERT INTO device_sensor(name, type_id) values ('today_kwh', deviceType.id) RETURNING id INTO todayKwh;
+    INSERT INTO device_sensor(name, type_id) values ('current_power', deviceType.id) RETURNING id INTO currentPower;
+    INSERT INTO device_sensor(name, type_id) values ('today_standby_time', deviceType.id) RETURNING id INTO todayStandby;
+    INSERT INTO device_sensor(name, type_id) values ('lastchange', deviceType.id) RETURNING id INTO lastChange;
+    INSERT INTO device_sensor(name, type_id) values ('isOn', deviceType.id) RETURNING id INTO isOn;
 
     ----------------------------------------------
     -- Commands that apply to this device type.
@@ -35,24 +41,26 @@ BEGIN
     ----------------------------------------------
     -- Alert types specifically for this dev type.
     ----------------------------------------------
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low', 'wemo.currentmw > X', 'Iot Interface');
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low-suspicious', 'wemo.currentmw > X for Y minutes', 'Iot Interface');
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-high', 'wemo.currentmw > Y', 'Iot Interface');
-    INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Iot Interface');
-    INSERT INTO alert_type(name, description, source) values('wemo-today-kwh', 'wemo.today_kwh > K', 'Iot Interface');
+    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low', 'wemo.currentmw > X', 'Iot Interface') RETURNING id INTO alertMwGL;
+    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low-suspicious', 'wemo.currentmw > X for Y minutes', 'Iot Interface') RETURNING id INTO alertMwGLS;
+    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-high', 'wemo.currentmw > Y', 'Iot Interface') RETURNING id INTO alertMwH;
+    INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Iot Interface') RETURNING id INTO alertTO;
+    INSERT INTO alert_type(name, description, source) values('wemo-today-kwh', 'wemo.today_kwh > K', 'Iot Interface') RETURNING id INTO alertTK;
+    INSERT INTO alert_type(name, description, source) values('wemo-last-change', '', 'Iot Interface') RETURNING id INTO alertLC;
 
     ----------------------------------------------
     -- Associating alert types to the device type.
     ----------------------------------------------
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.id FROM alert_type AS at WHERE at.name = 'device-unavailable'), deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT at.id FROM alert_type AS at WHERE at.name = 'state-reset'), deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES((SELECT id FROM alert_type WHERE name='brute-force'), deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name='brute-force'), deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name='max-login-attempts'), deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-low'), deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-low-suspicious'), deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-current-mw-greater-high'), deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-time-on'), deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name = 'wemo-today-kwh'), deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertMwGL.id, deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertMwGLS.id, deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertMwH.id, deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertTO.id, deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertTK.id, deviceType.id);
+    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertLC.id, deviceType.id);
 
     ----------------------------------------------
     -- ALERT CONDITIONS.

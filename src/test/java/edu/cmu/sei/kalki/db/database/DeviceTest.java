@@ -82,7 +82,6 @@ public class DeviceTest extends AUsesDatabase {
 
         assertNotNull(test.getCurrentState());
         assertNotEquals(0, AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(test.getType().getId()));
-        assertNotEquals(0, AlertContextDAO.findAlertContextsForDevice(test.getId()).size());
     }
     @Test
     public void testFindDevice() {
