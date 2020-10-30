@@ -12,7 +12,6 @@ DECLARE
     lastChange RECORD;
     isOn RECORD;
     alertMwGL RECORD;
-    alertMwGLS RECORD;
     alertMwH RECORD;
     alertTO RECORD;
     alertTK RECORD;
@@ -42,7 +41,6 @@ BEGIN
     -- Alert types specifically for this dev type.
     ----------------------------------------------
     INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low', 'wemo.currentmw > X', 'Device') RETURNING id INTO alertMwGL;
-    INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-low-suspicious', 'wemo.currentmw > X for Y minutes', 'Device') RETURNING id INTO alertMwGLS;
     INSERT INTO alert_type(name, description, source) values('wemo-current-mw-greater-high', 'wemo.currentmw > Y', 'Device') RETURNING id INTO alertMwH;
     INSERT INTO alert_type(name, description, source) values('wemo-time-on', 'wemo.today_on_time > T', 'Device') RETURNING id INTO alertTO;
     INSERT INTO alert_type(name, description, source) values('wemo-today-kwh', 'wemo.today_kwh > K', 'Device') RETURNING id INTO alertTK;
@@ -56,7 +54,6 @@ BEGIN
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name='brute-force'), deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES ((SELECT id FROM alert_type WHERE name='max-login-attempts'), deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertMwGL.id, deviceType.id);
-    INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertMwGLS.id, deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertMwH.id, deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertTO.id, deviceType.id);
     INSERT INTO alert_type_lookup(alert_type_id, device_type_id) VALUES (alertTK.id, deviceType.id);

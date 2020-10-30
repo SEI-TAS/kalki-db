@@ -122,7 +122,7 @@ BEGIN
     ----------------------------------------------
     -- unts-temperature
     ----------------------------------------------
-    SELECT INTO alertType1 id FROM alert_type WHERE name = 'unts-temperature';
+    SELECT INTO alertType1 id FROM alert_type WHERE name = 'unts-temperature-avg';
     SELECT INTO alertTypeLookup1 id FROM alert_type_lookup WHERE alert_type_id = alertType1.id AND device_type_id = deviceType.id;
     INSERT INTO alert_context(alert_type_lookup_id, logical_operator) VALUES (alertTypeLookup1.id, 'OR') RETURNING id INTO alertContext;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, tempInput.id, 10, '<','Average', '20') RETURNING id INTO alertCondition;
