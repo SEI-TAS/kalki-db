@@ -74,6 +74,25 @@ public class AlertContextDAO extends DAO
     }
 
     /**
+     * Finds all  AlertContexts for the given device alertTypeLookupId.
+     * @param typeId
+     * @return
+     */
+    public static List<AlertContext> findAlertContextsForAlertTypeLookup(int alertTypeLookupId) {
+        logger.info("Finding AlertContexts for AlertTypeLookup id: "+alertTypeLookupId);
+        String query = "SELECT ac.*, at.name AS alert_type_name, dt.id AS device_type_id " +
+                "FROM alert_context AS ac, alert_type_lookup AS atl, alert_type AS at, device_type AS dt " +
+                "WHERE ac.alert_type_lookup_id = ? AND atl.device_type_id=dt.id AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id AND ac.device_id IS NULL " +
+                "ORDER BY ac.id";
+        List<AlertContext> contextList = (List<AlertContext>) findObjectsByIdAndQuery(alertTypeLookupId, query, AlertContextDAO.class);
+        for(AlertContext context: contextList){
+            List<AlertCondition> conditions = AlertConditionDAO.findAlertConditionsForContext(context.getId());
+            context.setConditions(conditions);
+        }
+        return contextList;
+    }
+
+    /**
      * Finds AlertContexts from the database for the given device_id, that are ONLY device-specific.
      *
      * @param deviceId an id of a device

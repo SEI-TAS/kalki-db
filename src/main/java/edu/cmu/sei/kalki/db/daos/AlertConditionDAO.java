@@ -83,6 +83,17 @@ public class AlertConditionDAO extends DAO {
         return (List<AlertCondition>) findObjectsByIdAndQuery(contextId, query, AlertConditionDAO.class);
     }
 
+    /**
+     * Finds all AlertConditions for a specific AlertContext
+     */
+    public static List<AlertCondition> findAlertConditionsForAlertTypeLookup(int alertTypeLookupId) {
+        String query = "SELECT ac.*, ds.name AS attribute_name " +
+                "FROM alert_condition AS ac, device_sensor as ds, alert_context actx " +
+                "WHERE ac.context_id = actx.id AND ac.attribute_id = ds.id AND actx.alert_type_lookup_id = ?" +
+                "ORDER BY ac.id";
+        return (List<AlertCondition>) findObjectsByIdAndQuery(alertTypeLookupId, query, AlertConditionDAO.class);
+    }
+
     public static Boolean deleteAlertCondition(int id) {
         return deleteById("alert_condition", id);
     }
