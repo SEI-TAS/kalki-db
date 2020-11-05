@@ -50,7 +50,9 @@ public class AlertContextDAO extends DAO
                 "FROM alert_context AS ac, device_type AS dt, alert_type AS at, alert_type_lookup as atl " +
                 "WHERE ac.id=? AND atl.device_type_id=dt.id AND ac.alert_type_lookup_id=atl.id AND atl.alert_type_id=at.id";
         AlertContext context = (AlertContext) findObjectByIdAndQuery(id, query, AlertContextDAO.class);
-        context.setConditions(AlertConditionDAO.findAlertConditionsForContext(context.getId()));
+        if(context != null) {
+            context.setConditions(AlertConditionDAO.findAlertConditionsForContext(context.getId()));
+        }
         return context;
     }
 
