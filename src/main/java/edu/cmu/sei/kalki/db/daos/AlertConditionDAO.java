@@ -54,12 +54,8 @@ public class AlertConditionDAO extends DAO {
         String compOperator = rs.getString("comparison_operator");
         String calculation = rs.getString("calculation");
         String thresholdValue = rs.getString("threshold_value");
-        Integer targetDeviceId = 0;
-        try {
-            targetDeviceId = (Integer) rs.getObject("target_device_id");
-        } catch (PSQLException e) { logger.info("No device_id on ResultSet"); }
 
-        return new AlertCondition(id, contextId, attributeId, attributeName, numStatuses, compOperator, calculation, thresholdValue, targetDeviceId);
+        return new AlertCondition(id, contextId, attributeId, attributeName, numStatuses, compOperator, calculation, thresholdValue);
     }
 
     /**
@@ -106,14 +102,13 @@ public class AlertConditionDAO extends DAO {
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement(
                     "INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, " +
-                            "calculation, threshold_value, target_device_id) VALUES(?,?,?,?,?,?,?) RETURNING id")) {
+                            "calculation, threshold_value) VALUES(?,?,?,?,?,?) RETURNING id")) {
             st.setInt(1, cond.getContextId());
             st.setInt(2, cond.getAttributeId());
             st.setInt(3, cond.getNumStatues());
             st.setString(4, cond.getCompOperator());
             st.setString(5, cond.getCalculation());
             st.setString(6, cond.getThresholdValue());
-            st.setObject(7, cond.getTargetDeviceId());
             st.execute();
             int id = getLatestId(st);
             cond.setId(id);
@@ -132,7 +127,7 @@ public class AlertConditionDAO extends DAO {
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE alert_condition " +
                     "SET context_id = ?, attribute_id = ?, num_statuses = ?, comparison_operator = ?, calculation = ?, " +
-                    "threshold_value = ?, target_device_id = ? " +
+                    "threshold_value = ? " +
                     "WHERE id = ?")) {
             st.setInt(1, cond.getContextId());
             st.setInt(2, cond.getAttributeId());
@@ -140,8 +135,7 @@ public class AlertConditionDAO extends DAO {
             st.setString(4, cond.getCompOperator());
             st.setString(5, cond.getCalculation());
             st.setString(6, cond.getThresholdValue());
-            st.setObject(7, cond.getTargetDeviceId());
-            st.setInt(8, cond.getId());
+            st.setInt(7, cond.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

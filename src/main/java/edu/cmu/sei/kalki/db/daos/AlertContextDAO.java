@@ -3,7 +3,6 @@ package edu.cmu.sei.kalki.db.daos;
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertCondition;
 import edu.cmu.sei.kalki.db.models.AlertContext;
-import edu.cmu.sei.kalki.db.models.Device;
 import org.postgresql.util.PSQLException;
 
 import java.sql.Connection;
@@ -31,12 +30,8 @@ public class AlertContextDAO extends DAO
         try {
             alertTypeName = (String) rs.getObject("alert_type_name");
         } catch (PSQLException e) { logger.info("No alert_type_name on ResultSet"); }
-        Integer deviceId = 0;
-        try {
-            deviceId = (Integer) rs.getObject("device_id");
-        } catch (PSQLException e) { logger.info("No device_id on ResultSet"); }
 
-        return new AlertContext(id, deviceTypeId, logicalOperator, alertTypeLookupId, alertTypeName, deviceId);
+        return new AlertContext(id, deviceTypeId, logicalOperator, alertTypeLookupId, alertTypeName);
     }
 
     /**
@@ -65,7 +60,7 @@ public class AlertContextDAO extends DAO
         logger.info("Finding AlertContexts for DeviceType id: "+typeId);
         String query = "SELECT ac.*, at.name AS alert_type_name, dt.id AS device_type_id " +
                 "FROM alert_context AS ac, alert_type_lookup AS atl, alert_type AS at, device_type AS dt " +
-                "WHERE atl.device_type_id = ? AND atl.device_type_id=dt.id AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id AND ac.device_id IS NULL " +
+                "WHERE atl.device_type_id = ? AND atl.device_type_id=dt.id AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id " +
                 "ORDER BY ac.id";
         List<AlertContext> contextList = (List<AlertContext>) findObjectsByIdAndQuery(typeId, query, AlertContextDAO.class);
         for(AlertContext context: contextList){
@@ -84,7 +79,7 @@ public class AlertContextDAO extends DAO
         logger.info("Finding AlertContexts for AlertTypeLookup id: "+alertTypeLookupId);
         String query = "SELECT ac.*, at.name AS alert_type_name, dt.id AS device_type_id " +
                 "FROM alert_context AS ac, alert_type_lookup AS atl, alert_type AS at, device_type AS dt " +
-                "WHERE ac.alert_type_lookup_id = ? AND atl.device_type_id=dt.id AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id AND ac.device_id IS NULL " +
+                "WHERE ac.alert_type_lookup_id = ? AND atl.device_type_id=dt.id AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id " +
                 "ORDER BY ac.id";
         List<AlertContext> contextList = (List<AlertContext>) findObjectsByIdAndQuery(alertTypeLookupId, query, AlertContextDAO.class);
         for(AlertContext context: contextList){
@@ -92,41 +87,6 @@ public class AlertContextDAO extends DAO
             context.setConditions(conditions);
         }
         return contextList;
-    }
-
-    /**
-     * Finds AlertContexts from the database for the given device_id, that are ONLY device-specific.
-     *
-     * @param deviceId an id of a device
-     * @return a list of all AlertContext in the database related to the given device
-     */
-    public static List<AlertContext> findAlertContextsForDevice(int deviceId) {
-        logger.info("Finding AlertContexts for Device id: "+deviceId);
-        String query = "SELECT ac.*, at.name AS alert_type_name, dt.id AS device_type_id " +
-                "FROM alert_context AS ac, alert_type_lookup AS atl, alert_type AS at, device_type AS dt " +
-                "WHERE ac.device_id = ? AND atl.device_type_id=dt.id AND atl.id = ac.alert_type_lookup_id AND atl.alert_type_id = at.id " +
-                "ORDER BY ac.id";
-        List<AlertContext> contextList = (List<AlertContext>) findObjectsByIdAndQuery(deviceId, query, AlertContextDAO.class);
-        for(AlertContext context: contextList){
-            List<AlertCondition> conditions = AlertConditionDAO.findAlertConditionsForContext(context.getId());
-            context.setConditions(conditions);
-        }
-        return contextList;
-    }
-
-    /**
-     * Finds AlertContexts from the database for the given device_id, including both device-specific and type-generic.
-     *
-     * @param deviceId an id of a device
-     * @return a list of all AlertContext in the database related to the given device
-     */
-    public static List<AlertContext> findAlertContextsForDeviceOrType(int deviceId) {
-        logger.info("Finding AlertContexts for Device id: "+deviceId);
-        List<AlertContext> deviceSpecificContexts = findAlertContextsForDevice(deviceId);
-        Device device = DeviceDAO.findDevice(deviceId);
-        List<AlertContext> deviceTypeContexts = findAlertContextsForDeviceType(device.getType().getId());
-        deviceTypeContexts.addAll(deviceSpecificContexts);
-        return deviceTypeContexts;
     }
 
     /**
@@ -138,10 +98,9 @@ public class AlertContextDAO extends DAO
     public static AlertContext insertAlertContext(AlertContext cont) {
         logger.info("Inserting alert context");
         try(Connection con = Postgres.getConnection();
-            PreparedStatement st = con.prepareStatement("INSERT INTO alert_context(alert_type_lookup_id, logical_operator, device_id) VALUES (?,?,?) RETURNING id")) {
+            PreparedStatement st = con.prepareStatement("INSERT INTO alert_context(alert_type_lookup_id, logical_operator) VALUES (?,?) RETURNING id")) {
             st.setInt(1, cont.getAlertTypeLookupId());
             st.setString(2, cont.getLogicalOperator());
-            st.setObject(3, cont.getDeviceId());
             st.execute();
 
             int id = getLatestId(st);
@@ -160,12 +119,11 @@ public class AlertContextDAO extends DAO
         logger.info("Updating alert context: "+cont.getId());
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement("UPDATE alert_context " +
-                    "SET alert_type_lookup_id = ?, logical_operator = ?, device_id = ?" +
+                    "SET alert_type_lookup_id = ?, logical_operator = ? " +
                     "WHERE id = ?")) {
             st.setInt(1, cont.getAlertTypeLookupId());
             st.setString(2, cont.getLogicalOperator());
-            st.setObject(3, cont.getDeviceId());
-            st.setInt(4, cont.getId());
+            st.setInt(3, cont.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

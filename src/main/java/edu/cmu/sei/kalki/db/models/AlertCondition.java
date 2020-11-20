@@ -41,12 +41,11 @@ public class AlertCondition extends Model {
     private String compOperator;
     private String calculation;
     private String thresholdValue;
-    private Integer targetDeviceId;
 
     public AlertCondition() {}
 
     public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
-                          String calculation, String thresholdValue, Integer targetDeviceId) {
+                          String calculation, String thresholdValue) {
         this.contextId = contextId;
         this.attributeId = attributeId;
         this.attributeName = attributeName;
@@ -54,18 +53,17 @@ public class AlertCondition extends Model {
         this.compOperator = compOperator;
         this.calculation = calculation;
         this.thresholdValue = thresholdValue;
-        this.targetDeviceId = targetDeviceId;
     }
 
     public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, ComparisonOperator compOperator,
-                          Calculation calc, String thresholdValue, Integer targetDeviceId) {
-        this(contextId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdValue, targetDeviceId);
+                          Calculation calc, String thresholdValue) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdValue);
     }
 
 
     public AlertCondition(int id, int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
-                          String calculation, String thresholdValue, Integer targetDeviceId) {
-        this(contextId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdValue, targetDeviceId);
+                          String calculation, String thresholdValue) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdValue);
         this.id = id;
     }
 
@@ -75,14 +73,6 @@ public class AlertCondition extends Model {
 
     public void setContextId(int contextId) {
         this.contextId = contextId;
-    }
-
-    public Integer getTargetDeviceId() {
-        return targetDeviceId;
-    }
-
-    public void setTargetDeviceId(Integer targetDeviceId) {
-        this.targetDeviceId = targetDeviceId;
     }
 
     public int getAttributeId() {

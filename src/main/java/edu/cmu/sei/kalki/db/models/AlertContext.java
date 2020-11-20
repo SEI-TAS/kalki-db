@@ -12,7 +12,6 @@ public class AlertContext extends Model  {
     private String alertTypeName;
     private String logicalOperator;
     private List<AlertCondition> conditions = new ArrayList<>();
-    private Integer deviceId;
 
     public AlertContext() {
     }
@@ -26,19 +25,18 @@ public class AlertContext extends Model  {
         this(alertTypeLookupId, logicalOperator.convert());
     }
 
-    public AlertContext(Integer deviceTypeId, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
+    public AlertContext(Integer deviceTypeId, String logicalOperator, Integer alertTypeLookupId, String alertTypeName) {
         this(alertTypeLookupId, logicalOperator);
         this.deviceTypeId = deviceTypeId;
         this.alertTypeName = alertTypeName;
-        this.deviceId = deviceId;
     }
 
-    public AlertContext(Integer deviceTypeId, LogicalOperator logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
-        this(deviceTypeId, logicalOperator.convert(), alertTypeLookupId, alertTypeName, deviceId);
+    public AlertContext(Integer deviceTypeId, LogicalOperator logicalOperator, Integer alertTypeLookupId, String alertTypeName) {
+        this(deviceTypeId, logicalOperator.convert(), alertTypeLookupId, alertTypeName);
     }
 
-    public AlertContext(int id, Integer deviceTypeId, String logicalOperator, Integer alertTypeLookupId, String alertTypeName, Integer deviceId) {
-        this(deviceTypeId, logicalOperator, alertTypeLookupId, alertTypeName, deviceId);
+    public AlertContext(int id, Integer deviceTypeId, String logicalOperator, Integer alertTypeLookupId, String alertTypeName) {
+        this(deviceTypeId, logicalOperator, alertTypeLookupId, alertTypeName);
         this.id = id;
     }
 
@@ -56,14 +54,6 @@ public class AlertContext extends Model  {
 
     public void setDeviceTypeId(Integer deviceTypeId) {
         this.deviceTypeId = deviceTypeId;
-    }
-
-    public Integer getDeviceId() {
-        return deviceId;
-    }
-
-    public void setDeviceId(Integer deviceId) {
-        this.deviceId = deviceId;
     }
 
     public Integer getAlertTypeLookupId() {

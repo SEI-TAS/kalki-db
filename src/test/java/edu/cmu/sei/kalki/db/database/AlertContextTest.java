@@ -76,36 +76,6 @@ public class AlertContextTest extends AUsesDatabase {
         Assertions.assertEquals(alertContext.getLogicalOperator(), acList.get(1).getLogicalOperator());
     }
 
-    @Test
-    public void testFindAlertContextsForDevice() {
-        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
-        alertContext.insert();
-        AlertContext alertContext2 = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.OR);
-        alertContext2.setDeviceId(device.getId());
-        alertContext2.insert();
-
-        ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAlertContextsForDevice(device.getId()));
-        Assertions.assertEquals(1, acList.size());
-        Assertions.assertEquals(alertContext2.getLogicalOperator(), acList.get(0).getLogicalOperator());
-        Assertions.assertEquals(alertContext2.getDeviceId(), acList.get(0).getDeviceId());
-    }
-
-    @Test
-    public void testFindAlertContextsForDeviceOrType() {
-        AlertContext alertContext = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.NONE);
-        alertContext.insert();
-        AlertContext alertContext2 = new AlertContext(alertTypeLookup.getId(), AlertContext.LogicalOperator.OR);
-        alertContext2.setDeviceId(device.getId());
-        alertContext2.insert();
-
-        ArrayList<AlertContext> acList = new ArrayList<AlertContext>(AlertContextDAO.findAlertContextsForDeviceOrType(device.getId()));
-        Assertions.assertEquals(2, acList.size());
-        Assertions.assertEquals(alertContext.getLogicalOperator(), acList.get(0).getLogicalOperator());
-        Assertions.assertEquals(alertContext.getAlertTypeLookupId(), acList.get(0).getAlertTypeLookupId());
-        Assertions.assertEquals(alertContext2.getLogicalOperator(), acList.get(1).getLogicalOperator());
-        Assertions.assertEquals(alertContext2.getAlertTypeLookupId(), acList.get(1).getAlertTypeLookupId());
-    }
-
     public void insertData() {
         // insert device_type
         deviceType = new DeviceType("test device type");
