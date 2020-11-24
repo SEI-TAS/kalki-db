@@ -93,7 +93,7 @@ BEGIN
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroX.id, 1, '<','None', '-45') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroX.id, 1, '>','None', '45') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroY.id, 1, '<','None', '-60') RETURNING id INTO alertCondition;
-    INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroY.id, 1, '>','None', '-60') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroY.id, 1, '>','None', '60') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroZ.id, 1, '<','None', '-15') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, gyroZ.id, 1, '>','None', '15') RETURNING id INTO alertCondition;
 
@@ -103,9 +103,9 @@ BEGIN
     SELECT INTO alertType1 id FROM alert_type WHERE name = 'unts-magnetometer';
     SELECT INTO alertTypeLookup1 id FROM alert_type_lookup WHERE alert_type_id = alertType1.id AND device_type_id = deviceType.id;
     INSERT INTO alert_context(alert_type_lookup_id, logical_operator) VALUES (alertTypeLookup1.id, 'OR') RETURNING id INTO alertContext;
-    INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magX.id, 1, '<','None', '80') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magX.id, 1, '<','None', '50') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magX.id, 1, '>','None', '90') RETURNING id INTO alertCondition;
-    INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magY.id, 1, '<','None', '80') RETURNING id INTO alertCondition;
+    INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magY.id, 1, '<','None', '50') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magY.id, 1, '>','None', '90') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magZ.id, 1, '<','None', '90') RETURNING id INTO alertCondition;
     INSERT INTO alert_condition(context_id, attribute_id, num_statuses, comparison_operator, calculation, threshold_value) VALUES (alertContext.id, magZ.id, 1, '>','None', '110') RETURNING id INTO alertCondition;
