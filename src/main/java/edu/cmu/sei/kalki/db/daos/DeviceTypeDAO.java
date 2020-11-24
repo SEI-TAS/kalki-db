@@ -32,6 +32,7 @@
 package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
+import edu.cmu.sei.kalki.db.models.DeviceSensor;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 
 import java.sql.Connection;
@@ -59,7 +60,10 @@ public class DeviceTypeDAO extends DAO
      * @return the DeviceType if it exists in the database, else null.
      */
     public static DeviceType findDeviceType(int id) {
-        return (DeviceType) findObjectByIdAndTable(id, "device_type", DeviceTypeDAO.class);
+        DeviceType type = (DeviceType) findObjectByIdAndTable(id, "device_type", DeviceTypeDAO.class);
+        if(type != null)
+            type.setSensors(DeviceSensorDAO.findSensorsForDeviceType(type.getId()));
+        return type;
     }
 
     /**
@@ -68,7 +72,12 @@ public class DeviceTypeDAO extends DAO
      * @return a list of all DeviceTypes in the database.
      */
     public static List<DeviceType> findAllDeviceTypes() {
-        return (List<DeviceType>) findObjectsByTable("device_type", DeviceTypeDAO.class);
+        List<DeviceType> deviceTypes = (List<DeviceType>) findObjectsByTable("device_type", DeviceTypeDAO.class);
+        for(DeviceType deviceType : deviceTypes) {
+            List<DeviceSensor> sensors = DeviceSensorDAO.findSensorsForDeviceType(deviceType.getId());
+            deviceType.setSensors(sensors);
+        }
+        return deviceTypes;
     }
 
     /**
@@ -77,7 +86,7 @@ public class DeviceTypeDAO extends DAO
      * @param type DeviceType to be inserted.
      * @return auto incremented id
      */
-    public static Integer insertDeviceType(DeviceType type) {
+    public static DeviceType insertDeviceType(DeviceType type) {
         logger.info("Inserting DeviceType: " + type.getName());
         try(Connection con = Postgres.getConnection();
         PreparedStatement st = con.prepareStatement
@@ -85,20 +94,26 @@ public class DeviceTypeDAO extends DAO
                         "values(?) RETURNING id")) {
             st.setString(1, type.getName());
             st.execute();
-            return getLatestId(st);
+            int id = getLatestId(st);
+            type.setId(id);
+            if(type.getSensors().size() > 0) {
+                DeviceSensorDAO.insertDeviceSensorForDeviceType(type);
+            }
+
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error inserting DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
         }
-        return -1;
+        return type;
     }
 
     /**
      * Updates DeviceType with given id to have the parameters of the given DeviceType.
-     *
+     * NOTE: does NOT update associated device sensors. This is very inconsistent, but more definitive
+     * solution would imply removing sensors as part of the DeviceType object, which would require too many changes.
      * @param type DeviceType holding new parameters to be saved in the database.
      */
-    public static Integer updateDeviceType(DeviceType type) {
+    public static DeviceType updateDeviceType(DeviceType type) {
         logger.info("Updating DeviceType with id=" + type.getId());
         try(Connection con = Postgres.getConnection();
             PreparedStatement st = con.prepareStatement
@@ -107,12 +122,12 @@ public class DeviceTypeDAO extends DAO
             st.setString(1, type.getName());
             st.setInt(2, type.getId());
             st.executeUpdate();
-            return type.getId();
+            //DeviceSensorDAO.updateDeviceSensorForDeviceType(type);
         } catch (SQLException e) {
             e.printStackTrace();
             logger.severe("Error updating DeviceType: " + e.getClass().getName() + ": " + e.getMessage());
-            return -1;
         }
+        return type;
     }
 
     /**
@@ -122,7 +137,7 @@ public class DeviceTypeDAO extends DAO
      *
      * @param type DeviceType to be inserted or updated.
      */
-    public static Integer insertOrUpdateDeviceType(DeviceType type) {
+    public static DeviceType insertOrUpdateDeviceType(DeviceType type) {
         DeviceType dt = findDeviceType(type.getId());
         if (dt == null) {
             return insertDeviceType(type);

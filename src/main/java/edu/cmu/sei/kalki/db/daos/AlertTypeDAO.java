@@ -33,6 +33,7 @@ package edu.cmu.sei.kalki.db.daos;
 
 import edu.cmu.sei.kalki.db.database.Postgres;
 import edu.cmu.sei.kalki.db.models.AlertType;
+import edu.cmu.sei.kalki.db.models.DeviceSensor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -104,6 +105,16 @@ public class AlertTypeDAO extends DAO
      */
     public static List<AlertType> findAllAlertTypes() {
         return (List<AlertType>) findObjectsByTable("alert_type", AlertTypeDAO.class);
+    }
+
+    /**
+     * Finds all AlertTypes in the database for the given source
+     *
+     * @return a list of AlertTypes
+     */
+    public static List<AlertType> findAlertTypesForSource(AlertType.AlertSource source) {
+        String query = "SELECT * from alert_type WHERE source = '" + source + "'";
+        return (List<AlertType>) findObjectsByQuery(query, AlertTypeDAO.class);
     }
 
     /**
