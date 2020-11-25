@@ -33,84 +33,159 @@ package edu.cmu.sei.kalki.db.models;
 
 import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
 
-import java.util.Map;
+public class AlertCondition extends Model {
+    private int contextId;
+    private int attributeId;
+    private String attributeName;
+    private int numStatues;
+    private String compOperator;
+    private String calculation;
+    private String thresholdValue;
 
-public class AlertCondition extends Model  {
-    private int id;
-    private Integer deviceId;
-    private String deviceName;
-    private Integer alertTypeLookupId;
-    private String alertTypeName;
-    private Map<String, String> variables;
+    public AlertCondition() {}
 
-    public AlertCondition() {
+    public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
+                          String calculation, String thresholdValue) {
+        this.contextId = contextId;
+        this.attributeId = attributeId;
+        this.attributeName = attributeName;
+        this.numStatues = numStatues;
+        this.compOperator = compOperator;
+        this.calculation = calculation;
+        this.thresholdValue = thresholdValue;
     }
 
-    public AlertCondition(Integer deviceId, Integer alertTypeLookupId, Map<String, String> variables) {
-        this.deviceId = deviceId;
-        this.alertTypeLookupId = alertTypeLookupId;
-        this.variables = variables;
+    public AlertCondition(int contextId, int attributeId, String attributeName, int numStatues, ComparisonOperator compOperator,
+                          Calculation calc, String thresholdValue) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator.convert(), calc.convert(), thresholdValue);
     }
 
-    public AlertCondition(Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
-        this(deviceId, alertTypeLookupId, variables);
-        this.deviceName = deviceName;
-        this.alertTypeName = alertTypeName;
-    }
 
-    public AlertCondition(int id, Integer deviceId, String deviceName, Integer alertTypeLookupId, String alertTypeName, Map<String, String> variables) {
-        this(deviceId, deviceName, alertTypeLookupId, alertTypeName, variables);
+    public AlertCondition(int id, int contextId, int attributeId, String attributeName, int numStatues, String compOperator,
+                          String calculation, String thresholdValue) {
+        this(contextId, attributeId, attributeName, numStatues, compOperator, calculation, thresholdValue);
         this.id = id;
     }
 
-    public int getId() {
+    public int getContextId() {
+        return contextId;
+    }
+
+    public void setContextId(int contextId) {
+        this.contextId = contextId;
+    }
+
+    public int getAttributeId() {
+        return attributeId;
+    }
+
+    public void setAttributeId(int attributeId) {
+        this.attributeId = attributeId;
+    }
+
+    public String getAttributeName() {
+        return attributeName;
+    }
+
+    public void setAttributeName(String attributeName) {
+        this.attributeName = attributeName;
+    }
+
+    public int getNumStatues() {
+        return numStatues;
+    }
+
+    public void setNumStatues(int numStatues) {
+        this.numStatues = numStatues;
+    }
+
+    public String getCompOperator() {
+        return compOperator;
+    }
+
+    public void setCompOperator(String compOperator) {
+        this.compOperator = compOperator;
+    }
+
+    public void setCompOperator(ComparisonOperator compOperator) {
+        this.compOperator = compOperator.convert();
+    }
+
+    public String getCalculation() {
+        return calculation;
+    }
+
+    public void setCalculation(String calculation) {
+        this.calculation = calculation;
+    }
+
+    public void setCalculation(Calculation calculation) { this.calculation = calculation.convert(); }
+
+    public String getThresholdValue() {
+        return thresholdValue;
+    }
+
+    public void setThresholdValue(String thresholdValue) {
+        this.thresholdValue = thresholdValue;
+    }
+
+    @Override
+    public int insert() {
+        int id = AlertConditionDAO.insertAlertCondition(this).getId();
+        this.id = id;
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void insertOrUpdate() {
+        AlertCondition cond = AlertConditionDAO.insertOrUpdateAlertCondition(this);
+        this.id = cond.getId();
     }
 
-    public Integer getDeviceId() {
-        return deviceId;
+    public enum ComparisonOperator {
+        EQUAL,
+        GREATER,
+        GREATER_OR_EQUAL,
+        LESS,
+        LESS_OR_EQUAL;
+
+        ComparisonOperator() {}
+
+        public String convert() {
+            switch (this) {
+                case EQUAL:
+                    return "=";
+                case GREATER:
+                    return ">";
+                case GREATER_OR_EQUAL:
+                    return ">=";
+                case LESS:
+                    return "<";
+                case LESS_OR_EQUAL:
+                    return "<=";
+                default:
+                    return "Unsupported operator";
+            }
+        }
     }
 
-    public void setDeviceId(Integer deviceId) {
-        this.deviceId = deviceId;
-    }
+    public enum Calculation {
+        AVERAGE,
+        SUM,
+        NONE;
 
-    public String getDeviceName() { return this.deviceName; }
+        Calculation() {}
 
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
-    }
-
-    public Integer getAlertTypeLookupId() {
-        return alertTypeLookupId;
-    }
-
-    public void setAlertTypeLookupId(Integer alertTypeLookupId) {
-        this.alertTypeLookupId = alertTypeLookupId;
-    }
-
-    public String getAlertTypeName() {
-        return alertTypeName;
-    }
-
-    public void setAlertTypeName(String alertTypeName) {
-        this.alertTypeName = alertTypeName;
-    }
-
-    public Map<String, String> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(Map<String, String> variables) {
-        this.variables = variables;
-    }
-
-    public int insert() {
-        setId(AlertConditionDAO.insertAlertCondition(this));
-        return getId();
+        public String convert() {
+            switch (this) {
+                case AVERAGE:
+                    return "Average";
+                case SUM:
+                    return "Sum";
+                case NONE:
+                    return "None";
+                default:
+                    return "Unsupported calculation";
+            }
+        }
     }
 }

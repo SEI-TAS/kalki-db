@@ -35,12 +35,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import edu.cmu.sei.kalki.db.daos.AlertConditionDAO;
+import edu.cmu.sei.kalki.db.daos.AlertContextDAO;
 import edu.cmu.sei.kalki.db.daos.AlertDAO;
 import edu.cmu.sei.kalki.db.daos.AlertTypeLookupDAO;
 import edu.cmu.sei.kalki.db.daos.DeviceDAO;
 import edu.cmu.sei.kalki.db.models.Alert;
 import edu.cmu.sei.kalki.db.models.AlertType;
+import edu.cmu.sei.kalki.db.models.AlertContext;
 import edu.cmu.sei.kalki.db.models.AlertTypeLookup;
 import edu.cmu.sei.kalki.db.models.DataNode;
 import edu.cmu.sei.kalki.db.models.Device;
@@ -48,8 +49,6 @@ import edu.cmu.sei.kalki.db.models.DeviceStatus;
 import edu.cmu.sei.kalki.db.models.DeviceType;
 import edu.cmu.sei.kalki.db.models.Group;
 import edu.cmu.sei.kalki.db.models.SecurityState;
-import edu.cmu.sei.kalki.db.models.UmboxImage;
-import edu.cmu.sei.kalki.db.models.UmboxInstance;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +82,6 @@ public class DeviceTest extends AUsesDatabase {
 
         assertNotNull(test.getCurrentState());
         assertNotEquals(0, AlertTypeLookupDAO.findAlertTypeLookupsByDeviceType(test.getType().getId()));
-        assertNotEquals(0, AlertConditionDAO.findAlertConditionsByDevice(test.getId()).size());
     }
     @Test
     public void testFindDevice() {
@@ -202,7 +200,10 @@ public class DeviceTest extends AUsesDatabase {
         alertTypeReset = new AlertType("state-reset", "state reset", "Dashboard");
         alertTypeReset.insert();
 
-        AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId(), null);
+        AlertTypeLookup atl = new AlertTypeLookup(alertType.getId(), deviceType.getId());
         atl.insert();
+
+        AlertContext alertContext = new AlertContext(atl.getId(), AlertContext.LogicalOperator.NONE);
+        alertContext.insert();
     }
 }

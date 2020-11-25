@@ -87,4 +87,25 @@ public class AlertType extends Model  {
         this.id = AlertTypeDAO.insertOrUpdateAlertType(this);
         return this.id;
     }
+
+    public enum AlertSource {
+        Dashboard,
+        Network,
+        Device;
+
+        private AlertSource() {}
+
+        public String convert() {
+            switch (this) {
+                case Dashboard:
+                    return "Dashboard";
+                case Network:
+                    return "Network";
+                case Device:
+                    return "Device";
+                default:
+                    return "Unsupported source";
+            }
+        }
+    }
 }
